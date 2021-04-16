@@ -4,7 +4,7 @@ from drf_yasg import openapi
 from django.conf.urls import url
 from django.contrib import admin
 from django.http import JsonResponse
-from django.urls import path
+from django.urls import path, include
 
 
 def health_check(request):
@@ -31,4 +31,5 @@ urlpatterns = [
     url(r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
     path("admin/", admin.site.urls),
     path("health_check/", health_check, name="health_check"),
+    path("api/", include('cs_wiki.urls')),
 ]
