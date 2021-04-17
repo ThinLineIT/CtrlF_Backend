@@ -23,6 +23,7 @@ class NoteListView(APIView):
         serializer = NoteListSerializer(notes, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(request_body=NoteListSerializer)
     def post(self, request):
         serializer = NoteListSerializer(data=request.data)
         if serializer.is_valid():
@@ -43,26 +44,13 @@ class AllPageCountView(APIView):
 class NoteDetailView(APIView):
     @swagger_auto_schema(method="get")
     def get(self, request, note_id):
-        note = Note.objects.get(id=note_id)
-        note_data = NoteListSerializer(note).data
-        detail_data = {
-            "id": note_data["id"],
-            "title": note_data["title"],
-            "topics": []
-        }
+        try:
+            note = (Note.objects.prefetch_related(
+                "topic_set", "topic_set__page_set").get(id=note_id))
+        except Note.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
-        topics = Topic.objects.filter(note_id=note_id)
-        for topic in topics:
-            topic_data = TopicListSerializer(topic).data
-            topic_id = topic_data["id"]
-            pages = Page.objects.filter(topic_id=topic_id)
-            pages_data = []
-            for page in pages:
-                pages_data.append(PageListSerializer(page).data)
-            detail_data["topics"].append(
-                {"id": topic_data["id"], "title": topic_data["title"], "pages": pages_data})
-
-        serializer = NoteDetailViewSerializer(detail_data)
+        serializer = NoteDetailViewSerializer(note)
         return Response(serializer.data)
 
 
@@ -73,8 +61,9 @@ class IssueListView(APIView):
         serializer = IssueListViewSerializer(issues, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(request_body=IssueListViewSerializer)
     def post(self, request):
-        serializer = TopicListSerializer(data=request.data)
+        serializer = IssueListViewSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(status=status.HTTP_200_OK)
@@ -97,6 +86,7 @@ class TopicListView(APIView):
         serializer = TopicListSerializer(topics, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(request_body=TopicListSerializer)
     def post(self, request):
         serializer = TopicListSerializer(data=request.data)
         if serializer.is_valid():
@@ -113,8 +103,8 @@ class PageListView(APIView):
         serializer = PageListSerializer(pages, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(request_body=PageListSerializer)
     def post(self, request):
-        print(request)
         serializer = PageListSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()

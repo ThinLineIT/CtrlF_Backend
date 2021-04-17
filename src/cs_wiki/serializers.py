@@ -33,26 +33,45 @@ class DetailPageViewSerializer(serializers.ModelSerializer):
 class PageListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
-        fields = ("id", "title", "content")
+        fields = ("id", "title", "content", "topic_id")
 
     def create(self, validated_data):
-        return Issue.objects.create(**validated_data)
+        return Page.objects.create(**validated_data)
 
 
 class TopicDetailViewSerializer(serializers.ModelSerializer):
-    pages = PageListSerializer(many=True)
+    page = PageListSerializer()
 
     class Meta:
         model = Topic
-        fields = ("id", "title", "pages")
+        fields = ("id", "title", "note_id", "page")
 
 
 class NoteDetailViewSerializer(serializers.ModelSerializer):
-    topics = TopicDetailViewSerializer(many=True)
+    topic = TopicDetailViewSerializer()
 
     class Meta:
         model = Note
-        fields = ("id", "title", "topics")
+        fields = ("id", "title", "topic")
+
+    def to_representation(self, instance):
+        note_result = {}
+        note_result["id"] = instance.id
+        note_result["title"] = instance.title
+        note_result["topics"] = []
+
+        for topic in instance.topic_set.all():
+            temp_topic = {}
+            temp_topic["id"] = topic.id
+            temp_topic["title"] = topic.title
+            temp_topic["pages"] = []
+            for page in topic.page_set.all():
+                temp_page = {}
+                temp_page["id"] = page.id
+                temp_page["title"] = page.title
+                temp_topic["pages"].append(temp_page)
+            note_result["topics"].append(temp_topic)
+        return note_result
 
 
 class IssueListViewSerializer(serializers.ModelSerializer):
@@ -67,7 +86,9 @@ class IssueListViewSerializer(serializers.ModelSerializer):
 class TopicListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
-        fields = ("id", "title")
+        fields = ("id", "title", "note_id")
 
     def create(self, validated_data):
-        return Issue.objects.create(**validated_data)
+        result = Topic.objects.create(**validated_data)
+        print(result)
+        return result
