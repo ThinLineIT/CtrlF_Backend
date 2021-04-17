@@ -9,6 +9,9 @@ class NoteSerializer(serializers.ModelSerializer):
         model = Note
         fields = ("id", "title")
 
+    def create(self, validated_data):
+        return Note.objects.create(**validated_data)
+
 
 class AllPageCountViewSerializer(serializers.ModelSerializer):
     count = serializers.SerializerMethodField()

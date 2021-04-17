@@ -6,6 +6,9 @@ from rest_framework.views import APIView
 from cs_wiki.models import Note, Page, Issue, Topic
 from cs_wiki.serializers import NoteSerializer, AllPageCountViewSerializer, IssueListViewSerializer, DetailPageViewSerializer
 
+from drf_yasg import openapi
+from rest_framework import status
+
 
 @swagger_auto_schema(method="get")
 class CategoryListView(APIView):
@@ -19,6 +22,16 @@ class NoteListView(APIView):
         notes = Note.objects.all()
         serializer = NoteSerializer(notes, many=True)
         return Response(serializer.data)
+
+
+class NoteView(APIView):
+    def post(self, request):
+        serializer = NoteSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @swagger_auto_schema(method="get")
