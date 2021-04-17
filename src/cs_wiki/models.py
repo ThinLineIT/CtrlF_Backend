@@ -1,3 +1,30 @@
 from django.db import models
+from django.db.models.fields import CharField, DateTimeField, TextField
 
-# Create your models here.
+
+class Note(models.Model):
+    title = CharField(max_length=50)
+    create_date = DateTimeField(auto_now_add=True)
+    modify_date = DateTimeField(auto_now=True)
+
+
+class Topic(models.Model):
+    title = CharField(max_length=50)
+    note_id = models.ForeignKey("Note", on_delete=models.CASCADE)
+    create_date = DateTimeField(auto_now_add=True)
+    modify_date = DateTimeField(auto_now=True)
+
+
+class Page(models.Model):
+    title = CharField(max_length=50)
+    topic_id = models.ForeignKey("Topic", on_delete=models.CASCADE)
+    content = TextField()
+    create_date = DateTimeField(auto_now_add=True)
+    modify_date = DateTimeField(auto_now=True)
+
+
+class Issue(models.Model):
+    title = CharField(max_length=50)
+    content = TextField()
+    registration_date = DateTimeField(auto_now_add=True)
+    modify_date = DateTimeField(auto_now=True)
