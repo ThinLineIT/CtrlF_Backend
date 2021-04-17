@@ -91,6 +91,12 @@ class PageDetailView(APIView):
 
 
 class TopicListView(APIView):
+    @swagger_auto_schema(method="get")
+    def get(self, request):
+        topics = Topic.objects.all()
+        serializer = TopicListSerializer(topics, many=True)
+        return Response(serializer.data)
+
     def post(self, request):
         serializer = TopicListSerializer(data=request.data)
         if serializer.is_valid():
@@ -101,6 +107,12 @@ class TopicListView(APIView):
 
 
 class PageListView(APIView):
+    @swagger_auto_schema(method="get")
+    def get(self, request):
+        pages = Page.objects.all()
+        serializer = PageListSerializer(pages, many=True)
+        return Response(serializer.data)
+
     def post(self, request):
         print(request)
         serializer = PageListSerializer(data=request.data)
