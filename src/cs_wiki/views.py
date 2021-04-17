@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cs_wiki.models import Note, Page, Issue, Topic
-from cs_wiki.serializers import NoteListSerializer, AllPageCountViewSerializer, IssueListViewSerializer, DetailPageViewSerializer, TopicListSerializer, PageListSerializer  # AllPageListViewSerializer
+from cs_wiki.serializers import NoteListSerializer, AllPageCountViewSerializer, IssueListViewSerializer, DetailPageViewSerializer, TopicListSerializer, PageListSerializer, NoteDetailViewSerializer
 
 from drf_yasg import openapi
 from rest_framework import status
@@ -40,11 +40,29 @@ class AllPageCountView(APIView):
         return Response(serializer.data)
 
 
-class AllPageListView(APIView):
+class NoteDetailView(APIView):
     @swagger_auto_schema(method="get")
-    def get(self, request):
-        print(request)
-        serializer = AllPageListViewSerializer()
+    def get(self, request, note_id):
+        note = Note.objects.get(id=note_id)
+        note_data = NoteListSerializer(note).data
+        detail_data = {
+            "id": note_data["id"],
+            "title": note_data["title"],
+            "topics": []
+        }
+
+        topics = Topic.objects.filter(note_id=note_id)
+        for topic in topics:
+            topic_data = TopicListSerializer(topic).data
+            topic_id = topic_data["id"]
+            pages = Page.objects.filter(topic_id=topic_id)
+            pages_data = []
+            for page in pages:
+                pages_data.append(PageListSerializer(page).data)
+            detail_data["topics"].append(
+                {"id": topic_data["id"], "title": topic_data["title"], "pages": pages_data})
+
+        serializer = NoteDetailViewSerializer(detail_data)
         return Response(serializer.data)
 
 
