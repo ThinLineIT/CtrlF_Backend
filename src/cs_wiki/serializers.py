@@ -77,7 +77,7 @@ class NoteDetailViewSerializer(serializers.ModelSerializer):
 class IssueListViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Issue
-        fields = ("id", "title", "registration_date")
+        fields = ("id", "title", "content", "registration_date")
 
     def create(self, validated_data):
         return Issue.objects.create(**validated_data)
