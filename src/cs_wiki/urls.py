@@ -1,6 +1,6 @@
 from django.urls import path, include
 
-from cs_wiki.views import CategoryListView, NoteListView, AllPageCountView, IssueListView, AllPageListView, PageDetailView
+from cs_wiki.views import CategoryListView, NoteListView, AllPageCountView, IssueListView, PageDetailView
 
 urlpatterns = [
     path("mock-category-list", CategoryListView.as_view()),
