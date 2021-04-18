@@ -14,6 +14,9 @@ class Topic(models.Model):
     create_date = DateTimeField(auto_now_add=True)
     modify_date = DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.title
+
 
 class Page(models.Model):
     title = CharField(max_length=50)
@@ -22,9 +25,15 @@ class Page(models.Model):
     create_date = DateTimeField(auto_now_add=True)
     modify_date = DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.title
+
 
 class Issue(models.Model):
     title = CharField(max_length=50)
     content = TextField()
     registration_date = DateTimeField(auto_now_add=True)
     modify_date = DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
