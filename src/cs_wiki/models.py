@@ -7,6 +7,9 @@ class Note(models.Model):
     create_date = DateTimeField(auto_now_add=True)
     modify_date = DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.title
+
 
 class Topic(models.Model):
     title = CharField(max_length=50)
