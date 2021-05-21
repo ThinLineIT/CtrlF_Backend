@@ -4,6 +4,15 @@ from rest_framework import serializers
 from cs_wiki.models import Note, Topic, Page, Issue
 
 
+class IssueListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Issue
+        fields = ("id", "title", "registration_date", "content")
+
+    def create(self, validated_data):
+        return Issue.objects.create(**validated_data)
+
+
 class NoteListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
@@ -13,41 +22,66 @@ class NoteListSerializer(serializers.ModelSerializer):
         return Note.objects.create(**validated_data)
 
 
-class AllPageCountViewSerializer(serializers.ModelSerializer):
-    count = serializers.SerializerMethodField()
+class TopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Topic
+        fields = ("note_id", "title")
 
+    def create(self, validated_data):
+        return Topic.objects.create(**validated_data)
+
+
+class PageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
-        fields = ("count",)
-
-    def get_count(self, obj):
-        return obj
-
-
-class DetailPageViewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Page
-        fields = ("id", "title", "content")
-
-
-class PageListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Page
-        fields = ("id", "title", "content", "topic_id")
+        fields = ("id", "note_id", "topic_id", "title", "content")
 
     def create(self, validated_data):
         return Page.objects.create(**validated_data)
 
 
+class PageDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Page
+        fields = ("id", "title", "content")
+
+
+class HomeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Page
+        fields = ("count", "notes", "issues")
+
+    def to_representation(self, instance):
+        home = {}
+
+        home["count"] = instance["count"]
+
+        home["notes"] = []
+        for note in instance["notes"]:
+            temp_note = {}
+            temp_note["id"] = note.id
+            temp_note["title"] = note.title
+            home["notes"].append(temp_note)
+
+        home["issues"] = []
+        for issue in instance["issues"]:
+            temp_issue = {}
+            temp_issue["id"] = issue.id
+            temp_issue["title"] = issue.title
+            home["issues"].append(temp_issue)
+
+        return home
+
+
 class TopicDetailViewSerializer(serializers.ModelSerializer):
-    page = PageListSerializer()
+    page = PageSerializer()
 
     class Meta:
         model = Topic
         fields = ("id", "title", "note_id", "page")
 
 
-class NoteDetailViewSerializer(serializers.ModelSerializer):
+class NoteDetailSerializer(serializers.ModelSerializer):
     topic = TopicDetailViewSerializer()
 
     class Meta:
@@ -72,23 +106,3 @@ class NoteDetailViewSerializer(serializers.ModelSerializer):
                 temp_topic["pages"].append(temp_page)
             note_result["topics"].append(temp_topic)
         return note_result
-
-
-class IssueListViewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Issue
-        fields = ("id", "title", "content", "registration_date")
-
-    def create(self, validated_data):
-        return Issue.objects.create(**validated_data)
-
-
-class TopicListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Topic
-        fields = ("id", "title", "note_id")
-
-    def create(self, validated_data):
-        result = Topic.objects.create(**validated_data)
-        print(result)
-        return result
