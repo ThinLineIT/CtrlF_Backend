@@ -74,7 +74,7 @@ class NoteListView(APIView):
     def get(self, request, *args, **kwargs):
         notes = Note.objects.all()
 
-        if request.GET["search"]:
+        if "search" in request.GET:
             notes = notes.filter(title=request.GET["search"])
 
         serializer = NoteListSerializer(notes, many=True)
