@@ -1,7 +1,19 @@
+from django.db import models
 from django.db.models import fields
 from rest_framework import serializers
 
 from cs_wiki.models import Note, Topic, Page, Issue
+
+
+class PagesCountSerializer(serializers.ModelSerializer):
+    count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Page
+        fields = ("count",)
+
+    def get_count(self, obj):
+        return obj
 
 
 class IssueListSerializer(serializers.ModelSerializer):

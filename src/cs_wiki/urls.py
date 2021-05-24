@@ -8,12 +8,14 @@ from cs_wiki.views import (
     TopicView,
     PageView,
     PageDetailView,
+    PagesCountView,
 )
 
 app_name = "cs_wiki"
 
 urlpatterns = [
     path("home/", HomeView.as_view(), name="home"),
+    path("pages-count/", PagesCountView.as_view(), name="pages-count"),
     path("issues/", IssueListView.as_view(), name="issue-list"),
     path("notes/", NoteListView.as_view(), name="note-list"),
     path("notes/<int:note_id>/", NoteDetailView.as_view(), name="note-detail"),

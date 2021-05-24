@@ -11,6 +11,7 @@ from cs_wiki.serializers import (
     PageSerializer,
     PageDetailSerializer,
     TopicSerializer,
+    PagesCountSerializer,
 )
 
 from rest_framework import status
@@ -26,6 +27,15 @@ class HomeView(APIView):
         home = {"count": count, "notes": notes, "issues": issues}
 
         serializer = HomeSerializer(home)
+        return Response(serializer.data)
+
+
+class PagesCountView(APIView):
+    @swagger_auto_schema(method="get")
+    def get(self, request):
+        count = Page.objects.all().count()
+
+        serializer = PagesCountSerializer(count)
         return Response(serializer.data)
 
 
