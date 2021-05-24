@@ -108,9 +108,7 @@ class TestPageDetail(TestCase):
 
     def test_page_detail(self):
         # Given: Page 1개를 생성한다.
-        Page.objects.create(
-            note_id=self.note, topic_id=self.topic, title="배열", content="배열이란 무엇인가?"
-        )
+        Page.objects.create(topic_id=self.topic, title="배열", content="배열이란 무엇인가?")
 
         # When: Page Detail API를 호출하면,
         response = self._call_api(page_id=1)
@@ -121,9 +119,7 @@ class TestPageDetail(TestCase):
 
     def test_page_detail_does_not_exist(self):
         # Given: Page 1개를 생성한다.
-        Page.objects.create(
-            note_id=self.note, topic_id=self.topic, title="배열", content="배열이란 무엇인가?"
-        )
+        Page.objects.create(topic_id=self.topic, title="배열", content="배열이란 무엇인가?")
 
         # When: Page Detail API를 호출할 때, 없는 page id를 호출하면,
         response = self._call_api(page_id=3)

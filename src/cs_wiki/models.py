@@ -23,7 +23,6 @@ class Topic(models.Model):
 
 class Page(models.Model):
     title = CharField(max_length=50)
-    note_id = models.ForeignKey("Note", on_delete=models.CASCADE)
     topic_id = models.ForeignKey("Topic", on_delete=models.CASCADE)
     content = TextField()
     create_date = DateTimeField(auto_now_add=True)
@@ -36,7 +35,7 @@ class Page(models.Model):
 class Issue(models.Model):
     title = CharField(max_length=50)
     note_id = models.ForeignKey("Note", on_delete=models.CASCADE)
-    topic_id = models.ForeignKey("Topic", on_delete=models.CASCADE)
+    topic_id = models.ForeignKey("Topic", on_delete=models.CASCADE, null=True)
     content = TextField()
     registration_date = DateTimeField(auto_now_add=True)
     modify_date = DateTimeField(auto_now=True)
