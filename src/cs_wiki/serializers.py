@@ -7,7 +7,7 @@ from cs_wiki.models import Note, Topic, Page, Issue
 class IssueListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Issue
-        fields = ("id", "title", "registration_date", "content")
+        fields = ("id", "title", "note_id", "topic_id", "registration_date", "content")
 
     def create(self, validated_data):
         return Issue.objects.create(**validated_data)
@@ -68,6 +68,8 @@ class HomeSerializer(serializers.ModelSerializer):
             temp_issue = {}
             temp_issue["id"] = issue.id
             temp_issue["title"] = issue.title
+            temp_issue["note_id"] = issue.note_id.id
+            temp_issue["topic_id"] = issue.topic_id.id
             home["issues"].append(temp_issue)
 
         return home
