@@ -37,9 +37,6 @@ class IssueListView(APIView):
 
         issues = Issue.objects.order_by("-registration_date")
 
-        if "limit" in request.GET:
-            issues = issues[: int(request.GET["limit"])]
-
         if "note_id" in request.GET and "topic_id" in request.GET:
             issues = issues.filter(note_id=request.GET["note_id"]).filter(
                 topic_id=request.GET["topic_id"]
@@ -48,17 +45,23 @@ class IssueListView(APIView):
             issues = issues.filter(note_id=request.GET["note_id"])
 
         if "search" in request.GET and request.GET["search"] != "":
-            issues = issues.filter(title=request.GET["search"])
+            issues = issues.filter(title__contains=request.GET["search"])
+
+        if "limit" in request.GET:
+            issues = issues[: int(request.GET["limit"])]
 
         serializer = IssueListSerializer(issues, many=True)
         return Response(serializer.data)
 
     @swagger_auto_schema(request_body=IssueListSerializer)
     def post(self, request):
-        topic = Topic.objects.get(id=request.data["topic_id"])
-        note = Note.objects.get(id=request.data["note_id"])
+        try:
+            topic = Topic.objects.get(id=request.data["topic_id"])
+            note_id = request.data["note_id"]
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        if str(topic.note_id) != str(note.title):
+        if str(topic.note_id.id) != str(note_id):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         serializer = IssueListSerializer(data=request.data)
@@ -75,7 +78,7 @@ class NoteListView(APIView):
         notes = Note.objects.all()
 
         if "search" in request.GET and request.GET["search"] != "":
-            notes = notes.filter(title=request.GET["search"])
+            notes = notes.filter(title__contains=request.GET["search"])
 
         serializer = NoteListSerializer(notes, many=True)
         return Response(serializer.data)
@@ -123,12 +126,15 @@ class TopicView(APIView):
 class PageView(APIView):
     @swagger_auto_schema(request_body=PageSerializer)
     def post(self, request):
-        topic = Topic.objects.get(id=request.data["topic_id"])
-        note = Note.objects.get(id=request.data["note_id"])
-
-        if str(topic.note_id) != str(note.title):
+        try:
+            topic = Topic.objects.get(id=request.data["topic_id"])
+            note_id = request.data["note_id"]
+        except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+        if str(topic.note_id.id) != str(note_id):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
         serializer = PageSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
