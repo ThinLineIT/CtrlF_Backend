@@ -25,7 +25,7 @@ class NoteListSerializer(serializers.ModelSerializer):
 class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
-        fields = ("note_id", "title")
+        fields = ("id", "note_id", "title")
 
     def create(self, validated_data):
         return Topic.objects.create(**validated_data)
@@ -34,7 +34,7 @@ class TopicSerializer(serializers.ModelSerializer):
 class PageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
-        fields = ("id", "note_id", "topic_id", "title", "content")
+        fields = ("id", "topic_id", "title", "content")
 
     def create(self, validated_data):
         return Page.objects.create(**validated_data)
