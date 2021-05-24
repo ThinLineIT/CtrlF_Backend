@@ -31,24 +31,24 @@ class HomeView(APIView):
 
 class IssueListView(APIView):
     @swagger_auto_schema(method="get")
-    def get(self, request, *args, **kwargs):
-        if "note_id" not in kwargs and "topic_id" in kwargs:
+    def get(self, request):
+        if "note_id" not in request.GET and "topic_id" in request.GET:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         issues = Issue.objects.order_by("-registration_date")
 
-        if "limit" in kwargs:
-            issues = issues[: int(kwargs["limit"])]
+        if "limit" in request.GET:
+            issues = issues[: int(request.GET["limit"])]
 
-        if "note_id" in kwargs and "topic_id" in kwargs:
-            issues = issues.filter(note_id=kwargs["note_id"]).filter(
-                topic_id=kwargs["topic_id"]
+        if "note_id" in request.GET and "topic_id" in request.GET:
+            issues = issues.filter(note_id=request.GET["note_id"]).filter(
+                topic_id=request.GET["topic_id"]
             )
-        elif "note_id" in kwargs and "topic_id" not in kwargs:
-            issues = issues.filter(note_id=kwargs["note_id"])
+        elif "note_id" in request.GET and "topic_id" not in request.GET:
+            issues = issues.filter(note_id=request.GET["note_id"])
 
-        if "search" in kwargs:
-            issues = issues.filter(title=kwargs["search"])
+        if "search" in request.GET and request.GET["search"] != "":
+            issues = issues.filter(title=request.GET["search"])
 
         serializer = IssueListSerializer(issues, many=True)
         return Response(serializer.data)
@@ -71,7 +71,7 @@ class IssueListView(APIView):
 
 class NoteListView(APIView):
     @swagger_auto_schema(method="get")
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         notes = Note.objects.all()
 
         if "search" in request.GET and request.GET["search"] != "":
