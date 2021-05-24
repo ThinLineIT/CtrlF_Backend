@@ -69,7 +69,7 @@ class IssueListView(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         issue = Issue.objects.get(issue_id)
-        serializer = PageSerializer(issue, data=request.data)
+        serializer = IssueListSerializer(issue, data=request.data)
 
         if serializer.is_valid():
             serializer.save()
@@ -116,17 +116,19 @@ class NoteListView(APIView):
             note_id = request.data["note_id"]
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        print(1, note_id, request.data)
-        note = Note.objects.get(id=note_id)
-        print(2)
-        serializer = PageSerializer(note, data=request.data)
-        print(3, serializer)
+
+        try:
+            note = Note.objects.get(id=note_id)
+        except Note.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = NoteListSerializer(note, data=request.data)
+        print(serializer)
         if serializer.is_valid():
             serializer.save()
             return Response(status=status.HTTP_201_CREATED)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(request_body=NoteListSerializer)
     def delete(self, request):
         try:
             note_id = request.data["note_id"]
@@ -184,8 +186,8 @@ class TopicView(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         topic = Topic.objects.get(id=topic_id)
-        serializer = PageSerializer(topic, data=request.data)
-
+        serializer = TopicSerializer(topic, data=request.data)
+        print(serializer.is_valid(), serializer)
         if serializer.is_valid():
             serializer.save()
             return Response(status=status.HTTP_201_CREATED)
