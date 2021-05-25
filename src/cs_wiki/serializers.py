@@ -1,13 +1,25 @@
+from django.db import models
 from django.db.models import fields
 from rest_framework import serializers
 
 from cs_wiki.models import Note, Topic, Page, Issue
 
 
+class PagesCountSerializer(serializers.ModelSerializer):
+    count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Page
+        fields = ("count",)
+
+    def get_count(self, obj):
+        return obj
+
+
 class IssueListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Issue
-        fields = ("id", "title", "registration_date", "content")
+        fields = ("id", "title", "note_id", "topic_id", "registration_date", "content")
 
     def create(self, validated_data):
         return Issue.objects.create(**validated_data)
@@ -25,16 +37,22 @@ class NoteListSerializer(serializers.ModelSerializer):
 class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
-        fields = ("note_id", "title")
+        fields = ("id", "note_id", "title")
 
     def create(self, validated_data):
         return Topic.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 class PageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
-        fields = ("id", "note_id", "topic_id", "title", "content")
+        fields = ("id", "topic_id", "title", "content")
 
     def create(self, validated_data):
         return Page.objects.create(**validated_data)
@@ -68,6 +86,8 @@ class HomeSerializer(serializers.ModelSerializer):
             temp_issue = {}
             temp_issue["id"] = issue.id
             temp_issue["title"] = issue.title
+            temp_issue["note_id"] = issue.note_id.id
+            temp_issue["topic_id"] = issue.topic_id.id
             home["issues"].append(temp_issue)
 
         return home
