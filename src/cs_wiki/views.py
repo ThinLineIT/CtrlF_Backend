@@ -189,26 +189,28 @@ class TopicView(APIView):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self, request):
+
+class TopicDetailView(APIView):
+    @swagger_auto_schema(request_body=TopicSerializer)
+    def patch(self, request, **kwargs):
         try:
-            topic_id = request.data["topic_id"]
-        except:
+            topic_id = kwargs["topic_id"]
+        except KeyError:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         topic = Topic.objects.get(id=topic_id)
-        serializer = TopicSerializer(topic, data=request.data)
-        print(serializer.is_valid(), serializer)
+        serializer = TopicSerializer(topic, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request):
+    @swagger_auto_schema(method="delete")
+    def delete(self, request, **kwargs):
         try:
-            topic_id = request.data["topic_id"]
-        except:
+            topic_id = kwargs["topic_id"]
+        except KeyError:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
         try:
             topic = Topic.objects.get(id=topic_id)
         except Topic.DoesNotExist:

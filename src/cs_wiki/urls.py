@@ -9,6 +9,7 @@ from cs_wiki.views import (
     PageView,
     PageDetailView,
     PagesCountView,
+    TopicDetailView,
 )
 
 app_name = "cs_wiki"
@@ -20,6 +21,7 @@ urlpatterns = [
     path("notes/", NoteListView.as_view(), name="note-list"),
     path("notes/<int:note_id>/", NoteDetailView.as_view(), name="note-detail"),
     path("topics/", TopicView.as_view(), name="topic"),
+    path("topics/<int:topic_id>/", TopicDetailView.as_view(), name="topic-detail"),
     path("pages/", PageView.as_view(), name="page"),
     path("pages/<int:page_id>/", PageDetailView.as_view(), name="page-detail"),
 ]
