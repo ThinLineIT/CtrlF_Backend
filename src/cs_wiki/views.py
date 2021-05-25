@@ -72,23 +72,29 @@ class IssueListView(APIView):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self, request):
+
+class IssueDetailView(APIView):
+    @swagger_auto_schema(request_body=IssueListSerializer)
+    def patch(self, request, **kwargs):
         try:
-            issue_id = request.data["issue_id"]
+            issue_id = kwargs["issue_id"]
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+        try:
+            issue = Issue.objects.get(issue_id)
+        except Issue.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
-        issue = Issue.objects.get(issue_id)
-        serializer = IssueListSerializer(issue, data=request.data)
+        serializer = IssueListSerializer(issue, data=request.data, partial=True)
 
         if serializer.is_valid():
             serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request):
+    def delete(self, request, **kwargs):
         try:
-            issue_id = request.data["issue_id"]
+            issue_id = kwargs["issue_id"]
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -121,38 +127,6 @@ class NoteListView(APIView):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self, request):
-        try:
-            note_id = request.data["note_id"]
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            note = Note.objects.get(id=note_id)
-        except Note.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        serializer = NoteListSerializer(note, data=request.data)
-        print(serializer)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request):
-        try:
-            note_id = request.data["note_id"]
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            note = Note.objects.get(id=note_id)
-        except Note.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        note.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 class NoteDetailView(APIView):
     @swagger_auto_schema(method="get")
@@ -171,6 +145,40 @@ class NoteDetailView(APIView):
 
         serializer = NoteDetailSerializer(note)
         return Response(serializer.data)
+
+    @swagger_auto_schema(request_body=NoteListSerializer)
+    def patch(self, request, **kwargs):
+        try:
+            note_id = kwargs["note_id"]
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            note = Note.objects.get(id=note_id)
+        except Note.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = NoteListSerializer(note, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(method="delete")
+    def delete(self, request, **kwargs):
+        try:
+            note_id = kwargs["note_id"]
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            note = Note.objects.get(id=note_id)
+        except Note.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        note.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TopicView(APIView):
@@ -198,8 +206,13 @@ class TopicDetailView(APIView):
         except KeyError:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        topic = Topic.objects.get(id=topic_id)
+        try:
+            topic = Topic.objects.get(id=topic_id)
+        except Topic.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         serializer = TopicSerializer(topic, data=request.data, partial=True)
+
         if serializer.is_valid():
             serializer.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -211,6 +224,7 @@ class TopicDetailView(APIView):
             topic_id = kwargs["topic_id"]
         except KeyError:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
         try:
             topic = Topic.objects.get(id=topic_id)
         except Topic.DoesNotExist:
@@ -230,34 +244,6 @@ class PageView(APIView):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self, request):
-        try:
-            page_id = request.data["page_id"]
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        page = Page.objects.get(id=page_id)
-        serializer = PageSerializer(page, data=request.data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request):
-        try:
-            page_id = request.data["page_id"]
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            page = Page.objects.get(id=page_id)
-        except Page.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        page.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 class PageDetailView(APIView):
     @swagger_auto_schema(method="get")
@@ -274,3 +260,36 @@ class PageDetailView(APIView):
 
         serializer = PageDetailSerializer(page)
         return Response(serializer.data)
+
+    @swagger_auto_schema(request_body=PageSerializer)
+    def patch(self, request, **kwargs):
+        try:
+            page_id = kwargs["page_id"]
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        try:
+            page = Page.objects.get(id=page_id)
+        except Page.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = PageSerializer(page, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(method="delete")
+    def delete(self, request, **kwargs):
+        try:
+            page_id = kwargs["page_id"]
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            page = Page.objects.get(id=page_id)
+        except Page.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        page.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
