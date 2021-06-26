@@ -20,7 +20,7 @@
 * STEP2에 완성된 부분을 DRF(django rest framework)를 이용해서 변경
 
 ## 제약 조건
-1. python version -> 3.9
+1. python version -> 3.9 이상
 2. django version -> 3 버젼 이상
 3. STEP1 까지는 main branch에 자유롭게 commit 가능(but, 가능하다면 feature branch를 나눠서 작업하도록)
 4. STEP2 부터는 아래 제약이 추가된다.
