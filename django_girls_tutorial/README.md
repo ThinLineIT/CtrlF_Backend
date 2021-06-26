@@ -10,6 +10,7 @@
 
 ### STEP 1
 * django girls tutorial 완성 -> django template 이용
+* 결과물 -> pythonanywhere에 배포된 url
 
 ### STEP 2
 * django girls tutorial을 SPA 형태로 변경 -> JSON 통신하는 REST API 형태로 변경
