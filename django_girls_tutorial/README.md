@@ -1,5 +1,8 @@
 # Django girls tutorial 을 완성 해보자
 
+> 1. https://tutorial.djangogirls.org/ko/ -> 기본
+> 2. https://tutorial-extensions.djangogirls.org/ko -> 심화
+
 ## 목적
 * Django를 한번도 다루어본적이 없는 사람을 위한 워밍업 차원에서 진행
 
