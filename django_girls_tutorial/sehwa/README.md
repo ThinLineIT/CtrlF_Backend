@@ -1,1 +1,1 @@
-# HELLO SEHWA!
+# Sehwa Django Tutorial!
