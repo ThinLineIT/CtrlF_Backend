@@ -159,5 +159,5 @@ Thumbs.db
 .prof
 
 .idea
-
+.vscode
 # End of https://www.toptal.com/developers/gitignore/api/django
