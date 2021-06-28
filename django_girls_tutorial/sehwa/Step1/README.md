@@ -8,6 +8,19 @@
 # 2021/06/28
 
 ### 1. Django Model
-1. Model 정의 후 ```python manange.py makemigrations {new_model}```
-2. DB에 Model 추가 ```python manage.py migrate {new_model}```
+1. Model 정의 후 `python manange.py makemigrations {App이름}`
+2. DB에 Model 추가 `python manage.py migrate {App이름}`
 3. admin 계정 추가 후 pythonanywhere에 복제.
+4. pythonanywhere의 bash console에서 project git repo를 clone 후 내 branch에서 가져옴.
+5. 새 가상환경 설정. WSGI Protocol 설정.
+* http://jrhong95.pythonanywhere.com
+
+### 2. Django urls
+1. `/admin` url은 `mysite/urls.py`의 `urlpatterns`에 있다.
+2. 메인에 blog 글을 보여주기 위해 `""`일 때의 동작을 `blog.urls`로 변경
+3. `blog/urls.py`에 `./views.py`의 `post_list`를 연결.
+4. 템플릿은 곧 템플릿 파일을 만든다는 것.
+    - 정보를 일정한 형태로 표현하기 위한 재사용 가능한 파일
+    - MVC 패턴으로 치면 `views.py`는 controller, `template`은 view라고 생각할 수 있음.
+        >http://pythonstudy.xyz/python/article/307-Django-템플릿-Template
+5. 어우 배고파 http://jrhong95.pythonanywhere.com
