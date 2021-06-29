@@ -24,3 +24,25 @@
     - MVC 패턴으로 치면 `views.py`는 controller, `template`은 view라고 생각할 수 있음.
         >http://pythonstudy.xyz/python/article/307-Django-템플릿-Template
 5. 어우 배고파 http://jrhong95.pythonanywhere.com
+
+# 2021/06/29
+
+### 3. Django templates
+1. ORM method
+    * `create(속성=내용...)` : 새 내용들을 table로 넣음
+    * `all()`: 모든 내용 read
+    * `filter(속성__제약조건...)`: 검색
+    * `order_by(속성)`: 정렬
+
+2. `views.py`에서 데이터 불러오기
+    * vscode에서 오류 출력해서 설정 추가
+    ```json
+    "python.linting.pylintArgs": [ 
+        "--load-plugins=pylint_django", 
+        "--disable=django-not-configured"
+    ]
+    ```
+    * 템플릿 안에 있는 값 추가하려면 `{{ posts }}`
+
+3. 장고템플릿 사용법 알아봄.
+4. 배포 http://jrhong95.pythonanywhere.com
