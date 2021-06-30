@@ -26,6 +26,7 @@
         <p>{{ comment.text|linebreaks }}</p>
     </div>
 {% empty %}
+    <a class="btn btn-default" href="{% url 'add_comment_to_post' pk=post.pk  %}">Add Comment</a>
     <p>No comments here yet :(</p>
 {% endfor %}
 
