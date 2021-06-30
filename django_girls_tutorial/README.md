@@ -15,6 +15,15 @@
 ### STEP 2
 * django girls tutorial을 SPA 형태로 변경 -> JSON 통신하는 REST API 형태로 변경
 * django template 구현 부분을 jquery를 이용해서 변경
+----
+#### 상세 설명
+* 내용
+    * 작성한 views.py의 함수들 중 Posts 의 CRUD 함수를 대상으로 JSON 통신하는 REST API 형태로 변경해보자
+    * 기존 구현했던 django template 파일의 구현을 jquery를 이용해서 변경해보자
+* 조건
+    1. 미리 작성된 테스트를 모두 통과 해야 한다.
+    2. `JsonResponse` 를 활용한다
+    3. jQuery library를 이용하여서, API를 호출하여서 응답 값을 받아서 화면에 보여줘야 한다 
 
 ### STEP 3
 * STEP2에 완성된 부분을 DRF(django rest framework)를 이용해서 변경
@@ -23,7 +32,8 @@
 1. python version -> 3.9.X
 2. django version -> 3 버젼 이상
 3. STEP1 까지는 main branch에 자유롭게 commit 가능(but, 가능하다면 feature branch를 나눠서 작업하도록)
-4. STEP2 부터는 아래 제약이 추가된다.
+4. STEP2 는 테스트가 주어지고, 테스트를 통과하는 구현을 해야한
+5. STEP3 부터는 아래 제약이 추가된다.
     * poetry를 통한 패키지 관리
     * branch 룰 추가(추후 공지)
     * pre-commit 추가 - commit 할 때마다 아래 라이브러리 검사가 자동실행 됨
@@ -32,7 +42,7 @@
         * mypy
     * 테스트 코드가 없으면 코드리뷰 통과할 수 없
     * github actions(CI) 추가
-        * 작성한 모든 테스트 코드가 통과 해야 함
+        * 작성한 모든 테스트 코드가 통과다 해야 함
     * PR을 통한 merge 만 가능 with Code Review 통과해야 함
     
 
