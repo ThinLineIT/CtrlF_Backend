@@ -27,7 +27,7 @@
 
 # 2021/06/29
 
-### 3. Django templates
+### 3. Django CRUD
 1. ORM method
     * `create(속성=내용...)` : 새 내용들을 table로 넣음
     * `all()`: 모든 내용 read
@@ -45,4 +45,29 @@
     * 템플릿 안에 있는 값 추가하려면 `{{ posts }}`
 
 3. 장고템플릿 사용법 알아봄.
+4. 배포 http://jrhong95.pythonanywhere.com
+
+# 2021/06/30
+
+### django CRUD & Auth
+1. `from django.conf.urls import url` import하고 draft와 delete 구현
+2. `views.py` 의 해당 메서드에서 request와 나머지 인자를 받고 get_object_or_404로 model에서 값 가져옴.
+3. Auth 구현
+    * Django 3.x 버전이기 때문에 예시 대로 `view.login`으로 사용 불가하여 아래 처럼 사용.
+    ```python
+    from django.contrib.auth.views import LoginView, LogoutView
+
+    urlpatterns = [
+        url(r"^accounts/login/$", LoginView.as_view(), name="login"),
+        url(r"^accounts/logout/$", LogoutView.as_view(), name="logout"),
+        ...
+    ]
+    ```
+
+    * `settings.py`에 아래처럼 등록
+    ```python
+    LOGIN_REDIRECT_URL = "/"
+    LOGOUT_REDIRECT_URL = "/"
+    ```
+    
 4. 배포 http://jrhong95.pythonanywhere.com
