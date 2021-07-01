@@ -43,7 +43,7 @@ class TestPostList(TestPostMixin, TestCase):
         response_data = json.loads(response.content)["posts"]
         self.assertEqual(response_data[0]["title"], "test title")
         self.assertEqual(response_data[0]["text"], "test text")
-        self.assertEqual(response_data[0]["author_id"], self.author.id)
+        self.assertEqual(response_data[0]["author"], self.author.id)
 
     def test_list_with_no_published_post(self):
         self._create_post(author=self.author, title="test title", text="test text")
