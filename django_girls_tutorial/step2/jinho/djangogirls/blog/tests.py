@@ -9,15 +9,15 @@ from .models import Post
 
 class TestPostMixin:
     def setUp(self):
-        self.author = self._create_author(username="thkwon", password="test_password")
+        self.author = self._create_author(username="thkwon", password="test_password", email="thkwon@ctrlf.com")
 
     @staticmethod
     def _create_post(author, title, text):
         return Post.objects.create(author=author, title=title, text=text)
 
     @staticmethod
-    def _create_author(username, password):
-        return User.objects.create_superuser(username=username, password=password)
+    def _create_author(username, password, email):
+        return User.objects.create_superuser(username=username, password=password, email=email)
 
 
 class TestPostList(TestPostMixin, TestCase):
@@ -26,9 +26,10 @@ class TestPostList(TestPostMixin, TestCase):
 
     def test_list_with_count(self):
         for i in range(10):
-            self._create_post(
+            post = self._create_post(
                 author=self.author, title=f"test title-{i}", text=f"test text-{i}"
             )
+            post.publish()
         response = self.client.get(reverse("retrieve_post_list"))
         response_data = json.loads(response.content)["posts"]
         self.assertEqual(len(response_data), 10)
@@ -42,7 +43,7 @@ class TestPostList(TestPostMixin, TestCase):
         response_data = json.loads(response.content)["posts"]
         self.assertEqual(response_data[0]["title"], "test title")
         self.assertEqual(response_data[0]["text"], "test text")
-        self.assertEqual(response_data[0]["author"], self.author.id)
+        self.assertEqual(response_data[0]["author_id"], self.author.id)
 
     def test_list_with_no_published_post(self):
         self._create_post(author=self.author, title="test title", text="test text")
