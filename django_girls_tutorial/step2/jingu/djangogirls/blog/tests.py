@@ -28,7 +28,7 @@ class TestPostList(TestPostMixin, TestCase):
         for i in range(10):
             self._create_post(
                 author=self.author, title=f"test title-{i}", text=f"test text-{i}"
-            )
+            ).publish()
         response = self.client.get(reverse("retrieve_post_list"))
         response_data = json.loads(response.content)["posts"]
         self.assertEqual(len(response_data), 10)
