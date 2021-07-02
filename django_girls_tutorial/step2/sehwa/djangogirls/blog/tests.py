@@ -28,7 +28,8 @@ class TestPostList(TestPostMixin, TestCase):
         for i in range(10):
             self._create_post(
                 author=self.author, title=f"test title-{i}", text=f"test text-{i}"
-            )
+            ).publish()
+
         response = self.client.get(reverse("retrieve_post_list"))
         response_data = json.loads(response.content)["posts"]
         self.assertEqual(len(response_data), 10)
@@ -48,6 +49,4 @@ class TestPostList(TestPostMixin, TestCase):
         self._create_post(author=self.author, title="test title", text="test text")
         response = self.client.get(reverse("retrieve_post_list"))
         response_data = json.loads(response.content)["posts"]
-
-        # publish 여부에 관계없이 data를 전송하기 때문에 1이 맞는 것 같다.
-        self.assertEqual(len(response_data), 1)
+        self.assertEqual(len(response_data), 0)
