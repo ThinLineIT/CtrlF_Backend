@@ -7,7 +7,7 @@ def retrieve_post_list(request):
     posts = Post.objects.filter(published_date__lte=timezone.now()).order_by(
         "published_date"
     )
-
+    print(posts)
     post_list = [
         {
             "title": post.title,
@@ -22,28 +22,21 @@ def retrieve_post_list(request):
 
 
 def retrieve_post_detail(request, id):
-    """
-    해당 view 함수를 구현하시오.
+    try:
+        post = Post.objects.get(pk=id)
 
-    Case 1: 성공하는 경우,
+        return JsonResponse(
+            {
+                "post": {
+                    "author": post.author.id,
+                    "title": post.title,
+                    "text": post.text,
+                    "created_date": post.created_date,
+                    "published_date": post.published_date,
+                }
+            },
+            status=200,
+        )
 
-    응답 JSON
-    {
-        "post": {
-            "author": 1,
-            "title": "test title",
-            "text": "test text",
-            "created_date": "2021-01-01T00:00:00" # 포맷은 다를 수 있음
-            "published_date": "2021-01-02T01:00:00" # 포맷은 다를 수 있음
-        }
-    }
-    상태코드 200
-
-    Case 2: 실패하는 경우, - 검색하려는 Post가 존재하지 않음
-
-    응답 JSON
-    {
-        "message": "Post를 찾을 수 없습니다"
-    }
-    상태코드 404
-    """
+    except Post.DoesNotExist:
+        return JsonResponse({"message": "Post를 찾을 수 없습니다"}, status=404)
