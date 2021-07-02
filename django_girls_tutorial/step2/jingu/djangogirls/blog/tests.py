@@ -4,6 +4,11 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
+from http import HTTPStatus
+
+OK = HTTPStatus.OK
+NOT_FOUND = HTTPStatus.NOT_FOUND
+
 from .models import Post
 
 
@@ -56,11 +61,13 @@ class TestPostDetail(TestPostMixin, TestCase):
         super().setUp()
 
     def test_post_detail(self):
-        post = self._create_post(author=self.author, title="test title", text="test text")
+        post = self._create_post(
+            author=self.author, title="test title", text="test text"
+        )
         post.publish()
         response = self.client.get(reverse("retrieve_post_detail", kwargs={"id": 1}))
         response_data = json.loads(response.content)["post"]
-        self.assertEqual(response.status_code, OK)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(response_data["author"], self.author.id)
         self.assertEqual(response_data["title"], "test title")
         self.assertEqual(response_data["text"], "test text")
@@ -68,5 +75,5 @@ class TestPostDetail(TestPostMixin, TestCase):
     def test_post_detail_on_error_with_404_not_found(self):
         response = self.client.get(reverse("retrieve_post_detail", kwargs={"id": 1}))
         response_data = json.loads(response.content)["message"]
-        self.assertEqual(response.status_code, NOT_FOUND)
+        self.assertEqual(response.status_code, 404)
         self.assertEqual(response_data, "Post를 찾을 수 없습니다")
