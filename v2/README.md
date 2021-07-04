@@ -266,7 +266,7 @@ BASE_URL : "https://..."
   * Request
 
     ```python
-    # cusor based pagination 추가 필요
+    GET {BASE_URL}/api/notes?cursor=30
     ```
 
   * Response
@@ -275,12 +275,7 @@ BASE_URL : "https://..."
 
       ```json
       {
-          "pagination": {
-              "has_next": true,
-              "total_count": 1,
-              "page": 1,
-              "page_size": 200
-          },
+          "next_cursor": 45,
           "notes": [
               {
                   "title": "컴퓨터 네트워크",
