@@ -117,24 +117,26 @@ BASE_URL : "https://..."
           * 2XX
           * 4XX
 
-      * POST 이메일 인증 메일 보내기
-
-        * url
-
-          ```
           
-          ```
 
-        * Request
+    * POST 이메일 인증 메일 보내기
 
-          ```json
-          
-          ```
+      * url
 
-        * Response
+        ```
+        
+        ```
 
-          * 2XX
-          * 4XX
+      * Request
+
+        ```json
+        
+        ```
+
+      * Response
+
+        * 2XX
+        * 4XX
 ### 인증
 1. POST 로그인
 
