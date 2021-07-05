@@ -1,7 +1,11 @@
+import json
 from http.client import NOT_FOUND, OK
 
-from django.http import JsonResponse
+from django.contrib.auth.models import User
+from django.http import JsonResponse, QueryDict
 from django.utils import timezone
+from django.views.decorators.http import require_http_methods
+
 from blog.models import Post
 
 
@@ -49,3 +53,33 @@ def retrieve_post_detail(request, id):
     상태코드 404
     """
 
+
+@require_http_methods(["POST"])
+def create_post(request):
+    data = request.POST
+    try:
+        author = User.objects.get(id=data["author"])
+    except User.DoesNotExist:
+        return JsonResponse(status=404, data={"message": "author를 찾을 수 없습니다."})
+    post = Post.objects.create(author=author, title=data["title"], text=data["text"])
+    return JsonResponse(status=201, data={"post": {"title": post.title, "text": post.text, "author": author.username}})
+
+
+@require_http_methods(["PUT"])
+def update_post_with_put(request, id):
+    request_body = json.loads(request.body)
+    try:
+        post = Post.objects.get(id=id)
+    except Post.DoesNotExist:
+        return JsonResponse(status=404, data={"message": "post를 찾을 수 없습니다."})
+    try:
+        author = User.objects.get(id=request_body["author"])
+    except User.DoesNotExist:
+        return JsonResponse(status=404, data={"message": "author를 찾을 수 없습니다."})
+
+    post.author = author
+    post.title = request_body["title"]
+    post.text = request_body["text"]
+    post.save()
+
+    return JsonResponse(status=200, data={"post": {"title": post.title, "text": post.text, "author": author.username}})
