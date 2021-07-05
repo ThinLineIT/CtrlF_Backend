@@ -1,7 +1,9 @@
+import json
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from django.contrib.auth.models import User
 from blog.models import Post
 
 
@@ -53,34 +55,45 @@ def retrieve_post_detail(request, id):
 
 @require_http_methods(["POST"])
 def create_post(request):
-    """
-    해당 view 함수를 구현하시오.
+    body = request.POST
 
-    Case 1: 성공하는 경우,
-    상태코드 200
+    # author key를 이용해 user가 존재하는지 부터 확인
+    try:
+        user = User.objects.get(pk=body.get("author"))
+        title = body.get("title")
+        text = body.get("text")
 
-    Case 2: 실패하는 경우, - author가 존재하지 않음
-    상태코드 404
+        Post.objects.create(author=user, title=body.get("title"), text=body.get("text"))
 
-    자세한 조건은 테스트를 확인해보고 파악하자
+        return JsonResponse(
+            {"post": {"author": user.id, "title": title, "text": text}}, status=201
+        )
 
-    FYI, request.POST 활용
-    """
+    # author key로 검색했을 때 user가 없을 경우
+    except User.DoesNotExist:
+        return JsonResponse({"message": "author를 찾을 수 없습니다."}, status=404)
 
 
 @require_http_methods(["PUT"])
 def update_post_with_put(request, id):
-    """
-    해당 view 함수를 구현하시오.
+    body = json.loads(request.body.decode("utf-8"))
 
-    Case 1: 성공하는 경우,
-    상태코드 200
+    try:
+        user = User.objects.get(pk=body["author"])
+        post = Post.objects.get(pk=id)
 
-    Case 2: 실패하는 경우, - author가 존재하지 않음
-    Case 3: 실패하는 경우, - post가 존재하지 않음
-    상태코드 404
+        post.title = body["title"]
+        post.text = body["text"]
 
-    자세한 조건은 테스트를 확인해보고 파악하자
+        post.save()
 
-    FYI, request.body 활용
-    """
+        return JsonResponse(
+            {"post": {"author": user.id, "title": post.title, "text": post.text}},
+            status=200,
+        )
+
+    # User, Post 가 없을 때 Error 처리.
+    except User.DoesNotExist:
+        return JsonResponse({"message": "author를 찾을 수 없습니다."}, status=404)
+    except Post.DoesNotExist:
+        return JsonResponse({"message": "post를 찾을 수 없습니다."}, status=404)
