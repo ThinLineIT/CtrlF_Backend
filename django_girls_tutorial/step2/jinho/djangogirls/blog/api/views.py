@@ -56,30 +56,34 @@ def retrieve_post_detail(request, id):
 
 @require_http_methods(["POST"])
 def create_post(request):
-    data = request.POST
-    try:
-        author = User.objects.get(id=data["author"])
-    except User.DoesNotExist:
-        return JsonResponse(status=404, data={"message": "author를 찾을 수 없습니다."})
-    post = Post.objects.create(author=author, title=data["title"], text=data["text"])
-    return JsonResponse(status=201, data={"post": {"title": post.title, "text": post.text, "author": author.username}})
+    """
+    해당 view 함수를 구현하시오.
+
+    Case 1: 성공하는 경우,
+    상태코드 200
+
+    Case 2: 실패하는 경우, - author가 존재하지 않음
+    상태코드 404
+
+    자세한 조건은 테스트를 확인해보고 파악하자
+
+    FYI, request.POST 활용
+    """
 
 
 @require_http_methods(["PUT"])
 def update_post_with_put(request, id):
-    request_body = json.loads(request.body)
-    try:
-        post = Post.objects.get(id=id)
-    except Post.DoesNotExist:
-        return JsonResponse(status=404, data={"message": "post를 찾을 수 없습니다."})
-    try:
-        author = User.objects.get(id=request_body["author"])
-    except User.DoesNotExist:
-        return JsonResponse(status=404, data={"message": "author를 찾을 수 없습니다."})
+    """
+    해당 view 함수를 구현하시오.
 
-    post.author = author
-    post.title = request_body["title"]
-    post.text = request_body["text"]
-    post.save()
+    Case 1: 성공하는 경우,
+    상태코드 200
 
-    return JsonResponse(status=200, data={"post": {"title": post.title, "text": post.text, "author": author.username}})
+    Case 2: 실패하는 경우, - author가 존재하지 않음
+    Case 3: 실패하는 경우, - post가 존재하지 않음
+    상태코드 404
+
+    자세한 조건은 테스트를 확인해보고 파악하자
+
+    FYI, request.body 활용
+    """
