@@ -7,7 +7,7 @@ def retrieve_post_list(request):
     posts = Post.objects.filter(published_date__lte=timezone.now()).order_by(
         "published_date"
     )
-    print(posts)
+
     post_list = [
         {
             "title": post.title,
@@ -24,7 +24,9 @@ def retrieve_post_list(request):
 def retrieve_post_detail(request, id):
     try:
         post = Post.objects.get(pk=id)
-
+    except Post.DoesNotExist:
+        return JsonResponse({"message": "Post를 찾을 수 없습니다"}, status=404)
+    else:
         return JsonResponse(
             {
                 "post": {
@@ -37,6 +39,3 @@ def retrieve_post_detail(request, id):
             },
             status=200,
         )
-
-    except Post.DoesNotExist:
-        return JsonResponse({"message": "Post를 찾을 수 없습니다"}, status=404)
