@@ -25,12 +25,16 @@ def retrieve_post_list(request):
 def retrieve_post_detail(request, id):
     try:
         detail_post = Post.objects.get(id=id)
-        return JsonResponse({"post": {
-            "author": detail_post.author_id,
-            "title": detail_post.title,
-            "text": detail_post.text,
-            "created_date": detail_post.created_date,
-            "published_date": detail_post.published_date,
-        }}, status=OK)
     except Post.DoesNotExist:
         return JsonResponse({"message": "Post를 찾을 수 없습니다"}, status=NOT_FOUND)
+    return JsonResponse(
+        {
+            "post":
+                {
+                    "author": detail_post.author_id,
+                    "title": detail_post.title,
+                    "text": detail_post.text,
+                    "created_date": detail_post.created_date,
+                    "published_date": detail_post.published_date,
+                }
+        }, status=OK)
