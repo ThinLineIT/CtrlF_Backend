@@ -91,12 +91,12 @@ def update_post_with_put(request, id):
 @require_http_methods(["DELETE"])
 def remove_post_with_delete(request, id):
     body = json.loads(request.body)
-    posts = Post.objects.filter(id=id)
-    if len(posts) == 0:
+    try:
+        to_delete_post = Post.objects.get(id=id)
+    except Post.DoesNotExist:
         return JsonResponse({"message": "post를 찾을 수 없습니다."}, status=NOT_FOUND)
 
-    to_delete_post = posts[0]
-    if body["author"] != posts[0].author_id:
+    if body["author"] != to_delete_post.author_id:
         return JsonResponse({"message": "권한이 없습니다."}, status=UNAUTHORIZED)
 
     to_delete_post.delete()
