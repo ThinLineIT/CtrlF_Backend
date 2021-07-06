@@ -197,3 +197,21 @@ class TestPostRemove(TestPostMixin, TestCase):
         self.assertEqual(response["title"], "test title")
         self.assertEqual(response["text"], "test text")
 
+    def test_post_remove_with_error_about_post(self):
+        # Given: 유효하지 않은 post_id와 유효한 author를 생성
+        request_body = json.dumps({"author": self.author.id})
+        invalid_post_id = 837994
+
+        # When: 유효하지않은 post에 대한 remove API를 호출한다.
+        response = self.client.delete(reverse("remove_post_with_delete", kwargs={"id": invalid_post_id}),
+                                      data=request_body)
+
+        # Then: 상태코드는 404이고,
+        self.assertEqual(response.status_code, 404)
+        # And: 실제 post는 삭제되지 않는다.
+        self.assertEqual(Post.objects.all().count(), 1)
+
+        # And: 응답 메세지로 post를 찾을 수 없습니다. 를 리턴한다.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "post를 찾을 수 없습니다.")
+
