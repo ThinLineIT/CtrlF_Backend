@@ -56,22 +56,19 @@ def retrieve_post_detail(request, id):
 @require_http_methods(["POST"])
 def create_post(request):
     body = request.POST
+    title = body["title"]
+    text = body["text"]
 
-    # author key를 이용해 user가 존재하는지 부터 확인
     try:
         user = User.objects.get(pk=body.get("author"))
-        title = body.get("title")
-        text = body.get("text")
+    except User.DoesNotExist:
+        return JsonResponse({"message": "author를 찾을 수 없습니다."}, status=404)
 
+    else:
         Post.objects.create(author=user, title=body.get("title"), text=body.get("text"))
-
         return JsonResponse(
             {"post": {"author": user.id, "title": title, "text": text}}, status=201
         )
-
-    # author key로 검색했을 때 user가 없을 경우
-    except User.DoesNotExist:
-        return JsonResponse({"message": "author를 찾을 수 없습니다."}, status=404)
 
 
 @require_http_methods(["PUT"])
@@ -81,19 +78,17 @@ def update_post_with_put(request, id):
     try:
         user = User.objects.get(pk=body["author"])
         post = Post.objects.get(pk=id)
-
-        post.title = body["title"]
-        post.text = body["text"]
-
-        post.save()
-
-        return JsonResponse(
-            {"post": {"author": user.id, "title": post.title, "text": post.text}},
-            status=200,
-        )
-
-    # User, Post 가 없을 때 Error 처리.
     except User.DoesNotExist:
         return JsonResponse({"message": "author를 찾을 수 없습니다."}, status=404)
     except Post.DoesNotExist:
         return JsonResponse({"message": "post를 찾을 수 없습니다."}, status=404)
+
+    else:
+        post.title = body["title"]
+        post.text = body["text"]
+
+        post.save()
+        return JsonResponse(
+            {"post": {"author": user.id, "title": post.title, "text": post.text}},
+            status=200,
+        )
