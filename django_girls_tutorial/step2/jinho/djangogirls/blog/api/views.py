@@ -6,6 +6,7 @@ from django.http import JsonResponse, QueryDict
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from blog.form import PostForm
 from blog.models import Post
 
 
@@ -56,34 +57,49 @@ def retrieve_post_detail(request, id):
 
 @require_http_methods(["POST"])
 def create_post(request):
-    """
-    해당 view 함수를 구현하시오.
-
-    Case 1: 성공하는 경우,
-    상태코드 200
-
-    Case 2: 실패하는 경우, - author가 존재하지 않음
-    상태코드 404
-
-    자세한 조건은 테스트를 확인해보고 파악하자
-
-    FYI, request.POST 활용
-    """
+    body = request.POST
+    try:
+        user = User.objects.get(id=body.get("author"))
+    except User.DoesNotExist:
+        return JsonResponse({"message": "author를 찾을 수 없습니다."}, status=NOT_FOUND)
+    form = PostForm(request.POST)
+    if form.is_valid():
+        post = form.save(commit=False)
+        post.author = user
+        post.save()
+        return JsonResponse(
+            {
+                "post":
+                    {
+                        "title": post.title,
+                        "text": post.text,
+                    }
+            }, status=201)
+    return JsonResponse({"message:": "form is not valid"}, status=NOT_FOUND)
 
 
 @require_http_methods(["PUT"])
 def update_post_with_put(request, id):
-    """
-    해당 view 함수를 구현하시오.
-
-    Case 1: 성공하는 경우,
-    상태코드 200
-
-    Case 2: 실패하는 경우, - author가 존재하지 않음
-    Case 3: 실패하는 경우, - post가 존재하지 않음
-    상태코드 404
-
-    자세한 조건은 테스트를 확인해보고 파악하자
-
-    FYI, request.body 활용
-    """
+    body = json.loads(request.body)
+    try:
+        original_post = Post.objects.get(id=id)
+    except Post.DoesNotExist:
+        return JsonResponse({"message": "post를 찾을 수 없습니다."}, status=NOT_FOUND)
+    try:
+        user = User.objects.get(id=body["author"])
+    except User.DoesNotExist:
+        return JsonResponse({"message": "author를 찾을 수 없습니다."}, status=NOT_FOUND)
+    form = PostForm(body, instance=original_post)
+    if form.is_valid():
+        update_post = form.save(commit=False)
+        update_post.author = user
+        update_post.save()
+        return JsonResponse(
+            {
+                "post":
+                    {
+                        "title": update_post.title,
+                        "text": update_post.text,
+                    }
+            }, status=OK)
+    return JsonResponse({"message": "form is not valid"}, status=NOT_FOUND)
