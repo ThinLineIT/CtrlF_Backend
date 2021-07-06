@@ -124,7 +124,7 @@ BASE_URL : "https://..."
       * url
 
         ```
-        POST {BASE_URL}/api/auth/mail
+        POST {BASE_URL}/api/auth/email
         ```
 
       * Request
