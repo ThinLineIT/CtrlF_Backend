@@ -1,8 +1,7 @@
 import json
-from http.client import NOT_FOUND, OK
+from http.client import NOT_FOUND, OK, UNAUTHORIZED
 
-from django.contrib.auth.models import User
-from django.http import JsonResponse, QueryDict
+from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
@@ -87,3 +86,25 @@ def update_post_with_put(request, id):
 
     FYI, request.body 활용
     """
+
+
+@require_http_methods(["DELETE"])
+def remove_post_with_delete(request, id):
+    body = json.loads(request.body)
+    try:
+        to_delete_post = Post.objects.get(id=id)
+    except Post.DoesNotExist:
+        return JsonResponse({"message": "post를 찾을 수 없습니다."}, status=NOT_FOUND)
+
+    if body["author"] != to_delete_post.author_id:
+        return JsonResponse({"message": "권한이 없습니다."}, status=UNAUTHORIZED)
+
+    to_delete_post.delete()
+    return JsonResponse(
+        {
+            "post":
+                {
+                    "title": to_delete_post.title,
+                    "text": to_delete_post.text,
+                }
+        }, status=OK)
