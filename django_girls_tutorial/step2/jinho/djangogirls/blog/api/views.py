@@ -80,17 +80,26 @@ def create_post(request):
 
 @require_http_methods(["PUT"])
 def update_post_with_put(request, id):
-    """
-    해당 view 함수를 구현하시오.
-
-    Case 1: 성공하는 경우,
-    상태코드 200
-
-    Case 2: 실패하는 경우, - author가 존재하지 않음
-    Case 3: 실패하는 경우, - post가 존재하지 않음
-    상태코드 404
-
-    자세한 조건은 테스트를 확인해보고 파악하자
-
-    FYI, request.body 활용
-    """
+    body = json.loads(request.body)
+    try:
+        original_post = Post.objects.get(id=id)
+    except Post.DoesNotExist:
+        return JsonResponse({"message": "post를 찾을 수 없습니다."}, status=NOT_FOUND)
+    try:
+        user = User.objects.get(id=body["author"])
+    except User.DoesNotExist:
+        return JsonResponse({"message": "author를 찾을 수 없습니다."}, status=NOT_FOUND)
+    form = PostForm(body, instance=original_post)
+    if form.is_valid():
+        update_post = form.save(commit=False)
+        update_post.author = user
+        update_post.save()
+        return JsonResponse(
+            {
+                "post":
+                    {
+                        "title": update_post.title,
+                        "text": update_post.text,
+                    }
+            }, status=OK)
+    return JsonResponse({"message": "form is not valid"}, status=NOT_FOUND)
