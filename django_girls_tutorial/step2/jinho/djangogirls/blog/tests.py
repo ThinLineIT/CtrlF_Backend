@@ -215,3 +215,19 @@ class TestPostRemove(TestPostMixin, TestCase):
         response = json.loads(response.content)
         self.assertEqual(response["message"], "post를 찾을 수 없습니다.")
 
+    def test_post_remove_with_error_about_author(self):
+        # Given: 유효하지 않은 author 생성
+        request_body = json.dumps({"author": 12314})
+
+        # When: 1번 post에 대한 remove API를 호출한다.
+        response = self.client.delete(reverse("remove_post_with_delete", kwargs={"id": self.post.id}),
+                                      data=request_body)
+
+        # Then: 상태코드는 401이고,
+        self.assertEqual(response.status_code, UNAUTHORIZED)
+        # And: 실제 post는 삭제되지 않는다.
+        self.assertEqual(Post.objects.all().count(), 1)
+
+        # And: 응답 메세지로 권한이 없습니다. 를 리턴한다.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "권한이 없습니다.")
