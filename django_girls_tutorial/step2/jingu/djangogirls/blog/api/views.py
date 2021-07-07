@@ -3,6 +3,11 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from blog.models import Post
+from django.contrib.auth.models import User
+from blog.form import PostForm
+
+from http.client import NOT_FOUND, FORBIDDEN, NO_CONTENT
+import json
 
 
 def retrieve_post_list(request):
@@ -84,3 +89,18 @@ def update_post_with_put(request, id):
 
     FYI, request.body 활용
     """
+
+
+@require_http_methods(["DELETE"])
+def delete_post_with_delete(request, id):
+    body = json.loads(request.body)
+    try:
+        post = Post.objects.get(id=id)
+    except Post.DoesNotExist:
+        return JsonResponse({"message": "post를 찾을 수 없습니다."}, status=NOT_FOUND)
+
+    if body["author"] != post.author.id:
+        return JsonResponse({"message": "유효하지 않은 사용자입니다."}, status=FORBIDDEN)
+
+    post.delete()
+    return JsonResponse({}, status=NO_CONTENT)

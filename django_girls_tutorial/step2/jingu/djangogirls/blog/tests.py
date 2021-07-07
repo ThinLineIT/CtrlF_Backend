@@ -1,5 +1,5 @@
 import json
-from http.client import NOT_FOUND, OK
+from http.client import NOT_FOUND, OK, FORBIDDEN, NO_CONTENT
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -58,7 +58,9 @@ class TestPostDetail(TestPostMixin, TestCase):
         super().setUp()
 
     def test_post_detail(self):
-        post = self._create_post(author=self.author, title="test title", text="test text")
+        post = self._create_post(
+            author=self.author, title="test title", text="test text"
+        )
         post.publish()
         response = self.client.get(reverse("retrieve_post_detail", kwargs={"id": 1}))
         response_data = json.loads(response.content)["post"]
@@ -80,7 +82,11 @@ class TestPostCreate(TestPostMixin, TestCase):
 
     def test_post_create(self):
         # Given: 유효한 request body 값이 주어질 때,
-        request_body = {"author": self.author.id, "title": "test title", "text": "test text"}
+        request_body = {
+            "author": self.author.id,
+            "title": "test title",
+            "text": "test text",
+        }
 
         # When: post 생성 api를 호출하면,
         response = self.client.post(reverse("create_post"), data=request_body)
@@ -96,7 +102,11 @@ class TestPostCreate(TestPostMixin, TestCase):
     def test_post_create_with_error_on_404(self):
         # Given: 유효하지 않은 author_id가 주어질 때,
         invalid_author_id = 123123123
-        request_body = {"author": invalid_author_id, "title": "test title", "text": "test text"}
+        request_body = {
+            "author": invalid_author_id,
+            "title": "test title",
+            "text": "test text",
+        }
 
         # When: post 생성 api를 호출하면,
         response = self.client.post(reverse("create_post"), data=request_body)
@@ -112,14 +122,25 @@ class TestPostCreate(TestPostMixin, TestCase):
 class TestPostUpdate(TestPostMixin, TestCase):
     def setUp(self):
         super().setUp()
-        self.post = Post.objects.create(author=self.author, title="test title", text="test text")
+        self.post = Post.objects.create(
+            author=self.author, title="test title", text="test text"
+        )
 
     def test_post_update_with_put(self):
         # Given: 업데이트 하기 위한 유효한 request body 값이 주어지고,
-        request_body_for_put_update = json.dumps({"author": self.author.id, "title": "test test title", "text": "test test text"})
+        request_body_for_put_update = json.dumps(
+            {
+                "author": self.author.id,
+                "title": "test test title",
+                "text": "test test text",
+            }
+        )
 
         # When: 1번 post에 대한 업데이트 api를 호출 할 때,
-        response = self.client.put(reverse("update_post_with_put", kwargs={"id": self.post.id}), data=request_body_for_put_update)
+        response = self.client.put(
+            reverse("update_post_with_put", kwargs={"id": self.post.id}),
+            data=request_body_for_put_update,
+        )
 
         # Then: 상태코드는 200이고,
         self.assertEqual(response.status_code, 200)
@@ -133,15 +154,22 @@ class TestPostUpdate(TestPostMixin, TestCase):
         self.assertEqual(response["title"], "test test title")
         self.assertEqual(response["text"], "test test text")
 
-
     def test_post_update_with_error_with_author_on_404(self):
         # Given: 업데이트 하기 위한 유효하지 않은 author_id 값이 주어지고,
         invalid_author_id = 123123123
         request_body_for_put_update = json.dumps(
-            {"author": invalid_author_id, "title": "test test title", "text": "test test text"})
+            {
+                "author": invalid_author_id,
+                "title": "test test title",
+                "text": "test test text",
+            }
+        )
 
         # When: 1번 post에 대한 업데이트 api를 호출 할 때,
-        response = self.client.put(reverse("update_post_with_put", kwargs={"id": self.post.id}), data=request_body_for_put_update)
+        response = self.client.put(
+            reverse("update_post_with_put", kwargs={"id": self.post.id}),
+            data=request_body_for_put_update,
+        )
 
         # Then: 상태코드는 404이고,
         self.assertEqual(response.status_code, 404)
@@ -157,11 +185,19 @@ class TestPostUpdate(TestPostMixin, TestCase):
     def test_post_update_with_error_with_post_on_404(self):
         # Given: 업데이트 하기 위한 유효하지 않은 post_id 값이 주어지고,
         request_body_for_put_update = json.dumps(
-            {"author": self.author.id, "title": "test test title", "text": "test test text"})
+            {
+                "author": self.author.id,
+                "title": "test test title",
+                "text": "test test text",
+            }
+        )
         invalid_post_id = 12345
 
         # When: # When: 유효하지 않은 post에 대한 업데이트 api를 호출 할 때,
-        response = self.client.put(reverse("update_post_with_put", kwargs={"id": invalid_post_id}), data=request_body_for_put_update)
+        response = self.client.put(
+            reverse("update_post_with_put", kwargs={"id": invalid_post_id}),
+            data=request_body_for_put_update,
+        )
 
         # Then: 상태코드는 404이고,
         self.assertEqual(response.status_code, 404)
@@ -173,3 +209,70 @@ class TestPostUpdate(TestPostMixin, TestCase):
         response = json.loads(response.content)
         # And: 응답 메세지로 post를 찾을 수 없습니다. 를 리턴 해야 한다.
         self.assertEqual(response["message"], "post를 찾을 수 없습니다.")
+
+
+class TestPostDelete(TestPostMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.post = Post.objects.create(
+            author=self.author, title="test title", text="test text"
+        )
+
+    def test_post_delete_with_delete(self):
+        # Given: 삭제 하기 위한 유효한 request body 값이 주어지고,
+        request_body = json.dumps({"author": self.author.id})
+
+        # When: 1번 post에 대한 삭제 api를 호출할 때,
+        response = self.client.delete(
+            reverse("delete_post_with_delete", kwargs={"id": self.post.id}),
+            data=request_body,
+        )
+
+        # Then: 상태코드는 204이고,
+        self.assertEqual(response.status_code, NO_CONTENT)
+        # And: Post의 개수는 0개이다
+        self.assertEqual(Post.objects.all().count(), 0)
+
+    def test_post_delete_with_error_with_post_on_404(self):
+        # Given: 삭제 하기 위한 유효하지 않은 post_id 값이 주어지고,
+        request_body = json.dumps({"author": self.author.id})
+        invalid_post_id = 12345
+
+        # When: 유효하지 않은 post에 대한 삭제 api를 호출할 때,
+        response = self.client.delete(
+            reverse("delete_post_with_delete", kwargs={"id": invalid_post_id}),
+            data=request_body,
+        )
+
+        # Then: 상태코드는 404이고,
+        self.assertEqual(response.status_code, NOT_FOUND)
+        # And: post는 삭제되지 않아야 한다.
+        post = Post.objects.all()[0]
+        self.assertEqual(post.author.id, self.author.id)
+        self.assertEqual(post.title, "test title")
+        self.assertEqual(post.text, "test text")
+        # And: 응답 메세지로 post를 찾을 수 없습니다. 를 리턴해야 한다.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "post를 찾을 수 없습니다.")
+
+    def test_post_delete_with_error_with_invalid_author_on_403(self):
+        # Given: 삭제하기 위한 유효하지 않은 author_id 값이 주어지고,
+        invalid_author_id = 12345
+        request_body = json.dumps({"author": invalid_author_id})
+
+        # When: 1번 post에 대한 삭제 api를 호출할 때,
+        response = self.client.delete(
+            reverse("delete_post_with_delete", kwargs={"id": self.post.id}),
+            data=request_body,
+        )
+
+        # Then: 상태코드는 403이고,
+        self.assertEqual(response.status_code, FORBIDDEN)
+        # And: post는 삭제되지 않아야 한다.
+        post = Post.objects.all()[0]
+        self.assertEqual(post.author.id, self.author.id)
+        self.assertEqual(post.title, "test title")
+        self.assertEqual(post.text, "test text")
+        # And: 응답 메세지로 유효하지 않은 사용자입니다. 를 리턴해야 한다.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "유효하지 않은 사용자입니다.")
