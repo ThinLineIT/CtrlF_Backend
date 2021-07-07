@@ -21,7 +21,6 @@ class TestPostMixin:
         return User.objects.create_superuser(username=username, password=password)
 
 
-"""
 class TestPostList(TestPostMixin, TestCase):
     def setUp(self):
         super().setUp()
@@ -210,7 +209,6 @@ class TestPostUpdate(TestPostMixin, TestCase):
         response = json.loads(response.content)
         # And: 응답 메세지로 post를 찾을 수 없습니다. 를 리턴 해야 한다.
         self.assertEqual(response["message"], "post를 찾을 수 없습니다.")
-"""
 
 
 class TestPostDelete(TestPostMixin, TestCase):
