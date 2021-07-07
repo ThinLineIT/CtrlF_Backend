@@ -6,7 +6,7 @@ from blog.models import Post
 from django.contrib.auth.models import User
 from blog.form import PostForm
 
-from http.client import NOT_FOUND, OK, CREATED
+from http.client import NOT_FOUND, OK, CREATED, BAD_REQUEST
 import json
 
 
@@ -51,8 +51,9 @@ def retrieve_post_detail(request, id):
 
 @require_http_methods(["POST"])
 def create_post(request):
+    data = request.POST
     try:
-        user = User.objects.get(id=request.POST["author"])
+        user = User.objects.get(id=data["author"])
     except:
         return JsonResponse(
             {
@@ -60,15 +61,13 @@ def create_post(request):
             },
             status=NOT_FOUND,
         )
-
-    form = PostForm(request.POST)
-    if form.is_valid():
-        post = form.save(commit=False)
-        post.author = user
-        post.save()
-        return JsonResponse(
-            {"post": {"title": post.title, "text": post.text}}, status=CREATED
-        )
+    post = post = Post.objects.create(
+        author=user, title=data["title"], text=data["text"]
+    )
+    return JsonResponse(
+        {"post": {"title": post.title, "text": post.text, "author": user.username}},
+        status=CREATED,
+    )
 
 
 @require_http_methods(["PUT"])
@@ -103,3 +102,5 @@ def update_post_with_put(request, id):
         return JsonResponse(
             {"post": {"title": post.title, "text": post.text}}, status=OK
         )
+    else:
+        return JsonResponse({"message": "올바르지 않은 요청입니다."}, status=BAD_REQUEST)
