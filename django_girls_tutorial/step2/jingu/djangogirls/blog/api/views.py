@@ -28,16 +28,16 @@ def retrieve_post_detail(request, id):
         post = Post.objects.get(id=id)
     except:
         return JsonResponse({"message": "Post를 찾을 수 없습니다"}, status=404)
-
-    return JsonResponse(
-        {
-            "post": {
-                "author": post.author.id,
-                "title": post.title,
-                "text": post.text,
-                "created_date": post.created_date,
-                "published_date": post.published_date,
-            }
-        },
-        status=200,
-    )
+    else:
+        return JsonResponse(
+            {
+                "post": {
+                    "author": post.author.id,
+                    "title": post.title,
+                    "text": post.text,
+                    "created_date": post.created_date,
+                    "published_date": post.published_date,
+                }
+            },
+            status=200,
+        )
