@@ -103,13 +103,13 @@ BASE_URL : "https://..."
         * url
 
           ```
-          GET {BASE_URL}/api/auth/signup/duplicate
+          GET {BASE_URL}/api/auth/signup/email/duplicate
           ```
 
         * Request
 
           ```
-          GET {BASE_URL}/api/auth/signup/duplicate?email=test@test.com
+          GET {BASE_URL}/api/auth/signup/email/duplicate?data=test@test.com
           ```
 
         * Response
@@ -130,7 +130,7 @@ BASE_URL : "https://..."
             2. 이메일 형식이 아닌 경우
             ```json
             {
-              "message": "이메일이 아닙니다."
+              "message": "이메일 형식이 유효하지 않습니다."
             }
             ```
 
