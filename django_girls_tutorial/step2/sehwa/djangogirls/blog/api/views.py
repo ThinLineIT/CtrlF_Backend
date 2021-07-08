@@ -92,12 +92,12 @@ def delete_post(request, id):
     try:
         post = Post.objects.get(pk=id)
     except Post.DoesNotExist:
-        return JsonResponse({"message": "post를 찾을 수 없습니다."}, status=403)
+        return JsonResponse({"message": "post를 찾을 수 없습니다."}, status=404)
 
     body = json.loads(request.body)
 
     if body["author"] != post.author.id:
-        return JsonResponse({"message": "유효하지 않은 사용자 id입니다."}, status=403)
+        return JsonResponse({"message": "유효하지 않은 사용자 id입니다."}, status=404)
 
     post.delete()
     return JsonResponse({}, status=200)
