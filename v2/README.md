@@ -103,19 +103,36 @@ BASE_URL : "https://..."
         * url
 
           ```
-          
+          GET {BASE_URL}/api/auth/signup/email/duplicate
           ```
 
         * Request
 
-          ```json
-          
+          ```
+          GET {BASE_URL}/api/auth/signup/email/duplicate?data=test@test.com
           ```
 
         * Response
 
           * 2XX
+          ```json
+          {
+            "message": "사용 가능한 이메일 입니다."
+          }
+          ```
           * 4XX
+            1. 이미 존재하는 이메일일 경우
+            ```json
+            {
+              "message": "이미 존재하는 이메일 입니다."
+            }
+            ```
+            2. 이메일 형식이 아닌 경우
+            ```json
+            {
+              "message": "이메일 형식이 유효하지 않습니다."
+            }
+            ```
 
           
 
