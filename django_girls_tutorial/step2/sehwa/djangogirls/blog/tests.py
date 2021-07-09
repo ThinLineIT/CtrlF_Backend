@@ -175,3 +175,71 @@ class TestPostUpdate(TestPostMixin, TestCase):
         response = json.loads(response.content)
         # And: 응답 메세지로 post를 찾을 수 없습니다. 를 리턴 해야 한다.
         self.assertEqual(response["message"], "post를 찾을 수 없습니다.")
+
+
+class TestPostDelete(TestPostMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.post = Post.objects.create(author=self.author, title="test title", text="test text")
+
+    def test_delete_post(self):
+        # Given: 테스트 위한 post id와 author id를 body에 담는다.
+        request_body = json.dumps({"author": self.author.id})
+        post_id = self.post.id
+
+        # When: delete_post api 실행.
+        response = self.client.delete(
+            reverse("delete_post", kwargs={"id": post_id}), data=request_body
+        )
+
+        # Then: 실행 결과 상태코드 200 return.
+        self.assertEqual(response.status_code, 200)
+
+        # And: 기존의 post는 삭제 되어야 한다.
+        self.assertQuerysetEqual(Post.objects.all(), [])
+
+    def test_delete_post_with_invalid_post_id(self):
+        # Given: 유효하지 않은 post id, 정상적인 author id
+        request_body = json.dumps({"author": self.author.id})
+        invalid_post_id = 9999999
+
+        # When: delete_post api 실행.
+        response = self.client.delete(
+            reverse("delete_post", kwargs={"id": invalid_post_id}), data=request_body
+        )
+
+        # Then: 실행결과 상태코드 403 여야 한다.
+        self.assertEqual(response.status_code, 403)
+
+        # And: post가 삭제되지 않아야 한다.
+        post = Post.objects.all()[0]
+        self.assertEqual(post.author.id, self.author.id)
+        self.assertEqual(post.title, "test title")
+        self.assertEqual(post.text, "test text")
+
+        # And: 응답 메세지가 post를 찾을 수 없습니다. 여야 한다.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "post를 찾을 수 없습니다.")
+
+    def test_delete_post_with_invalid_author_id(self):
+        # Given: 정상적인 post id, 유효하지 않은 author id
+        invalid_author_id = 99999
+        invalid_request_body = json.dumps({"author": invalid_author_id})
+        post_id = self.post.id
+
+        # When: delete_post api 실행.
+        response = self.client.delete(
+            reverse("delete_post", kwargs={"id": post_id}), data=invalid_request_body
+        )
+        # Then: 실행결과 상태코드 404 여야 한다.
+        self.assertEqual(response.status_code, 404)
+
+        # And: post가 삭제되지 않아야 한다.
+        post = Post.objects.all()[0]
+        self.assertEqual(post.author.id, self.author.id)
+        self.assertEqual(post.title, "test title")
+        self.assertEqual(post.text, "test text")
+
+        # And: 응답 메세지가 유효하지 않은 사용자 id입니다. 여야 한다.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "유효하지 않은 사용자 id입니다.")
