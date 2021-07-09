@@ -124,19 +124,33 @@ BASE_URL : "https://..."
       * url
 
         ```
-        
+        POST {BASE_URL}/api/auth/email
         ```
 
       * Request
 
         ```json
-        
+        {
+            "email": "test1234@test.com"
+        }
         ```
 
       * Response
 
         * 2XX
+            * 200
+             ```json
+             {
+                 "message": "인증 메일이 발송되었습니다."
+             }
+             ``` 
         * 4XX
+            * 400 
+             ```json
+             {
+                 "message": "email이 유효하지 않습니다."
+             }
+             ```
 ### 인증
 1. POST 로그인
 
