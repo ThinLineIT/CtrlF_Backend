@@ -1,7 +1,9 @@
+import json
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from django.contrib.auth.models import User
 from blog.models import Post
 
 
