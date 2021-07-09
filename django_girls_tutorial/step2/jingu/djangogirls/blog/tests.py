@@ -214,7 +214,7 @@ class TestPostUpdate(TestPostMixin, TestCase):
 class TestPostDelete(TestPostMixin, TestCase):
     def setUp(self):
         super().setUp()
-        self.post = Post.objects.create(
+        self.post = self._create_post(
             author=self.author, title="test title", text="test text"
         )
 
@@ -234,8 +234,9 @@ class TestPostDelete(TestPostMixin, TestCase):
         self.assertEqual(Post.objects.all().count(), 0)
 
     def test_post_delete_with_error_with_post_on_404(self):
-        # Given: 삭제 하기 위한 유효하지 않은 post_id 값이 주어지고,
+        # Given: 삭제 하기 위한 유효한 request body 값과
         request_body = json.dumps({"author": self.author.id})
+        # And: 유효하지 않은 post_id 값이 주어지고,
         invalid_post_id = 12345
 
         # When: 유효하지 않은 post에 대한 삭제 api를 호출할 때,
@@ -256,10 +257,11 @@ class TestPostDelete(TestPostMixin, TestCase):
         self.assertEqual(response["message"], "post를 찾을 수 없습니다.")
 
     def test_post_delete_with_error_with_invalid_author_on_403(self):
-        # Given: 삭제하기 위한 유효하지 않은 author_id 값이 주어지고,
-        invalid_author_id = 12345
+        # Given: 삭제 하기 위한 유효한 request body 값과
         request_body = json.dumps({"author": invalid_author_id})
-
+        # And: 유효하지 않은 author_id 값이 주어지고,
+        invalid_author_id = 12345
+        
         # When: 1번 post에 대한 삭제 api를 호출할 때,
         response = self.client.delete(
             reverse("delete_post_with_delete", kwargs={"id": self.post.id}),
