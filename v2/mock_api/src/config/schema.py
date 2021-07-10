@@ -141,3 +141,33 @@ class ErrorLogin404Response(Schema):
 
     class Config:
         schema_extra = {"example": {"이메일이 존재하지 않음": {"message": "이메일이 존재하지 않습니다."}}}
+
+
+class LogoutRequest(Schema):
+    email: str
+
+    class Config:
+        schema_extra = {"example": {"email": "test1234@test.com"}}
+
+
+class LogoutResponse(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {"example": {"message": "로그아웃 되었습니다."}}
+
+
+class ErrorLogout400Response(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {
+            "example": {"이메일 형식 유효하지 않음": {"message": "이메일 형식이 유효하지 않습니다."},}
+        }
+
+
+class ErrorLogout404Response(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {"example": {"이메일이 존재하지 않음": {"message": "이메일이 존재하지 않습니다."}}}

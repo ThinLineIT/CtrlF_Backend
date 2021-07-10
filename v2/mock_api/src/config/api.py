@@ -18,6 +18,10 @@ from config.schema import (
     ErrorLogin400Response,
     LoginResponse,
     ErrorLogin404Response,
+    LogoutResponse,
+    ErrorLogout400Response,
+    ErrorLogout404Response,
+    LogoutRequest,
 )
 
 api = NinjaAPI(title="CtrlF Mock API Doc")
@@ -80,3 +84,16 @@ def send_auth_email(request, request_body: SendEmailAuthIn):
 )
 def login(request, request_body: LoginRequest):
     return 200, {"access_token": MOCK_ACCESS_TOKEN, "refresh_token": MOCK_REFRESH_TOKEN}
+
+
+@api_auth.post(
+    "/logout",
+    summary="로그아웃",
+    response={
+        200: LogoutResponse,
+        400: ErrorLogout400Response,
+        404: ErrorLogout404Response,
+    },
+)
+def logout(request, request_body: LogoutRequest):
+    return 200, {"message": "로그아웃 되었습니다."}
