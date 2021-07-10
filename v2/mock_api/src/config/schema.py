@@ -10,11 +10,13 @@ class SignUpRequestIn(Schema):
 
     class Config:
         schema_extra = {
-            "email": "test1234@testcom",
-            "code": "YWJjZGU=",
-            "nickname": "my nickname",
-            "password": "testpassword%*",
-            "password_confirm": "testpassword%*",
+            "example": {
+                "email": "test1234@testcom",
+                "code": "YWJjZGU=",
+                "nickname": "my nickname",
+                "password": "testpassword%*",
+                "password_confirm": "testpassword%*",
+            }
         }
 
 
