@@ -10,6 +10,9 @@ from config.schema import (
     EmailDuplicateCheckOut,
     ErrorduplicateEmail404Response,
     ErrorduplicateEmail400Response,
+    ErrorSendEmail400Response,
+    SendEmailAuthIn,
+    SendEmailAuthOut,
 )
 
 api = NinjaAPI()
@@ -44,3 +47,10 @@ def check_duplicate_nickname(request, data):
 )
 def check_duplicate_email(request, data):
     return 200, {"message": "사용 가능한 이메일 입니다."}
+
+
+@api_auth.post(
+    "/signup/email", response={200: SendEmailAuthOut, 400: ErrorSendEmail400Response}
+)
+def send_auth_email(request, request_body: SendEmailAuthIn):
+    return 200, {"message": "인증 메일이 발송되었습니다."}
