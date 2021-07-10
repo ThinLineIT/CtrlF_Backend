@@ -38,3 +38,26 @@ class ErrorSingUp400Response(Schema):
                 "전달된 코드가 일치하지 않을 때, ": {"message": "코드가 일치 하지 않습니다."},
             }
         }
+
+
+class EmailDuplicateCheckOut(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {"example": {"message": "사용 가능한 닉네임입니다."}}
+
+
+class ErrorduplicateNickName400Response(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {
+            "example": {"전달된 값이 유효하지 않을 때,": {"message": "전달된 값이 올바르지 않습니다."},}
+        }
+
+
+class ErrorduplicateNickName404Response(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {"example": {"닉네임 중복": {"message": "이미 존재하는 닉네임입니다."},}}
