@@ -2,26 +2,26 @@ from ninja import NinjaAPI, Router
 
 from config.constants import MOCK_ACCESS_TOKEN, MOCK_REFRESH_TOKEN
 from config.schema import (
-    SignUpRequestIn,
-    ErrorSingUp400Response,
-    SignUpRequestOut,
-    NickNameDuplicateCheckOut,
-    ErrorduplicateNickName404Response,
-    ErrorduplicateNickName400Response,
     EmailDuplicateCheckOut,
-    ErrorduplicateEmail404Response,
     ErrorduplicateEmail400Response,
-    ErrorSendEmail400Response,
-    SendEmailAuthIn,
-    SendEmailAuthOut,
-    LoginRequest,
+    ErrorduplicateEmail404Response,
+    ErrorduplicateNickName400Response,
+    ErrorduplicateNickName404Response,
     ErrorLogin400Response,
-    LoginResponse,
     ErrorLogin404Response,
-    LogoutResponse,
     ErrorLogout400Response,
     ErrorLogout404Response,
+    ErrorSendEmail400Response,
+    ErrorSignUp400Response,
+    LoginRequest,
+    LoginResponse,
     LogoutRequest,
+    LogoutResponse,
+    NickNameDuplicateCheckOut,
+    SendEmailAuthIn,
+    SendEmailAuthOut,
+    SignUpRequestIn,
+    SignUpRequestOut,
 )
 
 api = NinjaAPI(title="CtrlF Mock API Doc")
@@ -32,7 +32,7 @@ api.add_router("/auth/", api_auth)
 @api_auth.post(
     "/signup",
     summary="회원가입",
-    response={200: SignUpRequestOut, 400: ErrorSingUp400Response},
+    response={200: SignUpRequestOut, 400: ErrorSignUp400Response},
 )
 def signup(request, request_body: SignUpRequestIn):
     return request_body

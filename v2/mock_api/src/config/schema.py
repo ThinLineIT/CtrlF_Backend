@@ -28,7 +28,7 @@ class SignUpRequestOut(Schema):
         schema_extra = {"example": {"email": "test1234@testcom", "nickname": "유연한외곬"}}
 
 
-class ErrorSingUp400Response(Schema):
+class ErrorSignUp400Response(Schema):
     message: str
 
     class Config:
@@ -44,9 +44,7 @@ class ErrorduplicateNickName400Response(Schema):
     message: str
 
     class Config:
-        schema_extra = {
-            "example": {"전달된 값이 유효하지 않을 때,": {"message": "전달된 값이 올바르지 않습니다."}}
-        }
+        schema_extra = {"example": {"전달된 값이 유효하지 않을 때,": {"message": "전달된 값이 올바르지 않습니다."}}}
 
 
 class ErrorduplicateNickName404Response(Schema):
@@ -67,9 +65,7 @@ class ErrorduplicateEmail400Response(Schema):
     message: str
 
     class Config:
-        schema_extra = {
-            "example": {"이메일 형식 유효하지 않음": {"message": "이메일 형식이 유효하지 않습니다."}}
-        }
+        schema_extra = {"example": {"이메일 형식 유효하지 않음": {"message": "이메일 형식이 유효하지 않습니다."}}}
 
 
 class ErrorduplicateEmail404Response(Schema):
@@ -90,9 +86,7 @@ class ErrorSendEmail400Response(Schema):
     message: str
 
     class Config:
-        schema_extra = {
-            "example": {"이메일 형식 유효하지 않음": {"message": "이메일 형식이 유효하지 않습니다."}}
-        }
+        schema_extra = {"example": {"이메일 형식 유효하지 않음": {"message": "이메일 형식이 유효하지 않습니다."}}}
 
 
 class SendEmailAuthIn(Schema):
@@ -114,9 +108,7 @@ class LoginRequest(Schema):
     password: str
 
     class Config:
-        schema_extra = {
-            "example": {"email": "test1234@test.com", "password": "password123!"}
-        }
+        schema_extra = {"example": {"email": "test1234@test.com", "password": "password123!"}}
 
 
 class LoginResponse(Schema):
@@ -161,9 +153,7 @@ class ErrorLogout400Response(Schema):
     message: str
 
     class Config:
-        schema_extra = {
-            "example": {"이메일 형식 유효하지 않음": {"message": "이메일 형식이 유효하지 않습니다."},}
-        }
+        schema_extra = {"example": {"이메일 형식 유효하지 않음": {"message": "이메일 형식이 유효하지 않습니다."}}}
 
 
 class ErrorLogout404Response(Schema):

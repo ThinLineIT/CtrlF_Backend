@@ -1,0 +1,73 @@
+[tool.poetry]
+name = "ctrl-f"
+version = "0.1.0"
+description = ""
+authors = ["TaeHyoungKwon <kth5604@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Django = "^3.1.7"
+django-ninja = "^0.12.3"
+uvicorn = {version = "^0.13.4", extras = ["standard"]}
+django-environ = "^0.4.5"
+dj-database-url = "^0.5.0"
+gunicorn = "^20.0.4"
+whitenoise = "^5.2.0"
+pydantic = {version = "^1.8.1", extras = ["email"]}
+django-extensions = "^3.1.1"
+orjson = "^3.5.2"
+httpx = "^0.18.1"
+django-cors-headers = "^3.7.0"
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^2.11.1"
+mypy = "*"
+flake8 = "^3.9.0"
+black = "^21.4b2"
+isort = "^5.8.0"
+flake8-bugbear = "^21.3.2"
+pytest = "^6.2.2"
+pytest-env = "^0.6.2"
+pytest-django = "^4.1.0"
+awscli-local = "^0.14"
+mysqlclient = "^2.0.3"
+ipdb = "^0.13.7"
+ipython = "^7.23.1"
+
+
+[tool.black]
+line-length = 120
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | node_modules
+    | docs
+  )
+)
+'''
+
+[tool.isort]
+profile = "black"
+known_first_party = [
+    "ras"
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[flake8]
+ingnore = "E501"
+max-line-length = 120
