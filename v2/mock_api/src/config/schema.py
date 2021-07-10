@@ -40,13 +40,6 @@ class ErrorSingUp400Response(Schema):
         }
 
 
-class EmailDuplicateCheckOut(Schema):
-    message: str
-
-    class Config:
-        schema_extra = {"example": {"message": "사용 가능한 닉네임입니다."}}
-
-
 class ErrorduplicateNickName400Response(Schema):
     message: str
 
@@ -61,3 +54,33 @@ class ErrorduplicateNickName404Response(Schema):
 
     class Config:
         schema_extra = {"example": {"닉네임 중복": {"message": "이미 존재하는 닉네임입니다."},}}
+
+
+class NickNameDuplicateCheckOut(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {"example": {"message": "사용 가능한 닉네임입니다."}}
+
+
+class ErrorduplicateEmail400Response(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {
+            "example": {"이메일 형식 유효하지 않음": {"message": "이메일 형식이 유효하지 않습니다."},}
+        }
+
+
+class ErrorduplicateEmail404Response(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {"example": {"이메일 중복": {"message": "이미 존재하는 이메일 입니다."},}}
+
+
+class EmailDuplicateCheckOut(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {"example": {"message": "사용 가능한 이메일 입니다."}}
