@@ -107,3 +107,37 @@ class SendEmailAuthOut(Schema):
 
     class Config:
         schema_extra = {"example": {"email": "test1234@test.com"}}
+
+
+class LoginRequest(Schema):
+    email: str
+    password: str
+
+    class Config:
+        schema_extra = {
+            "example": {"email": "test1234@test.com", "password": "password123!"}
+        }
+
+
+class LoginResponse(Schema):
+    access_token: str
+    refresh_token: str
+
+
+class ErrorLogin400Response(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "이메일 형식 유효하지 않음": {"message": "이메일 형식이 유효하지 않습니다."},
+                "패스워드 불 일치": {"message": "패스워드가 유효하지 않습니다."},
+            }
+        }
+
+
+class ErrorLogin404Response(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {"example": {"이메일이 존재하지 않음": {"message": "이메일이 존재하지 않습니다."}}}
