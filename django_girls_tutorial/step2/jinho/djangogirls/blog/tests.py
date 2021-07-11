@@ -212,7 +212,8 @@ class TestPostRemove(TestPostMixin, TestCase):
 
     def test_post_remove_with_error_about_author(self):
         # Given: 유효하지 않은 author 생성
-        request_body = json.dumps({"author": 12314})
+        invalid_author_id = 12314
+        request_body = json.dumps({"author": invalid_author_id})
 
         # When: 1번 post에 대한 remove API를 호출한다.
         response = self.client.delete(reverse("remove_post_with_delete", kwargs={"id": self.post.id}),
