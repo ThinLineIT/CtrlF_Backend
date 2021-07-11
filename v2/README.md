@@ -82,13 +82,13 @@ BASE_URL : "https://..."
         * url
 
           ```
-          GET {BASE_URL}/api/auth/duplicate
+          GET {BASE_URL}/api/auth/signup/nickname/duplicate
           ```
 
         * Request
 
           ```json
-          GET {BASE_URL}/api/auth/duplicate?nickname=nick
+          GET {BASE_URL}/api/auth/signup/nickname/duplicate?data=nick
           ```
 
         * Response
