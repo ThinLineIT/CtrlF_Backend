@@ -1,5 +1,5 @@
 import json
-from http.client import NOT_FOUND, OK, UNAUTHORIZED
+from http.client import NOT_FOUND, OK, NO_CONTENT, FORBIDDEN
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -187,15 +187,10 @@ class TestPostRemove(TestPostMixin, TestCase):
         response = self.client.delete(reverse("remove_post_with_delete", kwargs={"id": self.post.id}),
                                       data=request_body)
 
-        # Then: 상태코드는 200이고,
-        self.assertEqual(response.status_code, 200)
+        # Then: 상태코드는 204이고,
+        self.assertEqual(response.status_code, NO_CONTENT)
         # And: 실제 post는 삭제된다.
         self.assertEqual(Post.objects.all().count(), 0)
-
-        # And: 응답 값에서 삭제한 post의 title, text를 리턴한다.
-        response = json.loads(response.content)["post"]
-        self.assertEqual(response["title"], "test title")
-        self.assertEqual(response["text"], "test text")
 
     def test_post_remove_with_error_about_post(self):
         # Given: 유효하지 않은 post_id와 유효한 author를 생성

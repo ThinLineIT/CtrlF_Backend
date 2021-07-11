@@ -1,5 +1,5 @@
 import json
-from http.client import NOT_FOUND, OK, UNAUTHORIZED
+from http.client import NOT_FOUND, OK, FORBIDDEN, NO_CONTENT
 
 from django.http import JsonResponse
 from django.utils import timezone
@@ -100,11 +100,4 @@ def remove_post_with_delete(request, id):
         return JsonResponse({"message": "권한이 없습니다."}, status=UNAUTHORIZED)
 
     to_delete_post.delete()
-    return JsonResponse(
-        {
-            "post":
-                {
-                    "title": to_delete_post.title,
-                    "text": to_delete_post.text,
-                }
-        }, status=OK)
+    return JsonResponse(status=NO_CONTENT)
