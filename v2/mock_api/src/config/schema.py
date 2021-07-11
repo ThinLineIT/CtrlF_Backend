@@ -194,3 +194,14 @@ class NoteResponse(Schema):
                 ],
             }
         }
+
+
+class Issue(Schema):
+    title: str
+
+
+class MainEtcInfoResponse(Schema):
+    not_approved_issues: list[Issue]
+    all_issues_count: int
+    approved_issues_count: int
+    not_approved_issues_count: int

@@ -17,6 +17,7 @@ from config.schema import (
     LoginResponse,
     LogoutRequest,
     LogoutResponse,
+    MainEtcInfoResponse,
     NickNameDuplicateCheckOut,
     NoteResponse,
     SendEmailAuthIn,
@@ -98,5 +99,18 @@ def retrieve_notes_list(request, cursor: int):
                 {"title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
                 {"title": "컴퓨터 구조", "status": "APPROVED"},
             ],
+        ),
+    )
+
+
+@api.get("/notes/other-info", summary="메인화면 기타 정보", response={200: MainEtcInfoResponse})
+def retrieve_main_etc_info(request):
+    return (
+        200,
+        MainEtcInfoResponse(
+            all_issues_count=20,
+            approved_issues_count=10,
+            not_approved_issues_count=30,
+            not_approved_issues=[{"title": "운영체제"}, {"title": "프로세스는 무엇인가?"}],
         ),
     )
