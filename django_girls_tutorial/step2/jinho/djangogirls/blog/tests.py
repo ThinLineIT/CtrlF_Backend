@@ -219,8 +219,8 @@ class TestPostRemove(TestPostMixin, TestCase):
         response = self.client.delete(reverse("remove_post_with_delete", kwargs={"id": self.post.id}),
                                       data=request_body)
 
-        # Then: 상태코드는 401이고,
-        self.assertEqual(response.status_code, UNAUTHORIZED)
+        # Then: 상태코드는 403이고,
+        self.assertEqual(response.status_code, FORBIDDEN)
         # And: 실제 post는 삭제되지 않는다.
         self.assertEqual(Post.objects.all().count(), 1)
 
