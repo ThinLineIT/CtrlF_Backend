@@ -1,3 +1,5 @@
+from typing import List
+
 from ninja import Schema
 
 
@@ -170,7 +172,7 @@ class Note(Schema):
 
 class NoteResponse(Schema):
     next_cursor: int
-    notes: list[Note]
+    notes: List[Note]
 
     class Config:
         schema_extra = {
@@ -201,7 +203,7 @@ class Issue(Schema):
 
 
 class MainEtcInfoResponse(Schema):
-    not_approved_issues: list[Issue]
+    not_approved_issues: List[Issue]
     all_issues_count: int
     approved_issues_count: int
     not_approved_issues_count: int
