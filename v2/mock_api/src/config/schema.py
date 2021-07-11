@@ -205,3 +205,22 @@ class MainEtcInfoResponse(Schema):
     all_issues_count: int
     approved_issues_count: int
     not_approved_issues_count: int
+
+
+class NoteRequestBody(Schema):
+    title: str
+    request_contents: str
+
+    class Config:
+        schema_extra = {"example": {"title": "운영체제", "request_contents": "운영체제 노트가 없네요 추가 요청 합니다:)"}}
+
+
+class NoteCreateResponse(Schema):
+    message: str
+
+
+class ErrorNoteCreate400Response(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {"example": {"request body가 유효하지 않음": {"message": "타이틀과 요청 내용 설명을 채워주세요."}}}

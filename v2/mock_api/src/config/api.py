@@ -11,6 +11,7 @@ from config.schema import (
     ErrorLogin404Response,
     ErrorLogout400Response,
     ErrorLogout404Response,
+    ErrorNoteCreate400Response,
     ErrorSendEmail400Response,
     ErrorSignUp400Response,
     LoginRequest,
@@ -19,6 +20,8 @@ from config.schema import (
     LogoutResponse,
     MainEtcInfoResponse,
     NickNameDuplicateCheckOut,
+    NoteCreateResponse,
+    NoteRequestBody,
     NoteResponse,
     SendEmailAuthIn,
     SendEmailAuthOut,
@@ -114,3 +117,8 @@ def retrieve_main_etc_info(request):
             not_approved_issues=[{"title": "운영체제"}, {"title": "프로세스는 무엇인가?"}],
         ),
     )
+
+
+@api.post("/notes", summary="note 생성", response={201: NoteCreateResponse, 400: ErrorNoteCreate400Response})
+def create_note(request, request_body: NoteRequestBody):
+    return 201, {"message": "Note가 생성 되었습니다."}
