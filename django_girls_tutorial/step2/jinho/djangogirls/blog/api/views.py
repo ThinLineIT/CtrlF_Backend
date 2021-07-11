@@ -1,5 +1,5 @@
 import json
-from http.client import NOT_FOUND, OK
+from http.client import NOT_FOUND, OK, BAD_REQUEST
 
 from django.contrib.auth.models import User
 from django.http import JsonResponse, QueryDict
@@ -102,4 +102,4 @@ def update_post_with_put(request, id):
                         "text": update_post.text,
                     }
             }, status=OK)
-    return JsonResponse({"message": "form is not valid"}, status=NOT_FOUND)
+    return JsonResponse({"message": "form is not valid"}, status=BAD_REQUEST)
