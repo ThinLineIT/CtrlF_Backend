@@ -75,7 +75,7 @@ def create_post(request):
                         "text": post.text,
                     }
             }, status=201)
-    return JsonResponse({"message:": "form is not valid"}, status=NOT_FOUND)
+    return JsonResponse({"message:": "form is not valid"}, status=BAD_REQUEST)
 
 
 @require_http_methods(["PUT"])
