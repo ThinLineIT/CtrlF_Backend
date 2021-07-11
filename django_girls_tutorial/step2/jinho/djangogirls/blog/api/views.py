@@ -97,7 +97,7 @@ def remove_post_with_delete(request, id):
         return JsonResponse({"message": "post를 찾을 수 없습니다."}, status=NOT_FOUND)
 
     if body["author"] != to_delete_post.author_id:
-        return JsonResponse({"message": "권한이 없습니다."}, status=UNAUTHORIZED)
+        return JsonResponse({"message": "권한이 없습니다."}, status=FORBIDDEN)
 
     to_delete_post.delete()
     return JsonResponse(status=NO_CONTENT)
