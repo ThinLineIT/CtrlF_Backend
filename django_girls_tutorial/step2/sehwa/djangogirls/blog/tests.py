@@ -257,7 +257,7 @@ class TestCommentList(TestPostMixin, TestCase):
         self.post = self._create_post(self.author, "test", "test text")
 
     def test_comment_list_on_valid_post_with_comment_count(self):
-        # Given: 정상적으로 생성된 comment 10개, 올바른 post id
+        # Given: 정상적으로 생성된 comment 10개, 유효한 post id
         post_id = self.post.id
         comment_count = 10
         for i in range(comment_count):
@@ -270,3 +270,17 @@ class TestCommentList(TestPostMixin, TestCase):
         # Then: 실행결과 200, 댓글 갯수 10개여야 함.
         response = json.loads(response.content)
         self.assertEqual(comment_count, len(response["data"]))
+
+    def test_comment_list_on_invalid_post(self):
+        # Given: 유효하지 않은 post id
+        invalid_post_id = 9876
+
+        # When: retrieve_comment_list api 실행
+        response = self.client.get(reverse("retrieve_comment_list", kwargs={"post_id": invalid_post_id}))
+
+        # Then: 실행결과 404여야 함.
+        self.assertEqual(response.status_code, 404)
+
+        # And: 메세지 응답이 post가 없습니다. 여야 함.
+        response = json.loads(response.content)
+        self.assertAlmostEqual(response["message"], "post가 없습니다.")
