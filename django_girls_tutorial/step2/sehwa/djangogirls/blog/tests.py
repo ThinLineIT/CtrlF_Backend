@@ -259,19 +259,19 @@ class TestCommentList(TestPostMixin, TestCase):
             comment = self._create_comment_on_post(self.post, f"author{i}", f"comment{i}")
             comment.approve()
 
-        # When: retrieve_comment_list api 실행
-        response = self.client.get(reverse("retrieve_comment_list", kwargs={"post_id": post_id}))
+        # When: comment_list_create api get 실행
+        response = self.client.get(reverse("comment_list_create", kwargs={"post_id": post_id}))
 
         # Then: 실행결과 200, 댓글 갯수 10개여야 함.
         response = json.loads(response.content)
         self.assertEqual(comment_count, len(response["data"]))
 
-    def test_comment_list_on_invalid_post(self):
+    def test_comment_list_on_invalid_post_id(self):
         # Given: 유효하지 않은 post id
         invalid_post_id = 9876
 
-        # When: retrieve_comment_list api 실행
-        response = self.client.get(reverse("retrieve_comment_list", kwargs={"post_id": invalid_post_id}))
+        # When: comment_list_create api get 실행
+        response = self.client.get(reverse("comment_list_create", kwargs={"post_id": invalid_post_id}))
 
         # Then: 실행결과 404여야 함.
         self.assertEqual(response.status_code, 404)
@@ -279,3 +279,26 @@ class TestCommentList(TestPostMixin, TestCase):
         # And: 메세지 응답이 post가 없습니다. 여야 함.
         response = json.loads(response.content)
         self.assertAlmostEqual(response["message"], "post가 없습니다.")
+
+
+class TestCommentCreate(TestPostMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.post = self._create_post(self.author, "test", "test")
+
+    def test_comment_create(self):
+        # Given: 유효한 post id, comment data
+        post_id = self.post.id
+        request_body = {"author": "test author", "text": "test text"}
+
+        # When: comment_list_create api post 실행
+        response = self.client.post(reverse("comment_list_create", kwargs={"post_id": post_id}), data=request_body)
+
+        # Then: 정상적으로 등록. 상태코드 201
+        self.assertEqual(response.status_code, 201)
+
+        # And: 응답에서 comment의 post id, author, text를 리턴.
+        response = json.loads(response.content)["data"]
+        self.assertEqual(response["post_id"], post_id)
+        self.assertEqual(response["author"], "test author")
+        self.assertEqual(response["text"], "test text")
