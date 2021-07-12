@@ -256,7 +256,7 @@ class TestCommentList(TestPostMixin, TestCase):
         super().setUp()
         self.post = self._create_post(self.author, "test", "test text")
 
-    def test_comment_list_on_valid_post_with_comment_count_(self):
+    def test_comment_list_on_valid_post_with_comment_count(self):
         # Given: 정상적으로 생성된 comment 10개, 올바른 post id
         post_id = self.post.id
         comment_count = 10
