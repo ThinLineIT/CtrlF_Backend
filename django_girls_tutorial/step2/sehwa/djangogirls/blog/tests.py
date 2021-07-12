@@ -278,7 +278,7 @@ class TestCommentList(TestPostMixin, TestCase):
 
         # And: 메세지 응답이 post가 없습니다. 여야 함.
         response = json.loads(response.content)
-        self.assertAlmostEqual(response["message"], "post가 없습니다.")
+        self.assertEqual(response["message"], "post가 없습니다.")
 
 
 class TestCommentCreate(TestPostMixin, TestCase):
@@ -302,3 +302,54 @@ class TestCommentCreate(TestPostMixin, TestCase):
         self.assertEqual(response["post_id"], post_id)
         self.assertEqual(response["author"], "test author")
         self.assertEqual(response["text"], "test text")
+
+    def test_comment_create_with_invalid_post_id(self):
+        # Given: 유효하지 않은 post id
+        invalid_post_id = 9876
+        request_body = {"author": "test author", "text": "test text"}
+
+        # When: comment_list_create api post 실행
+        response = self.client.post(
+            reverse("comment_list_create", kwargs={"post_id": invalid_post_id}), data=request_body
+        )
+
+        # Then: comment 등록 실패, 상태코드 404
+        self.assertEqual(response.status_code, 404)
+
+        # And: 메세지 응답이 post가 없습니다. 여야 함.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "post가 없습니다.")
+
+    def test_comment_create_without_author(self):
+        # Given: author를 입력받지 않음.
+        post_id = self.post.id
+        invalid_request_body = {"author": "", "text": "test text"}
+
+        # When: comment_list_create api post 실행
+        response = self.client.post(
+            reverse("comment_list_create", kwargs={"post_id": post_id}), data=invalid_request_body
+        )
+
+        # Then: comment 등록 실패, 상태코드 400
+        self.assertEqual(response.status_code, 400)
+
+        # And: 메세지 응답이 author가 없습니다. 여야 함.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "author가 없습니다.")
+
+    def test_comment_create_without_text(self):
+        # Given: text를 입력받지 않음.
+        post_id = self.post.id
+        invalid_request_body = {"author": "test author", "text": ""}
+
+        # When: comment_list_create api post 실행
+        response = self.client.post(
+            reverse("comment_list_create", kwargs={"post_id": post_id}), data=invalid_request_body
+        )
+
+        # Then: comment 등록 실패, 상태코드 400
+        self.assertEqual(response.status_code, 400)
+
+        # And: 메세지 응답이 text가 없습니다. 여야 함.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "text가 없습니다.")
