@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Post
+from .models import Post, Comment
 
 
 class TestPostMixin:
@@ -20,7 +20,12 @@ class TestPostMixin:
     def _create_author(username, password):
         return User.objects.create_superuser(username=username, password=password)
 
+    @staticmethod
+    def _create_comment_on_post(post, author, text):
+        return Comment.objects.create(post=post, author=author, text=text)
 
+
+"""띄어쓰기 ㄴㄴ
 class TestPostList(TestPostMixin, TestCase):
     def setUp(self):
         super().setUp()
@@ -243,3 +248,25 @@ class TestPostDelete(TestPostMixin, TestCase):
         # And: 응답 메세지가 유효하지 않은 사용자 id입니다. 여야 한다.
         response = json.loads(response.content)
         self.assertEqual(response["message"], "유효하지 않은 사용자 id입니다.")
+"""
+
+
+class TestCommentList(TestPostMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.post = self._create_post(self.author, "test", "test text")
+
+    def test_comment_list_on_valid_post_with_comment_count_(self):
+        # Given: 정상적으로 생성된 comment 10개, 올바른 post id
+        post_id = self.post.id
+        comment_count = 10
+        for i in range(comment_count):
+            comment = self._create_comment_on_post(self.post, f"author{i}", f"comment{i}")
+            comment.approve()
+
+        # When: retrieve_comment_list api 실행
+        response = self.client.get(reverse("retrieve_comment_list", kwargs={"post_id": post_id}))
+
+        # Then: 실행결과 200, 댓글 갯수 10개여야 함.
+        response = json.loads(response.content)
+        self.assertEqual(comment_count, len(response["data"]))
