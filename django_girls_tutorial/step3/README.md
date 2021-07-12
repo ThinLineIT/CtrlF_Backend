@@ -39,6 +39,7 @@
         * github Issue 생성 -> 생성된 이슈번호가 20 일 때,
     5. legacy branch로 checkout
     6. 작업 브랜치 생성 ex) git checkout -b sh-20-add-post-list-api-in-drf
+    6-1. DRF 설치
     7. 코드 작업 후 commit + 테스트 코드는 필수
         * 이때, pre-commit이 동작하면서 isort, black, flake8, mypy를 자동으로 검사
         * 위 검사를 모두 통과해서 commit 할 수 있음
