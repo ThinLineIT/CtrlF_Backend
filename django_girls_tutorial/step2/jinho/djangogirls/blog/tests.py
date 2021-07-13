@@ -1,11 +1,12 @@
 import json
 from http.client import NOT_FOUND, OK
+from http import HTTPStatus
 
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Post
+from .models import Post, Comment
 
 
 class TestPostMixin:
@@ -173,3 +174,26 @@ class TestPostUpdate(TestPostMixin, TestCase):
         response = json.loads(response.content)
         # And: 응답 메세지로 post를 찾을 수 없습니다. 를 리턴 해야 한다.
         self.assertEqual(response["message"], "post를 찾을 수 없습니다.")
+
+
+class TestCommentCreate(TestPostMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.post = Post.objects.create(author=self.author, title="test title", text="test text")
+
+    def test_create_comment_to_post(self):
+        # Given: request body가 주어지고
+        request_body = {"author": "test by jinho", "post_id": self.post.id, "text": "test comment"}
+
+        # When: create_comment_to_post api를 호출한다.
+        response = self.client.post(reverse("create_comment_to_post"), data=request_body)
+
+        # Then: 상태코드는 201이고
+        self.assertEqual(response.status_code, HTTPStatus.CREATED)
+        # And: 응답값에서 생성된 comment의 author, post_id, text를 리턴한다.
+        response = json.loads(response.content)["comment"]
+        self.assertEqual(response["author"], "test by jinho")
+        self.assertEqual(response["post_id"], self.post.id)
+        self.assertEqual(response["text"], "test comment")
+        # And: post의 comment는 1개이다.
+        self.assertEqual(Comment.objects.filter(post_id=self.post.id).count(), 1)
