@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Post
+from .models import Post, Comment
 
 
 class TestPostMixin:
@@ -20,6 +20,10 @@ class TestPostMixin:
     def _create_author(username, password):
         return User.objects.create_superuser(username=username, password=password)
 
+    @staticmethod
+    def _create_comment_on_post(post, author, text):
+        return Comment.objects.create(post=post, author=author, text=text)
+
 
 class TestPostList(TestPostMixin, TestCase):
     def setUp(self):
@@ -27,18 +31,14 @@ class TestPostList(TestPostMixin, TestCase):
 
     def test_list_with_count(self):
         for i in range(10):
-            post = self._create_post(
-                author=self.author, title=f"test title-{i}", text=f"test text-{i}"
-            )
+            post = self._create_post(author=self.author, title=f"test title-{i}", text=f"test text-{i}")
             post.publish()
         response = self.client.get(reverse("retrieve_post_list"))
         response_data = json.loads(response.content)["posts"]
         self.assertEqual(len(response_data), 10)
 
     def test_list_with_published_post(self):
-        post = self._create_post(
-            author=self.author, title="test title", text="test text"
-        )
+        post = self._create_post(author=self.author, title="test title", text="test text")
         post.publish()
         response = self.client.get(reverse("retrieve_post_list"))
         response_data = json.loads(response.content)["posts"]
@@ -58,9 +58,7 @@ class TestPostDetail(TestPostMixin, TestCase):
         super().setUp()
 
     def test_post_detail(self):
-        post = self._create_post(
-            author=self.author, title="test title", text="test text"
-        )
+        post = self._create_post(author=self.author, title="test title", text="test text")
         post.publish()
         response = self.client.get(reverse("retrieve_post_detail", kwargs={"id": 1}))
         response_data = json.loads(response.content)["post"]
@@ -118,10 +116,14 @@ class TestPostUpdate(TestPostMixin, TestCase):
 
     def test_post_update_with_put(self):
         # Given: 업데이트 하기 위한 유효한 request body 값이 주어지고,
-        request_body_for_put_update = json.dumps({"author": self.author.id, "title": "test test title", "text": "test test text"})
+        request_body_for_put_update = json.dumps(
+            {"author": self.author.id, "title": "test test title", "text": "test test text"}
+        )
 
         # When: 1번 post에 대한 업데이트 api를 호출 할 때,
-        response = self.client.put(reverse("update_post_with_put", kwargs={"id": self.post.id}), data=request_body_for_put_update)
+        response = self.client.put(
+            reverse("update_post_with_put", kwargs={"id": self.post.id}), data=request_body_for_put_update
+        )
 
         # Then: 상태코드는 200이고,
         self.assertEqual(response.status_code, 200)
@@ -135,15 +137,17 @@ class TestPostUpdate(TestPostMixin, TestCase):
         self.assertEqual(response["title"], "test test title")
         self.assertEqual(response["text"], "test test text")
 
-
     def test_post_update_with_error_with_author_on_404(self):
         # Given: 업데이트 하기 위한 유효하지 않은 author_id 값이 주어지고,
         invalid_author_id = 123123123
         request_body_for_put_update = json.dumps(
-            {"author": invalid_author_id, "title": "test test title", "text": "test test text"})
+            {"author": invalid_author_id, "title": "test test title", "text": "test test text"}
+        )
 
         # When: 1번 post에 대한 업데이트 api를 호출 할 때,
-        response = self.client.put(reverse("update_post_with_put", kwargs={"id": self.post.id}), data=request_body_for_put_update)
+        response = self.client.put(
+            reverse("update_post_with_put", kwargs={"id": self.post.id}), data=request_body_for_put_update
+        )
 
         # Then: 상태코드는 404이고,
         self.assertEqual(response.status_code, 404)
@@ -159,11 +163,14 @@ class TestPostUpdate(TestPostMixin, TestCase):
     def test_post_update_with_error_with_post_on_404(self):
         # Given: 업데이트 하기 위한 유효하지 않은 post_id 값이 주어지고,
         request_body_for_put_update = json.dumps(
-            {"author": self.author.id, "title": "test test title", "text": "test test text"})
+            {"author": self.author.id, "title": "test test title", "text": "test test text"}
+        )
         invalid_post_id = 12345
 
         # When: # When: 유효하지 않은 post에 대한 업데이트 api를 호출 할 때,
-        response = self.client.put(reverse("update_post_with_put", kwargs={"id": invalid_post_id}), data=request_body_for_put_update)
+        response = self.client.put(
+            reverse("update_post_with_put", kwargs={"id": invalid_post_id}), data=request_body_for_put_update
+        )
 
         # Then: 상태코드는 404이고,
         self.assertEqual(response.status_code, 404)
@@ -188,9 +195,7 @@ class TestPostDelete(TestPostMixin, TestCase):
         post_id = self.post.id
 
         # When: delete_post api 실행.
-        response = self.client.delete(
-            reverse("delete_post", kwargs={"id": post_id}), data=request_body
-        )
+        response = self.client.delete(reverse("delete_post", kwargs={"id": post_id}), data=request_body)
 
         # Then: 실행 결과 상태코드 200 return.
         self.assertEqual(response.status_code, 200)
@@ -204,9 +209,7 @@ class TestPostDelete(TestPostMixin, TestCase):
         invalid_post_id = 9999999
 
         # When: delete_post api 실행.
-        response = self.client.delete(
-            reverse("delete_post", kwargs={"id": invalid_post_id}), data=request_body
-        )
+        response = self.client.delete(reverse("delete_post", kwargs={"id": invalid_post_id}), data=request_body)
 
         # Then: 실행결과 상태코드 403 여야 한다.
         self.assertEqual(response.status_code, 403)
@@ -228,9 +231,7 @@ class TestPostDelete(TestPostMixin, TestCase):
         post_id = self.post.id
 
         # When: delete_post api 실행.
-        response = self.client.delete(
-            reverse("delete_post", kwargs={"id": post_id}), data=invalid_request_body
-        )
+        response = self.client.delete(reverse("delete_post", kwargs={"id": post_id}), data=invalid_request_body)
         # Then: 실행결과 상태코드 404 여야 한다.
         self.assertEqual(response.status_code, 404)
 
@@ -243,3 +244,112 @@ class TestPostDelete(TestPostMixin, TestCase):
         # And: 응답 메세지가 유효하지 않은 사용자 id입니다. 여야 한다.
         response = json.loads(response.content)
         self.assertEqual(response["message"], "유효하지 않은 사용자 id입니다.")
+
+
+class TestCommentList(TestPostMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.post = self._create_post(self.author, "test", "test text")
+
+    def test_comment_list_on_valid_post_with_comment_count(self):
+        # Given: 정상적으로 생성된 comment 10개, 유효한 post id
+        post_id = self.post.id
+        comment_count = 10
+        for i in range(comment_count):
+            comment = self._create_comment_on_post(self.post, f"author{i}", f"comment{i}")
+            comment.approve()
+
+        # When: comment_list_create api get 실행
+        response = self.client.get(reverse("comment_list_create", kwargs={"post_id": post_id}))
+
+        # Then: 실행결과 200, 댓글 갯수 10개여야 함.
+        response = json.loads(response.content)
+        self.assertEqual(comment_count, len(response["data"]))
+
+    def test_comment_list_on_invalid_post_id(self):
+        # Given: 유효하지 않은 post id
+        invalid_post_id = 9876
+
+        # When: comment_list_create api get 실행
+        response = self.client.get(reverse("comment_list_create", kwargs={"post_id": invalid_post_id}))
+
+        # Then: 실행결과 404여야 함.
+        self.assertEqual(response.status_code, 404)
+
+        # And: 메세지 응답이 post가 없습니다. 여야 함.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "post가 없습니다.")
+
+
+class TestCommentCreate(TestPostMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.post = self._create_post(self.author, "test", "test")
+
+    def test_comment_create(self):
+        # Given: 유효한 post id, comment data
+        post_id = self.post.id
+        request_body = {"author": "test author", "text": "test text"}
+
+        # When: comment_list_create api post 실행
+        response = self.client.post(reverse("comment_list_create", kwargs={"post_id": post_id}), data=request_body)
+
+        # Then: 정상적으로 등록. 상태코드 201
+        self.assertEqual(response.status_code, 201)
+
+        # And: 응답에서 comment의 post id, author, text를 리턴.
+        response = json.loads(response.content)["data"]
+        self.assertEqual(response["post_id"], post_id)
+        self.assertEqual(response["author"], "test author")
+        self.assertEqual(response["text"], "test text")
+
+    def test_comment_create_with_invalid_post_id(self):
+        # Given: 유효하지 않은 post id
+        invalid_post_id = 9876
+        request_body = {"author": "test author", "text": "test text"}
+
+        # When: comment_list_create api post 실행
+        response = self.client.post(
+            reverse("comment_list_create", kwargs={"post_id": invalid_post_id}), data=request_body
+        )
+
+        # Then: comment 등록 실패, 상태코드 404
+        self.assertEqual(response.status_code, 404)
+
+        # And: 메세지 응답이 post가 없습니다. 여야 함.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "post가 없습니다.")
+
+    def test_comment_create_without_author(self):
+        # Given: author를 입력받지 않음.
+        post_id = self.post.id
+        invalid_request_body = {"author": "", "text": "test text"}
+
+        # When: comment_list_create api post 실행
+        response = self.client.post(
+            reverse("comment_list_create", kwargs={"post_id": post_id}), data=invalid_request_body
+        )
+
+        # Then: comment 등록 실패, 상태코드 400
+        self.assertEqual(response.status_code, 400)
+
+        # And: 메세지 응답이 author가 없습니다. 여야 함.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "author가 없습니다.")
+
+    def test_comment_create_without_text(self):
+        # Given: text를 입력받지 않음.
+        post_id = self.post.id
+        invalid_request_body = {"author": "test author", "text": ""}
+
+        # When: comment_list_create api post 실행
+        response = self.client.post(
+            reverse("comment_list_create", kwargs={"post_id": post_id}), data=invalid_request_body
+        )
+
+        # Then: comment 등록 실패, 상태코드 400
+        self.assertEqual(response.status_code, 400)
+
+        # And: 메세지 응답이 text가 없습니다. 여야 함.
+        response = json.loads(response.content)
+        self.assertEqual(response["message"], "text가 없습니다.")
