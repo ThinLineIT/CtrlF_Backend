@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,14 +21,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-env = environ.Env()
-SECRET_KEY = env.str("DJANGO_SECRET_KEY", default="django_secret_key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
+SECRET_KEY = "test secret"
 
 # Application definition
 
@@ -40,6 +38,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "blog",
 ]
 
 MIDDLEWARE = [
