@@ -93,19 +93,24 @@ def update_post_with_put(request, id):
 @require_http_methods(["POST"])
 def create_comment_to_post(request):
     body = request.POST
-    comment_form = CommentForm(body)
-    if comment_form.is_valid():
-        comment = comment_form.save(commit=False)
-        comment.author = body["author"]
-        comment.post = Post.objects.get(id=body["post_id"])
-        comment.text = body["text"]
-        comment.save()
-        return JsonResponse({
-            "comment": {
-                "id": comment.id,
-                "author": comment.author,
-                "post_id": comment.post.id,
-                "text": comment.text,
-            }
-        }, status=HTTPStatus.CREATED)
+    try:
+        post_of_comment = Post.objects.get(id=body["post_id"])
+    except Post.DoesNotExist:
+        return JsonResponse({"message": "Post를 찾을 수 없습니다."}, status=HTTPStatus.NOT_FOUND)
+    else:
+        comment_form = CommentForm(body)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.author = body["author"]
+            comment.post = post_of_comment
+            comment.text = body["text"]
+            comment.save()
+            return JsonResponse({
+                "comment": {
+                    "id": comment.id,
+                    "author": comment.author,
+                    "post_id": comment.post.id,
+                    "text": comment.text,
+                }
+            }, status=HTTPStatus.CREATED)
     return JsonResponse({"message": "form is invalid"}, status=HTTPStatus.BAD_REQUEST)
