@@ -197,3 +197,19 @@ class TestCommentCreate(TestPostMixin, TestCase):
         self.assertEqual(response["text"], "test comment")
         # And: post의 comment는 1개이다.
         self.assertEqual(Comment.objects.filter(post_id=self.post.id).count(), 1)
+
+    def test_create_comment_to_post_with_invalid_post(self):
+        # Given: request body에 유효하지 않은 post_id가 주어진다.
+        invalid_post_id = 369
+        request_body = {"author": "test by jinho", "post_id": invalid_post_id, "text": "test comment"}
+
+        # When: create_comment_to_post api를 호출
+        response = self.client.post(reverse("create_comment_to_post"), data=request_body)
+
+        # Then: 상태코드는 404이고
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        # And: 응답메세지로 "Post를 찾을 수 없습니다."를 리턴한다.
+        message = json.loads(response.content)["message"]
+        self.assertEqual(message, "Post를 찾을 수 없습니다.")
+        # And: comment는 추가되지 않으므로 개수는 0개이다.
+        self.assertEqual(Comment.objects.all().count(), 0)
