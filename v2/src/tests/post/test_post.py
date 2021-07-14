@@ -27,14 +27,14 @@ class TestPostList(TestPostMixin, TestCase):
         for i in range(10):
             post = self._create_post(author=self.author, title=f"test title-{i}", text=f"test text-{i}")
             post.publish()
-        response = self.client.get(reverse("retrieve_post_list"))
+        response = self.client.get(reverse("post_list_create"))
         response_data = json.loads(response.content)["posts"]
         self.assertEqual(len(response_data), 10)
 
     def test_list_with_published_post(self):
         post = self._create_post(author=self.author, title="test title", text="test text")
         post.publish()
-        response = self.client.get(reverse("retrieve_post_list"))
+        response = self.client.get(reverse("post_list_create"))
         response_data = json.loads(response.content)["posts"]
         self.assertEqual(response_data[0]["title"], "test title")
         self.assertEqual(response_data[0]["text"], "test text")
@@ -42,6 +42,6 @@ class TestPostList(TestPostMixin, TestCase):
 
     def test_list_with_no_published_post(self):
         self._create_post(author=self.author, title="test title", text="test text")
-        response = self.client.get(reverse("retrieve_post_list"))
+        response = self.client.get(reverse("post_list_create"))
         response_data = json.loads(response.content)["posts"]
         self.assertEqual(len(response_data), 0)
