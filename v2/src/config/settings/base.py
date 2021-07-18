@@ -14,11 +14,6 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 import environ
-from config.settings.production import (
-    AWS_MEDIA_LOCATION,
-    AWS_S3_CUSTOM_DOMAIN,
-    AWS_STATIC_LOCATION,
-)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -128,18 +123,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_URL = "/static/"
 
-STATIC_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, AWS_STATIC_LOCATION)
-MEDIA_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, AWS_MEDIA_LOCATION)
-
-STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-DEFAULT_FILE_STORAGE = "config.backends.MediaStorage"
-
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-]
-STATIC_ROOT = os.path.join(BASE_DIR, "assets")
+MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Default primary key field type
