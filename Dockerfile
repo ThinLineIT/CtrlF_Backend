@@ -41,7 +41,7 @@ RUN cd $DOCK_SRC && pip3 install -r requirements.txt
 
 # 필요한 파일들 옮기기
 COPY v2/src $DOCK_SRC/src
-RUN cd $DOCK_SRC/src && python3 manage.py migrate
+RUN cd $DOCK_SRC/src && python3 manage.py migrate && python3 manage.py collectstatic
 
 # 웹 서버 설정
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf && \
