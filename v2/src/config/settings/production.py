@@ -1,11 +1,5 @@
-import environ
-
 from .base import *  # noqa: F403, F401
 
-env = environ.Env()
-
-AWS_ACCESS_KEY_ID = env.str("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = env.str("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = "ctrl-be"
 AWS_PRELOAD_METADATA = True
 AWS_QUERYSTRING_AUTH = False
