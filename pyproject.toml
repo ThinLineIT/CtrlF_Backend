@@ -21,6 +21,7 @@ django-cors-headers = "^3.7.0"
 django-storages = "^1.11.1"
 drf-yasg = "^1.20.0"
 colorama = "^0.4.4"
+boto3 = "^1.18.1"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.11.1"
