@@ -46,9 +46,9 @@ RUN cd $DOCK_SRC/src && python3 manage.py migrate
 # 웹 서버 설정
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf && \
     cd $DOCK_WSGI
-COPY build/uwsgi_params build/uwsgi.ini $DOCK_WSGI/
-COPY build/nginx.conf /etc/nginx/sites-available/default
-COPY build/supervisor.conf /etc/supervisor/conf.d/
+COPY system_settings/uwsgi_params system_settings/uwsgi.ini $DOCK_WSGI/
+COPY system_settings/nginx.conf /etc/nginx/sites-available/default
+COPY system_settings/supervisor.conf /etc/supervisor/conf.d/
 
 EXPOSE 80
 CMD ["supervisord", "-n"]
