@@ -1,3 +1,5 @@
+from ctrlf_auth.helpers import generate_auth_code
+from ctrlf_auth.models import EmailAuthCode
 from ctrlf_auth.serializers import (
     LoginSerializer,
     SendingAuthEmailSerializer,
@@ -39,4 +41,11 @@ class SignUpAPIView(APIView):
 class SendingAuthEmailView(APIView):
     @swagger_auto_schema(request_body=SendingAuthEmailSerializer)
     def post(self, request, *args, **kwargs):
+        serializer = SendingAuthEmailSerializer(data=request.data)
+        if serializer.is_valid():
+            email_auth_code = EmailAuthCode.objects.create(code=generate_auth_code())
+            success = email_auth_code.send_email(to=serializer.data["email"])
+            if not success:
+                # TODO: 메일발송 실패 로그 남기기
+                pass
         return Response(status=status.HTTP_200_OK)
