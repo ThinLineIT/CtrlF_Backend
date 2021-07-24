@@ -68,3 +68,18 @@ class TestSignUp(TestCase):
         response = self._call_api(user_data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["message"], "패스워드가 일치하지 않습니다.")
+
+
+class TestSendingAuthEmail(TestCase):
+    def setUp(self) -> None:
+        self.c = Client()
+
+    def _call_api(self, request_body):
+        return self.c.post(reverse("auth:sending_auth_email"), request_body)
+
+    def test_sending_auth_email_should_return_200_on_success(self):
+        request_body = {
+            "email": "test1234@test.com",
+        }
+        response = self._call_api(request_body)
+        self.assertEqual(response.status_code, 200)

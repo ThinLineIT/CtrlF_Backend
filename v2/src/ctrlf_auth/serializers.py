@@ -30,10 +30,7 @@ class LoginSerializer(serializers.Serializer):
 
         payload = jwt_payload_handler(user)
 
-        return {
-            "token": jwt_encode_handler(payload),
-            "user": user,
-        }
+        return {"token": jwt_encode_handler(payload), "user": user}
 
 
 class SignUpSerializer(serializers.Serializer):
@@ -63,3 +60,7 @@ class SignUpSerializer(serializers.Serializer):
         user.set_password(validated_data.pop("password"))
         user.save()
         return user
+
+
+class SendingAuthEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()

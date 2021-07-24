@@ -1,4 +1,8 @@
-from ctrlf_auth.serializers import LoginSerializer, SignUpSerializer
+from ctrlf_auth.serializers import (
+    LoginSerializer,
+    SendingAuthEmailSerializer,
+    SignUpSerializer,
+)
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
@@ -30,3 +34,9 @@ class SignUpAPIView(APIView):
             for _, message in serializer.errors.items():
                 message = message[0]
         return Response(data={"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SendingAuthEmailView(APIView):
+    @swagger_auto_schema(request_body=SendingAuthEmailSerializer)
+    def post(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_200_OK)
