@@ -18,3 +18,23 @@ class TestLogin(TestCase):
     def test_login_should_return_token(self):
         response = self._call_api()
         self.assertIn("token", response.data)
+
+
+class TestSignUp(TestCase):
+    def setUp(self) -> None:
+        self.c = Client()
+
+    def _call_api(self, request_body):
+        return self.c.post(reverse("auth:signup"), request_body)
+
+    def test_signup_should_return_201_on_success(self):
+        response = self._call_api(
+            request_body={
+                "email": "test1234@testcom",
+                "code": "YWJjZGU=",
+                "nickname": "유연한외곬",
+                "password": "testpassword%*",
+                "password_confirm": "testpassword%*",
+            }
+        )
+        self.assertEqual(response.status_code, 201)
