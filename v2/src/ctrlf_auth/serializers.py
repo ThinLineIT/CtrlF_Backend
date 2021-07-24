@@ -49,6 +49,12 @@ class SignUpSerializer(serializers.Serializer):
         email = request_data["email"]
         if CtrlfUser.objects.filter(email=email).exists():
             raise ValidationError("중복된 email 입니다.")
+
+        password = request_data["password"]
+        password_confirm = request_data["password_confirm"]
+
+        if password != password_confirm:
+            raise ValidationError("패스워드가 일치하지 않습니다.")
         return request_data
 
     def create(self, validated_data):

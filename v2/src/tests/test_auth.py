@@ -56,3 +56,15 @@ class TestSignUp(TestCase):
         response = self._call_api(user_data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["message"], "중복된 email 입니다.")
+
+    def test_signup_should_return_400_on_fail_with_no_same_password(self):
+        user_data = {
+            "email": "test1234@test.com",
+            "code": "YWJjZGU=",
+            "nickname": "유연한외곬",
+            "password": "no_same_password",
+            "password_confirm": "testpassword%*",
+        }
+        response = self._call_api(user_data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["message"], "패스워드가 일치하지 않습니다.")
