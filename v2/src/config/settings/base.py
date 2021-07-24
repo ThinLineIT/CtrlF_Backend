@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -23,6 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 env = environ.Env()
+environ.Env.read_env(env_file=os.path.join(BASE_DIR, ".env"))
 SECRET_KEY = env.str("DJANGO_SECRET_KEY", default="django_secret_key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -40,7 +41,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "drf_yasg",
+    "rest_framework",
     "ctrlf_auth",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
@@ -129,9 +133,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_URL = "/static/"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+AWS_ACCESS_KEY_ID = env.str("AWS_ACCESS_KEY_ID", default="aws_access_key_id")
+AWS_SECRET_ACCESS_KEY = env.str("AWS_SECRET_ACCESS_KEY", default="aws_secret_access_key")

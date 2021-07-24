@@ -1,6 +1,4 @@
-from ninja import NinjaAPI, Router
-
-from config.constants import MOCK_ACCESS_TOKEN, MOCK_REFRESH_TOKEN
+from config.constants import MOCK_ACCESS_TOKEN
 from config.schema import (
     EmailDuplicateCheckOut,
     ErrorduplicateEmail400Response,
@@ -28,6 +26,7 @@ from config.schema import (
     SignUpRequestIn,
     SignUpRequestOut,
 )
+from ninja import NinjaAPI, Router
 
 api = NinjaAPI(title="CtrlF Mock API Doc")
 api_auth = Router(tags=["인증(SignUp, Login, Logout)"])
@@ -70,7 +69,7 @@ def send_auth_email(request, request_body: SendEmailAuthIn):
     "/login", summary="로그인", response={200: LoginResponse, 400: ErrorLogin400Response, 404: ErrorLogin404Response}
 )
 def login(request, request_body: LoginRequest):
-    return 200, {"access_token": MOCK_ACCESS_TOKEN, "refresh_token": MOCK_REFRESH_TOKEN}
+    return 200, {"token": MOCK_ACCESS_TOKEN}
 
 
 @api_auth.post(

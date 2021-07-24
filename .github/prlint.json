@@ -1,6 +1,6 @@
 "title": [
   {
-  	"pattern": "^(TH-|JH-|SH-|JG-)\d+: \w+$",
+    "pattern": "^(TH-|JH-|SH-|JG-)\d+: \w+$",
     "message": "{personal initial above}-{issue number}: {pr title} - ex) TH-150: add test prlint.json"
   }
 ]

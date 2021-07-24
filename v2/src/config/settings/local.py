@@ -1,3 +1,3 @@
-from .base import *  # noqa: F401, F403
+from .base import *  # noqa: F403, F401
 
-INSTALLED_APPS += ["drf_yasg"]  # noqa: F405
+DEBUG = True

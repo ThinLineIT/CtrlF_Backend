@@ -114,8 +114,7 @@ class LoginRequest(Schema):
 
 
 class LoginResponse(Schema):
-    access_token: str
-    refresh_token: str
+    token: str
 
 
 class ErrorLogin400Response(Schema):
