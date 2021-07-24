@@ -25,3 +25,7 @@ class SignUpAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(data={"message": self._SIGNUP_MSG}, status=status.HTTP_201_CREATED)
+        else:
+            for _, message in serializer.errors.items():
+                message = message[0]
+        return Response(data={"message": message}, status=status.HTTP_400_BAD_REQUEST)

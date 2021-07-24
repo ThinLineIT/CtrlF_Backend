@@ -1,6 +1,7 @@
 from ctrlf_auth.models import CtrlfUser
 from django.contrib.auth.hashers import check_password
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from rest_framework_jwt.utils import unix_epoch
 
@@ -45,7 +46,9 @@ class SignUpSerializer(serializers.Serializer):
     password_confirm = serializers.CharField()
 
     def validate(self, request_data):
-        print(request_data)
+        email = request_data["email"]
+        if CtrlfUser.objects.filter(email=email).exists():
+            raise ValidationError("중복된 email 입니다.")
         return request_data
 
     def create(self, validated_data):
