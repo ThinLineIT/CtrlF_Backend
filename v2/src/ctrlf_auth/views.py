@@ -3,10 +3,10 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_jwt.views import ObtainJSONWebTokenView
+from rest_framework_jwt.views import ObtainJSONWebToken
 
 
-class LoginAPIView(ObtainJSONWebTokenView):
+class LoginAPIView(ObtainJSONWebToken):
 
     serializer_class = LoginSerializer
 

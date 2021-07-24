@@ -2,8 +2,7 @@ from ctrlf_auth.models import CtrlfUser
 from django.contrib.auth.hashers import check_password
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework_jwt.authentication import JSONWebTokenAuthentication
-from rest_framework_jwt.utils import unix_epoch
+from rest_framework_jwt.serializers import jwt_encode_handler, jwt_payload_handler
 
 
 class LoginSerializer(serializers.Serializer):
@@ -29,12 +28,11 @@ class LoginSerializer(serializers.Serializer):
         if not check_password(data["password"], user.password):
             raise serializers.ValidationError("패스워드가 일치하지 않습니다.")
 
-        payload = JSONWebTokenAuthentication.jwt_create_payload(user)
+        payload = jwt_payload_handler(user)
 
         return {
-            "token": JSONWebTokenAuthentication.jwt_encode_payload(payload),
+            "token": jwt_encode_handler(payload),
             "user": user,
-            "issued_at": payload.get("iat", unix_epoch()),
         }
 
 
