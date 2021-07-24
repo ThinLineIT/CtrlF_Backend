@@ -1,4 +1,4 @@
-from ctrlf_auth.serializers import LoginSerializer
+from ctrlf_auth.serializers import LoginSerializer, SignUpSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
@@ -19,4 +19,7 @@ class LoginAPIView(ObtainJSONWebTokenView):
 
 class SignUpAPIView(APIView):
     def post(self, request, *args, **kwargs):
+        serializer = SignUpSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
         return Response(status=status.HTTP_201_CREATED)

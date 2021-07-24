@@ -35,3 +35,16 @@ class LoginSerializer(serializers.Serializer):
             "user": user,
             "issued_at": payload.get("iat", unix_epoch()),
         }
+
+
+class SignUpSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    nickname = serializers.CharField(max_length=30)
+    password = serializers.CharField()
+    code = serializers.CharField(max_length=20)
+    password_confirm = serializers.CharField()
+
+    def create(self, validated_data):
+        validated_data.pop("code")
+        validated_data.pop("password_confirm")
+        return CtrlfUser(**validated_data)

@@ -30,7 +30,7 @@ class TestSignUp(TestCase):
     def test_signup_should_return_201_on_success(self):
         response = self._call_api(
             request_body={
-                "email": "test1234@testcom",
+                "email": "test1234@test.com",
                 "code": "YWJjZGU=",
                 "nickname": "유연한외곬",
                 "password": "testpassword%*",
