@@ -28,13 +28,19 @@ class TestSignUp(TestCase):
         return self.c.post(reverse("auth:signup"), request_body)
 
     def test_signup_should_return_201_on_success(self):
-        response = self._call_api(
-            request_body={
-                "email": "test1234@test.com",
-                "code": "YWJjZGU=",
-                "nickname": "유연한외곬",
-                "password": "testpassword%*",
-                "password_confirm": "testpassword%*",
-            }
-        )
+        valid_request_body = {
+            "email": "test1234@test.com",
+            "code": "YWJjZGU=",
+            "nickname": "유연한외곬",
+            "password": "testpassword%*",
+            "password_confirm": "testpassword%*",
+        }
+        response = self._call_api(valid_request_body)
         self.assertEqual(response.status_code, 201)
+
+    def test_signup_should_return_message_on_success(self):
+        user_data = {"email": "test1234@test.com", "password": "testpassword%*"}  # email이 이미 중복 됨
+        CtrlfUser.objects.create_user(**user_data)
+        user_data.update({"code": "YWJjZGU=", "nickname": "유연한외곬", "password_confirm": "testpassword%*"})
+        response = self._call_api(user_data)
+        self.assertEqual(response.data["message"], "환영합니다.\n가입이 완료되었습니다\n\n로그인 후 이용해주세요.")

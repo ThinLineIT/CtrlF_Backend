@@ -44,6 +44,10 @@ class SignUpSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=20)
     password_confirm = serializers.CharField()
 
+    def validate(self, request_data):
+        print(request_data)
+        return request_data
+
     def create(self, validated_data):
         validated_data.pop("code")
         validated_data.pop("password_confirm")

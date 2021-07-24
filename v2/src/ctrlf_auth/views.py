@@ -18,8 +18,10 @@ class LoginAPIView(ObtainJSONWebTokenView):
 
 
 class SignUpAPIView(APIView):
+    _SIGNUP_MSG = "환영합니다.\n가입이 완료되었습니다\n\n로그인 후 이용해주세요."
+
     def post(self, request, *args, **kwargs):
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-        return Response(status=status.HTTP_201_CREATED)
+            return Response(data={"message": self._SIGNUP_MSG}, status=status.HTTP_201_CREATED)
