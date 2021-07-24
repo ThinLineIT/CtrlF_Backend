@@ -1,5 +1,7 @@
 from ctrlf_auth.models import CtrlfUser
 from django.contrib.auth.hashers import check_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import validate_email
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework_jwt.serializers import jwt_encode_handler, jwt_payload_handler
@@ -63,4 +65,11 @@ class SignUpSerializer(serializers.Serializer):
 
 
 class SendingAuthEmailSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.CharField()
+
+    def validate_email(self, email):
+        try:
+            validate_email(email)
+        except DjangoValidationError:
+            raise DjangoValidationError("유효하지 않은 이메일 형식 입니다.")
+        return email

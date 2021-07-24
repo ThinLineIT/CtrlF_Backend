@@ -90,3 +90,11 @@ class TestSendingAuthEmail(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(EmailAuthCode.objects.filter(code="1q2w3e4r").exists())
         mock_send_email.assert_called_once_with(to="test1234@test.com")
+
+    def test_sending_auth_email_should_return_400_on_email_from_request_body_is_invalid_format(self):
+        request_body = {
+            "email": "test1234test.com",  # invalid email format
+        }
+        response = self._call_api(request_body)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["message"], "유효하지 않은 이메일 형식 입니다.")

@@ -48,4 +48,8 @@ class SendingAuthEmailView(APIView):
             if not success:
                 # TODO: 메일발송 실패 로그 남기기
                 pass
-        return Response(status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_200_OK)
+        else:
+            for _, message in serializer.errors.items():
+                message = message[0]
+        return Response(data={"message": message}, status=status.HTTP_400_BAD_REQUEST)
