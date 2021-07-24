@@ -58,6 +58,10 @@ class SignUpSerializer(serializers.Serializer):
         return request_data
 
     def create(self, validated_data):
-        validated_data.pop("code")
         validated_data.pop("password_confirm")
-        return CtrlfUser(**validated_data)
+        validated_data.pop("code")
+
+        user = CtrlfUser.objects.create(**validated_data)
+        user.set_password(validated_data.pop("password"))
+        user.save()
+        return user

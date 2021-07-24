@@ -20,6 +20,7 @@ class LoginAPIView(ObtainJSONWebTokenView):
 class SignUpAPIView(APIView):
     _SIGNUP_MSG = "환영합니다.\n가입이 완료되었습니다\n\n로그인 후 이용해주세요."
 
+    @swagger_auto_schema(request_body=SignUpSerializer)
     def post(self, request, *args, **kwargs):
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
