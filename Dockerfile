@@ -35,7 +35,7 @@ RUN mkdir $DOCK_ROOT && \
 #COPY requirements.txt manage.py $DOCK_SRC/
 COPY poetry.lock pyproject.toml $DOCK_SRC/
 #$(test "$PROJECT_ENV" == production && echo "--no-dev")
-RUN cd $DOCK_SRC && poetry export -f requirements.txt --output requirements.txt
+RUN cd $DOCK_SRC && poetry export -f requirements.txt --output requirements.txt --without-hashes
 RUN cd $DOCK_SRC && pip3 install -r requirements.txt
 
 
