@@ -138,3 +138,13 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AWS_ACCESS_KEY_ID = env.str("AWS_ACCESS_KEY_ID", default="aws_access_key_id")
 AWS_SECRET_ACCESS_KEY = env.str("AWS_SECRET_ACCESS_KEY", default="aws_secret_access_key")
+
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_USE_TLS = True
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_HOST_USER = env.str("EMAIL_HOST_USER", default="email_host_user")
+EMAIL_HOST_PASSWORD = env.str("EMAIL_HOST_PASSWORD", default="email_host_password")
+SERVER_EMAIL = env.str("SERVER_EMAIL", default="server_email")
+DEFAULT_FROM_MAIL = env.str("DEFAULT_FROM_MAIL", default="default_from_mail")

@@ -35,13 +35,14 @@ RUN mkdir $DOCK_ROOT && \
 #COPY requirements.txt manage.py $DOCK_SRC/
 COPY poetry.lock pyproject.toml $DOCK_SRC/
 #$(test "$PROJECT_ENV" == production && echo "--no-dev")
-RUN cd $DOCK_SRC && poetry export -f requirements.txt --output requirements.txt
+RUN cd $DOCK_SRC && poetry export -f requirements.txt --output requirements.txt --without-hashes
 RUN cd $DOCK_SRC && pip3 install -r requirements.txt
 
 
 # 필요한 파일들 옮기기
 COPY v2/src $DOCK_SRC/src
 RUN cd $DOCK_SRC/src && python3 manage.py migrate
+COPY v2/src/config/.env $DOCK_SRC/src/config
 
 # 웹 서버 설정
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf && \

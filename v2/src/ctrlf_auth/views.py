@@ -1,12 +1,18 @@
-from ctrlf_auth.serializers import LoginSerializer, SignUpSerializer
+from ctrlf_auth.helpers import generate_auth_code
+from ctrlf_auth.models import EmailAuthCode
+from ctrlf_auth.serializers import (
+    LoginSerializer,
+    SendingAuthEmailSerializer,
+    SignUpSerializer,
+)
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_jwt.views import ObtainJSONWebTokenView
+from rest_framework_jwt.views import ObtainJSONWebToken
 
 
-class LoginAPIView(ObtainJSONWebTokenView):
+class LoginAPIView(ObtainJSONWebToken):
 
     serializer_class = LoginSerializer
 
@@ -26,6 +32,23 @@ class SignUpAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(data={"message": self._SIGNUP_MSG}, status=status.HTTP_201_CREATED)
+        else:
+            for _, message in serializer.errors.items():
+                message = message[0]
+        return Response(data={"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SendingAuthEmailView(APIView):
+    @swagger_auto_schema(request_body=SendingAuthEmailSerializer)
+    def post(self, request, *args, **kwargs):
+        serializer = SendingAuthEmailSerializer(data=request.data)
+        if serializer.is_valid():
+            email_auth_code = EmailAuthCode.objects.create(code=generate_auth_code())
+            success = email_auth_code.send_email(to=serializer.data["email"])
+            if not success:
+                # TODO: 메일발송 실패 로그 남기기
+                pass
+            return Response(status=status.HTTP_200_OK)
         else:
             for _, message in serializer.errors.items():
                 message = message[0]
