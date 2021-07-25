@@ -128,16 +128,9 @@ class TestCheckEmailDuplicate(TestCase):
     def test_check_email_duplicate_should_return_200(self):
         # Given
         email = "sehwa@test.com"
-
         # When
         response = self._call_api(email)
         # Then
         self.assertEqual(response.status_code, 200)
         # And
-
-    def test_check_email_duplicate_should_return_400_by_invalid_email_pattern(self):
-        invalid_email = "sehwatestcom"
-
-        response = self._call_api(invalid_email)
-
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["message"], "사용 가능한 이메일 입니다.")
