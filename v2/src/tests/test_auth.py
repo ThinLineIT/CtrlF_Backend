@@ -26,6 +26,7 @@ class TestLogin(TestCase):
 class TestSignUp(TestCase):
     def setUp(self) -> None:
         self.c = Client()
+        EmailAuthCode.objects.create(code="YWJjZGU=")
 
     def _call_api(self, request_body):
         return self.c.post(reverse("auth:signup"), request_body)
@@ -71,6 +72,18 @@ class TestSignUp(TestCase):
         response = self._call_api(user_data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["message"], "패스워드가 일치하지 않습니다.")
+
+    def test_signup_should_return_400_on_fail_with_invalid_code(self):
+        user_data = {
+            "email": "test1234@test.com",
+            "code": "invalid_code",  # invalid code
+            "nickname": "유연한외곬",
+            "password": "testpassword%*",
+            "password_confirm": "testpassword%*",
+        }
+        response = self._call_api(user_data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["message"], "유효하지 않은 코드 입니다.")
 
 
 class TestSendingAuthEmail(TestCase):
