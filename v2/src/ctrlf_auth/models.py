@@ -1,4 +1,5 @@
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.core.mail import EmailMessage
 from django.db import models
 
 
@@ -21,8 +22,9 @@ class CtrlfUserManager(BaseUserManager):
 
 
 class CtrlfUser(AbstractBaseUser):
-    email = models.EmailField(verbose_name="email address", max_length=255, unique=True)
-    is_active = models.BooleanField(default=True)
+    email = models.EmailField(verbose_name="email address", max_length=255, unique=True, help_text="email 주소")
+    is_active = models.BooleanField(default=True, help_text="패스워드")
+    nickname = models.CharField(max_length=30, help_text="닉네임")
 
     objects = CtrlfUserManager()
 
@@ -46,3 +48,11 @@ class CtrlfUser(AbstractBaseUser):
         "Is the user a member of staff?"
         # Simplest possible answer: All admins are staff
         return self.is_admin
+
+
+class EmailAuthCode(models.Model):
+    code = models.CharField(max_length=8, help_text="이메일 인증용 코드")
+
+    def send_email(self, to):
+        email = EmailMessage("[Ctrlf] 이메일 인증코드가 도착 하였습니다!", f"커넵 이메일 인증 코드: {self.code}", to=[to])
+        return email.send()

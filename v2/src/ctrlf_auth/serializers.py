@@ -1,8 +1,10 @@
 from ctrlf_auth.models import CtrlfUser
 from django.contrib.auth.hashers import check_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import validate_email
 from rest_framework import serializers
-from rest_framework_jwt.authentication import JSONWebTokenAuthentication
-from rest_framework_jwt.utils import unix_epoch
+from rest_framework.exceptions import ValidationError
+from rest_framework_jwt.serializers import jwt_encode_handler, jwt_payload_handler
 
 
 class LoginSerializer(serializers.Serializer):
@@ -28,10 +30,46 @@ class LoginSerializer(serializers.Serializer):
         if not check_password(data["password"], user.password):
             raise serializers.ValidationError("패스워드가 일치하지 않습니다.")
 
-        payload = JSONWebTokenAuthentication.jwt_create_payload(user)
+        payload = jwt_payload_handler(user)
 
-        return {
-            "token": JSONWebTokenAuthentication.jwt_encode_payload(payload),
-            "user": user,
-            "issued_at": payload.get("iat", unix_epoch()),
-        }
+        return {"token": jwt_encode_handler(payload), "user": user}
+
+
+class SignUpSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    nickname = serializers.CharField(max_length=30)
+    password = serializers.CharField()
+    code = serializers.CharField(max_length=20)
+    password_confirm = serializers.CharField()
+
+    def validate(self, request_data):
+        email = request_data["email"]
+        if CtrlfUser.objects.filter(email=email).exists():
+            raise ValidationError("중복된 email 입니다.")
+
+        password = request_data["password"]
+        password_confirm = request_data["password_confirm"]
+
+        if password != password_confirm:
+            raise ValidationError("패스워드가 일치하지 않습니다.")
+        return request_data
+
+    def create(self, validated_data):
+        validated_data.pop("password_confirm")
+        validated_data.pop("code")
+
+        user = CtrlfUser.objects.create(**validated_data)
+        user.set_password(validated_data.pop("password"))
+        user.save()
+        return user
+
+
+class SendingAuthEmailSerializer(serializers.Serializer):
+    email = serializers.CharField()
+
+    def validate_email(self, email):
+        try:
+            validate_email(email)
+        except DjangoValidationError:
+            raise DjangoValidationError("유효하지 않은 이메일 형식 입니다.")
+        return email
