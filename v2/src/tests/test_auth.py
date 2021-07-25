@@ -120,7 +120,6 @@ class TestGenerateAuthCode(TestCase):
 class TestCheckEmailDuplicate(TestCase):
     def setUp(self):
         self.c = Client()
-        self.existed_user = CtrlfUser.objects.create_user(email="exist@test.com", password="test1234")
 
     def _call_api(self, email):
         return self.c.get(reverse("auth:check_email_duplicate"), {"data": email})
@@ -134,3 +133,24 @@ class TestCheckEmailDuplicate(TestCase):
         self.assertEqual(response.status_code, 200)
         # And
         self.assertEqual(response.data["message"], "사용 가능한 이메일 입니다.")
+
+    def test_check_email_duplicate_should_return_400_by_invalid_email_pattern(self):
+        # Given
+        invalid_email = "sehwatestcom"
+        # When
+        response = self._call_api(invalid_email)
+        # Then
+        self.assertEqual(response.status_code, 400)
+        # And
+        self.assertEqual(response.data["message"], "이메일 형식이 유효하지 않습니다.")
+
+    def test_check_email_duplicate_should_return_404_by_duplicated_email(self):
+        # Given
+        existed_email = "exist@test.com"
+        CtrlfUser.objects.create_user(email=existed_email, password="test1234")
+        # When
+        response = self._call_api(existed_email)
+        # Then
+        self.assertEqual(response.status_code, 404)
+        # And
+        self.assertEqual(response.data["message"], "이미 존재하는 이메일 입니다.")
