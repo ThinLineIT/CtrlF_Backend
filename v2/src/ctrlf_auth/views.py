@@ -57,6 +57,7 @@ class SendingAuthEmailView(APIView):
 
 
 class CheckEmailDuplicateView(APIView):
+    @swagger_auto_schema(query_serializer=CheckEmailDuplicateSerializer)
     def get(self, request):
         serializer = CheckEmailDuplicateSerializer(data=request.GET)
 
