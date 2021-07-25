@@ -1,4 +1,4 @@
-from ctrlf_auth.models import CtrlfUser
+from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
@@ -43,15 +43,14 @@ class SignUpSerializer(serializers.Serializer):
     password_confirm = serializers.CharField()
 
     def validate(self, request_data):
-        email = request_data["email"]
-        if CtrlfUser.objects.filter(email=email).exists():
+        if CtrlfUser.objects.filter(email=request_data["email"]).exists():
             raise ValidationError("중복된 email 입니다.")
 
-        password = request_data["password"]
-        password_confirm = request_data["password_confirm"]
-
-        if password != password_confirm:
+        if request_data["password"] != request_data["password_confirm"]:
             raise ValidationError("패스워드가 일치하지 않습니다.")
+
+        if not EmailAuthCode.objects.filter(code=request_data["code"]).exists():
+            raise ValidationError("유효하지 않은 코드 입니다.")
         return request_data
 
     def create(self, validated_data):
