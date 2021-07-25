@@ -115,3 +115,29 @@ class TestGenerateAuthCode(TestCase):
         code = generate_auth_code()
         self.assertEqual(len(code), 8)
         self.assertRegexpMatches(code, "[a-zA-Z0-9]")
+
+
+class TestCheckEmailDuplicate(TestCase):
+    def setUp(self):
+        self.c = Client()
+        self.existed_user = CtrlfUser.objects.create_user(email="exist@test.com", password="test1234")
+
+    def _call_api(self, email):
+        return self.c.get(reverse("auth:check_email_duplicate"), {"data": email})
+
+    def test_check_email_duplicate_should_return_200(self):
+        # Given
+        email = "sehwa@test.com"
+
+        # When
+        response = self._call_api(email)
+        # Then
+        self.assertEqual(response.status_code, 200)
+        # And
+
+    def test_check_email_duplicate_should_return_400_by_invalid_email_pattern(self):
+        invalid_email = "sehwatestcom"
+
+        response = self._call_api(invalid_email)
+
+        self.assertEqual(response.status_code, 400)
