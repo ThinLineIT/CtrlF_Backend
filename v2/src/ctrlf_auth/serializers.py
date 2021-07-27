@@ -4,7 +4,8 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework_jwt.serializers import jwt_encode_handler, jwt_payload_handler
+from rest_framework_jwt.serializers import jwt_payload_handler
+from rest_framework_jwt.utils import jwt_encode_handler
 
 
 class LoginSerializer(serializers.Serializer):
