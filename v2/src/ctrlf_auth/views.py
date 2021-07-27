@@ -58,6 +58,7 @@ class SendingAuthEmailView(APIView):
 class CheckNicknameDuplicateView(APIView):
     _SUCCESS_MSG = "사용 가능한 닉네임입니다."
 
+    @swagger_auto_schema(query_serializer=NicknameDuplicateSerializer)
     def get(self, request):
         nickname = request.GET
         serializer = NicknameDuplicateSerializer(data=nickname)
