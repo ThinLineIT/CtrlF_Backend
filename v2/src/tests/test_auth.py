@@ -134,3 +134,15 @@ class TestNicknameDuplicate(TestCase):
         # Then
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["message"], "사용 가능한 닉네임입니다.")
+
+    def test_check_nickname_duplicate_should_return_400_on_duplicate_nickname(self):
+        # Given
+        CtrlfUser.objects.create(email="test123@naver.com", password="12345", nickname="test_nickname")
+        duplicate_nickname = "test_nickname"
+
+        # When
+        response = self._call_api(duplicate_nickname)
+
+        # Then
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["message"], "이미 존재하는 닉네임입니다.")

@@ -2,6 +2,7 @@ from ctrlf_auth.helpers import generate_auth_code
 from ctrlf_auth.models import EmailAuthCode
 from ctrlf_auth.serializers import (
     LoginSerializer,
+    NicknameDuplicateSerializer,
     SendingAuthEmailSerializer,
     SignUpSerializer,
 )
@@ -58,4 +59,11 @@ class CheckNicknameDuplicateView(APIView):
     _SUCCESS_MSG = "사용 가능한 닉네임입니다."
 
     def get(self, request):
-        return Response(data={"message": self._SUCCESS_MSG}, status=status.HTTP_200_OK)
+        nickname = request.GET
+        serializer = NicknameDuplicateSerializer(data=nickname)
+        if serializer.is_valid():
+            return Response(data={"message": self._SUCCESS_MSG}, status=status.HTTP_200_OK)
+        else:
+            for _, message in serializer.errors.items():
+                message = message[0]
+        return Response(data={"message": message}, status=status.HTTP_400_BAD_REQUEST)
