@@ -133,3 +133,4 @@ class TestNicknameDuplicate(TestCase):
 
         # Then
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["message"], "사용 가능한 닉네임입니다.")

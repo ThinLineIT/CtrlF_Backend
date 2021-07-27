@@ -58,4 +58,4 @@ class CheckNicknameDuplicateView(APIView):
     _SUCCESS_MSG = "사용 가능한 닉네임입니다."
 
     def get(self, request):
-        return Response(status=status.HTTP_200_OK)
+        return Response(data={"message": self._SUCCESS_MSG}, status=status.HTTP_200_OK)
