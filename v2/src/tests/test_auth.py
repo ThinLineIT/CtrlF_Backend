@@ -115,3 +115,21 @@ class TestGenerateAuthCode(TestCase):
         code = generate_auth_code()
         self.assertEqual(len(code), 8)
         self.assertRegexpMatches(code, "[a-zA-Z0-9]")
+
+
+class TestNicknameDuplicate(TestCase):
+    def setUp(self) -> None:
+        self.c = Client()
+
+    def _call_api(self, nickname):
+        return self.c.get(reverse("auth:check_nickname_duplicate"), {"data": nickname})
+
+    def test_check_nickname_duplicate_should_return_200_on_success(self):
+        # Given
+        valid_nickname = "test_nickname"
+
+        # When
+        response = self._call_api(valid_nickname)
+
+        # Then
+        self.assertEqual(response.status_code, 200)

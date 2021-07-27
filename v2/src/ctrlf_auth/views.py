@@ -13,7 +13,6 @@ from rest_framework_jwt.views import ObtainJSONWebToken
 
 
 class LoginAPIView(ObtainJSONWebToken):
-
     serializer_class = LoginSerializer
 
     @swagger_auto_schema(method="post")
@@ -53,3 +52,10 @@ class SendingAuthEmailView(APIView):
             for _, message in serializer.errors.items():
                 message = message[0]
         return Response(data={"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CheckNicknameDuplicateView(APIView):
+    _SUCCESS_MSG = "사용 가능한 닉네임입니다."
+
+    def get(self, request):
+        return Response(status=status.HTTP_200_OK)
