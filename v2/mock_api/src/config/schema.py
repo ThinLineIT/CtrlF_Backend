@@ -165,6 +165,7 @@ class ErrorLogout404Response(Schema):
 
 
 class Note(Schema):
+    id: int
     title: str
     status: str
 
@@ -178,20 +179,20 @@ class NoteResponse(Schema):
             "example": {
                 "next_cursor": 30,
                 "notes": [
-                    {"title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
-                    {"title": "자료구조", "status": "NOT_APPROVED"},
-                    {"title": "알고리즘", "status": "APPROVED"},
-                    {"title": "운영체제", "status": "APPROVED"},
-                    {"title": "컴퓨터 구조", "status": "APPROVED"},
-                    {"title": "컴파일러", "status": "APPROVED"},
-                    {"title": "이산수학", "status": "APPROVED"},
-                    {"title": "디지털 논리 회로", "status": "APPROVED"},
-                    {"title": "프로그래밍 언어", "status": "APPROVED"},
-                    {"title": "소프트웨어 공학", "status": "APPROVED"},
-                    {"title": "알고리즘", "status": "APPROVED"},
-                    {"title": "자료구조", "status": "NOT_APPROVED"},
-                    {"title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
-                    {"title": "컴퓨터 구조", "status": "APPROVED"},
+                    {"id": 1, "title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
+                    {"id": 2, "title": "자료구조", "status": "NOT_APPROVED"},
+                    {"id": 3, "title": "알고리즘", "status": "APPROVED"},
+                    {"id": 4, "title": "운영체제", "status": "APPROVED"},
+                    {"id": 5, "title": "컴퓨터 구조", "status": "APPROVED"},
+                    {"id": 6, "title": "컴파일러", "status": "APPROVED"},
+                    {"id": 7, "title": "이산수학", "status": "APPROVED"},
+                    {"id": 8, "title": "디지털 논리 회로", "status": "APPROVED"},
+                    {"id": 9, "title": "프로그래밍 언어", "status": "APPROVED"},
+                    {"id": 10, "title": "소프트웨어 공학", "status": "APPROVED"},
+                    {"id": 11, "title": "알고리즘", "status": "APPROVED"},
+                    {"id": 12, "title": "자료구조", "status": "NOT_APPROVED"},
+                    {"id": 13, "title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
+                    {"id": 14, "title": "컴퓨터 구조", "status": "APPROVED"},
                 ],
             }
         }
