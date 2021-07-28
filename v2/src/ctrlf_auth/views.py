@@ -60,7 +60,7 @@ class CheckNicknameDuplicateView(APIView):
 
     @swagger_auto_schema(query_serializer=NicknameDuplicateSerializer)
     def get(self, request):
-        nickname = request.GET
+        nickname = request.query_params
         serializer = NicknameDuplicateSerializer(data=nickname)
         if serializer.is_valid():
             return Response(data={"message": self._SUCCESS_MSG}, status=status.HTTP_200_OK)
