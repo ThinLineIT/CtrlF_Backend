@@ -59,7 +59,7 @@ class SendingAuthEmailView(APIView):
 class CheckEmailDuplicateView(APIView):
     @swagger_auto_schema(query_serializer=CheckEmailDuplicateSerializer)
     def get(self, request):
-        serializer = CheckEmailDuplicateSerializer(data=request.GET)
+        serializer = CheckEmailDuplicateSerializer(data=request.query_params)
 
         if serializer.is_valid():
             return Response({"message": "사용 가능한 이메일 입니다."}, status=status.HTTP_200_OK)

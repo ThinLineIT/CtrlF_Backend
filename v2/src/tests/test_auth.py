@@ -4,6 +4,7 @@ from ctrlf_auth.helpers import generate_auth_code
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from django.test import Client, TestCase
 from django.urls import reverse
+from rest_framework import status
 
 
 class TestLogin(TestCase):
@@ -125,32 +126,32 @@ class TestCheckEmailDuplicate(TestCase):
         return self.c.get(reverse("auth:check_email_duplicate"), {"data": email})
 
     def test_check_email_duplicate_should_return_200(self):
-        # Given
+        # Given : 중복되지 않고 유효한 이메일
         email = "sehwa@test.com"
-        # When
+        # When  : API 실행
         response = self._call_api(email)
-        # Then
-        self.assertEqual(response.status_code, 200)
-        # And
+        # Then  : 상태코드 200 리턴.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And   : 메세지는 "사용 가능한 이메일 입니다." 이어야 함.
         self.assertEqual(response.data["message"], "사용 가능한 이메일 입니다.")
 
     def test_check_email_duplicate_should_return_400_by_invalid_email_pattern(self):
-        # Given
+        # Given : 유효하지 않은 형식의 이메일
         invalid_email = "sehwatestcom"
-        # When
+        # When  : API 실행
         response = self._call_api(invalid_email)
-        # Then
-        self.assertEqual(response.status_code, 400)
-        # And
+        # Then  : 상태코드 400 리턴.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And   : 메세지는 "이메일 형식이 유효하지 않습니다." 이어야 함.
         self.assertEqual(response.data["message"], "이메일 형식이 유효하지 않습니다.")
 
     def test_check_email_duplicate_should_return_404_by_duplicated_email(self):
-        # Given
+        # Given : 중복된 이메일
         existed_email = "exist@test.com"
         CtrlfUser.objects.create_user(email=existed_email, password="test1234")
-        # When
+        # When  : API 실행.
         response = self._call_api(existed_email)
-        # Then
-        self.assertEqual(response.status_code, 404)
-        # And
+        # Then  : 상태코드 404 리턴.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And   : 메세지는 "이미 존재하는 이메일 입니다." 이어야 함.
         self.assertEqual(response.data["message"], "이미 존재하는 이메일 입니다.")

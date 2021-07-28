@@ -2,7 +2,7 @@ from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
-from rest_framework import serializers
+from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
 from rest_framework_jwt.serializers import jwt_encode_handler, jwt_payload_handler
 
@@ -77,11 +77,11 @@ class SendingAuthEmailSerializer(serializers.Serializer):
 class CheckEmailDuplicateSerializer(serializers.Serializer):
     data = serializers.CharField()
 
-    def validate_data(self, data):
-        if CtrlfUser.objects.filter(email=data).exists():
-            raise ValidationError("이미 존재하는 이메일 입니다.", code=404)
+    def validate_data(self, input_email):
+        if CtrlfUser.objects.filter(email=input_email).exists():
+            raise ValidationError("이미 존재하는 이메일 입니다.", code=status.HTTP_404_NOT_FOUND)
         try:
-            validate_email(data)
+            validate_email(input_email)
         except DjangoValidationError:
-            raise DjangoValidationError("이메일 형식이 유효하지 않습니다.", code=400)
-        return data
+            raise DjangoValidationError("이메일 형식이 유효하지 않습니다.", code=status.HTTP_400_BAD_REQUEST)
+        return input_email
