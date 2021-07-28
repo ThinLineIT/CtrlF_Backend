@@ -4,6 +4,7 @@ from ctrlf_auth.helpers import generate_auth_code
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from django.test import Client, TestCase
 from django.urls import reverse
+from rest_framework import status
 
 
 class TestLogin(TestCase):
@@ -132,7 +133,7 @@ class TestNicknameDuplicate(TestCase):
         response = self._call_api(valid_nickname)
 
         # Then
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["message"], "사용 가능한 닉네임입니다.")
 
     def test_check_nickname_duplicate_should_return_400_on_duplicate_nickname(self):
@@ -144,5 +145,5 @@ class TestNicknameDuplicate(TestCase):
         response = self._call_api(duplicate_nickname)
 
         # Then
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["message"], "이미 존재하는 닉네임입니다.")
