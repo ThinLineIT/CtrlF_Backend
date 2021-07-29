@@ -73,3 +73,12 @@ class SendingAuthEmailSerializer(serializers.Serializer):
         except DjangoValidationError:
             raise DjangoValidationError("유효하지 않은 이메일 형식 입니다.")
         return email
+
+
+class NicknameDuplicateSerializer(serializers.Serializer):
+    data = serializers.CharField(max_length=30)
+
+    def validate_data(self, data):
+        if CtrlfUser.objects.filter(nickname=data).exists():
+            raise ValidationError("이미 존재하는 닉네임입니다.")
+        return data
