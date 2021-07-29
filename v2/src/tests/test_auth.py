@@ -149,3 +149,51 @@ class TestNicknameDuplicate(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         # And: "이미 존재하는 닉네임입니다."라는 메시지를 리턴한다.
         self.assertEqual(response.data["message"], "이미 존재하는 닉네임입니다.")
+
+    def test_check_nickname_duplicate_should_return_400_on_containing_white_space(self):
+        # Given: 공백이 포함된 닉네임이 주어진다.
+        invalid_nickname = "nick name"
+
+        # When: check nickname duplicate api를 호출한다.
+        response = self._call_api(invalid_nickname)
+
+        # Then: status code 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And : "전달 된 값이 올바르지 않습니다.\n영어,숫자,한글2~10자\n특수문자x\n공백x"라는 메시지를 리턴한다.
+        self.assertEqual(response.data["message"], "전달 된 값이 올바르지 않습니다.\n영어,숫자,한글2~10자\n특수문자x\n공백x")
+
+    def test_check_nickname_duplicate_should_return_400_on_containing_special_character(self):
+        # Given: 특수문자가 포함된 닉네임이 주어진다.
+        invalid_nickname = "nickname!!"
+
+        # When: check nickname duplicate api를 호출한다.
+        response = self._call_api(invalid_nickname)
+
+        # Then: status code 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And : "전달 된 값이 올바르지 않습니다.\n영어,숫자,한글2~10자\n특수문자x\n공백x"라는 메시지를 리턴한다.
+        self.assertEqual(response.data["message"], "전달 된 값이 올바르지 않습니다.\n영어,숫자,한글2~10자\n특수문자x\n공백x")
+
+    def test_check_nickname_duplicate_should_return_400_on_length_less_than_2(self):
+        # Given: 길이가 2보다 작은 닉네임이 주어진다.
+        invalid_nickname = "K"
+
+        # When: check nickname duplicate api를 호출한다.
+        response = self._call_api(invalid_nickname)
+
+        # Then: status code 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And : "전달 된 값이 올바르지 않습니다.\n영어,숫자,한글2~10자\n특수문자x\n공백x"라는 메시지를 리턴한다.
+        self.assertEqual(response.data["message"], "전달 된 값이 올바르지 않습니다.\n영어,숫자,한글2~10자\n특수문자x\n공백x")
+
+    def test_check_nickname_duplicate_should_return_400_on_length_more_than_10(self):
+        # Given: 길이가 10보다 큰 닉네임이 주어진다.
+        invalid_nickname = "미안하다이거보여주려고어그로끌었다"
+
+        # When: check nickname duplicate api를 호출한다.
+        response = self._call_api(invalid_nickname)
+
+        # Then: status code 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And : "전달 된 값이 올바르지 않습니다.\n영어,숫자,한글2~10자\n특수문자x\n공백x"라는 메시지를 리턴한다.
+        self.assertEqual(response.data["message"], "전달 된 값이 올바르지 않습니다.\n영어,숫자,한글2~10자\n특수문자x\n공백x")

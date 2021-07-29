@@ -75,9 +75,11 @@ class SendingAuthEmailSerializer(serializers.Serializer):
 
 
 class NicknameDuplicateSerializer(serializers.Serializer):
-    data = serializers.CharField(max_length=30)
+    _INVALID_ERR_MESSAGE = "전달 된 값이 올바르지 않습니다.\n영어,숫자,한글2~10자\n특수문자x\n공백x"
+    _VALID_REGEX = "^[a-zA-Z0-9ㅏ-ㅣㄱ-ㅎ가-힣]{2,10}$"
+    data = serializers.RegexField(regex=_VALID_REGEX, error_messages={"invalid": _INVALID_ERR_MESSAGE})
 
-    def validate_data(self, data):
-        if CtrlfUser.objects.filter(nickname=data).exists():
+    def validate_data(self, nickname):
+        if CtrlfUser.objects.filter(nickname=nickname).exists():
             raise ValidationError("이미 존재하는 닉네임입니다.")
-        return data
+        return nickname
