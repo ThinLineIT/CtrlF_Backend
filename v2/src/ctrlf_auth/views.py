@@ -2,6 +2,7 @@ from ctrlf_auth.helpers import generate_auth_code
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import (
     LoginSerializer,
+    NicknameDuplicateSerializer,
     SendingAuthEmailSerializer,
     SignUpSerializer,
 )
@@ -13,7 +14,6 @@ from rest_framework_jwt.views import ObtainJSONWebToken
 
 
 class LoginAPIView(ObtainJSONWebToken):
-
     serializer_class = LoginSerializer
 
     @swagger_auto_schema(method="post")
@@ -63,6 +63,17 @@ class TempDeleteEmailView(APIView):
             user = CtrlfUser.objects.get(email=serializer.data["email"])
             user.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CheckNicknameDuplicateView(APIView):
+    _SUCCESS_MSG = "사용 가능한 닉네임입니다."
+
+    @swagger_auto_schema(query_serializer=NicknameDuplicateSerializer)
+    def get(self, request):
+        nickname = request.query_params
+        serializer = NicknameDuplicateSerializer(data=nickname)
+        if serializer.is_valid():
+            return Response(data={"message": self._SUCCESS_MSG}, status=status.HTTP_200_OK)
         else:
             for _, message in serializer.errors.items():
                 message = message[0]

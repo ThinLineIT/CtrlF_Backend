@@ -4,6 +4,7 @@ from ctrlf_auth.helpers import generate_auth_code
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from django.test import Client, TestCase
 from django.urls import reverse
+from rest_framework import status
 
 
 class TestLogin(TestCase):
@@ -115,3 +116,36 @@ class TestGenerateAuthCode(TestCase):
         code = generate_auth_code()
         self.assertEqual(len(code), 8)
         self.assertRegexpMatches(code, "[a-zA-Z0-9]")
+
+
+class TestNicknameDuplicate(TestCase):
+    def setUp(self) -> None:
+        self.c = Client()
+
+    def _call_api(self, nickname):
+        return self.c.get(reverse("auth:check_nickname_duplicate"), {"data": nickname})
+
+    def test_check_nickname_duplicate_should_return_200_on_success(self):
+        # Given: 유효한 닉네임이 주어진다.
+        valid_nickname = "nickname"
+
+        # When: check nickname duplicate api를 호출한다.
+        response = self._call_api(valid_nickname)
+
+        # Then: status code 200을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: "사용 가능한 닉네임입니다."라는 메시지를 리턴한다.
+        self.assertEqual(response.data["message"], "사용 가능한 닉네임입니다.")
+
+    def test_check_nickname_duplicate_should_return_400_on_duplicate_nickname(self):
+        # Given: "test_nickname"이라는 닉네임을 가진 user와, 중복된 닉네임이 주어진다.
+        CtrlfUser.objects.create(email="test123@naver.com", password="12345", nickname="nickname")
+        duplicate_nickname = "nickname"
+
+        # When: check nickname duplicate api를 호출한다.
+        response = self._call_api(duplicate_nickname)
+
+        # Then: status code 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And: "이미 존재하는 닉네임입니다."라는 메시지를 리턴한다.
+        self.assertEqual(response.data["message"], "이미 존재하는 닉네임입니다.")
