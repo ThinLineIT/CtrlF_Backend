@@ -1,5 +1,5 @@
 from ctrlf_auth.helpers import generate_auth_code
-from ctrlf_auth.models import EmailAuthCode
+from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import (
     LoginSerializer,
     SendingAuthEmailSerializer,
@@ -49,6 +49,20 @@ class SendingAuthEmailView(APIView):
                 # TODO: 메일발송 실패 로그 남기기
                 pass
             return Response(status=status.HTTP_200_OK)
+        else:
+            for _, message in serializer.errors.items():
+                message = message[0]
+        return Response(data={"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TempDeleteEmailView(APIView):
+    @swagger_auto_schema(request_body=SendingAuthEmailSerializer)
+    def delete(self, request):
+        serializer = SendingAuthEmailSerializer(data=request.data)
+        if serializer.is_valid():
+            user = CtrlfUser.objects.get(email=serializer.data["email"])
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             for _, message in serializer.errors.items():
                 message = message[0]
