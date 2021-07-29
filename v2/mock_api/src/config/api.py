@@ -84,7 +84,7 @@ def retrieve_notes_list(request, cursor: int):
     return (
         200,
         NoteResponse(
-            next_cursor=cursor + 15,
+            next_cursor=cursor + 30,
             notes=[
                 {"id": 1 + cursor, "title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
                 {"id": 2 + cursor, "title": "자료구조", "status": "NOT_APPROVED"},
@@ -100,6 +100,22 @@ def retrieve_notes_list(request, cursor: int):
                 {"id": 12 + cursor, "title": "자료구조", "status": "NOT_APPROVED"},
                 {"id": 13 + cursor, "title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
                 {"id": 14 + cursor, "title": "컴퓨터 구조", "status": "APPROVED"},
+                {"id": 15 + cursor, "title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
+                {"id": 16 + cursor, "title": "자료구조", "status": "NOT_APPROVED"},
+                {"id": 17 + cursor, "title": "알고리즘", "status": "APPROVED"},
+                {"id": 18 + cursor, "title": "운영체제", "status": "APPROVED"},
+                {"id": 19 + cursor, "title": "컴퓨터 구조", "status": "APPROVED"},
+                {"id": 20 + cursor, "title": "컴파일러", "status": "APPROVED"},
+                {"id": 21 + cursor, "title": "이산수학", "status": "APPROVED"},
+                {"id": 22 + cursor, "title": "디지털 논리 회로", "status": "APPROVED"},
+                {"id": 23 + cursor, "title": "프로그래밍 언어", "status": "APPROVED"},
+                {"id": 24 + cursor, "title": "소프트웨어 공학", "status": "APPROVED"},
+                {"id": 25 + cursor, "title": "알고리즘", "status": "APPROVED"},
+                {"id": 26 + cursor, "title": "자료구조", "status": "NOT_APPROVED"},
+                {"id": 27 + cursor, "title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
+                {"id": 28 + cursor, "title": "컴퓨터 구조", "status": "APPROVED"},
+                {"id": 29 + cursor, "title": "자료구조", "status": "NOT_APPROVED"},
+                {"id": 30 + cursor, "title": "알고리즘", "status": "APPROVED"},
             ],
         ),
     )
