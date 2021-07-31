@@ -167,7 +167,7 @@ class ErrorLogout404Response(Schema):
 class Note(Schema):
     id: int
     title: str
-    status: str
+    is_approved: bool
 
 
 class NoteResponse(Schema):
@@ -179,20 +179,36 @@ class NoteResponse(Schema):
             "example": {
                 "next_cursor": 30,
                 "notes": [
-                    {"id": 1, "title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
-                    {"id": 2, "title": "자료구조", "status": "NOT_APPROVED"},
-                    {"id": 3, "title": "알고리즘", "status": "APPROVED"},
-                    {"id": 4, "title": "운영체제", "status": "APPROVED"},
-                    {"id": 5, "title": "컴퓨터 구조", "status": "APPROVED"},
-                    {"id": 6, "title": "컴파일러", "status": "APPROVED"},
-                    {"id": 7, "title": "이산수학", "status": "APPROVED"},
-                    {"id": 8, "title": "디지털 논리 회로", "status": "APPROVED"},
-                    {"id": 9, "title": "프로그래밍 언어", "status": "APPROVED"},
-                    {"id": 10, "title": "소프트웨어 공학", "status": "APPROVED"},
-                    {"id": 11, "title": "알고리즘", "status": "APPROVED"},
-                    {"id": 12, "title": "자료구조", "status": "NOT_APPROVED"},
-                    {"id": 13, "title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
-                    {"id": 14, "title": "컴퓨터 구조", "status": "APPROVED"},
+                    {"id": 1, "title": "컴퓨터 네트워크", "is_approved": False},
+                    {"id": 2, "title": "자료구조", "is_approved": False},
+                    {"id": 3, "title": "알고리즘", "is_approved": True},
+                    {"id": 4, "title": "운영체제", "is_approved": True},
+                    {"id": 5, "title": "컴퓨터 구조", "is_approved": True},
+                    {"id": 6, "title": "컴파일러", "is_approved": True},
+                    {"id": 7, "title": "이산수학", "is_approved": True},
+                    {"id": 8, "title": "디지털 논리 회로", "is_approved": True},
+                    {"id": 9, "title": "프로그래밍 언어", "is_approved": True},
+                    {"id": 10, "title": "소프트웨어 공학", "is_approved": True},
+                    {"id": 11, "title": "알고리즘", "is_approved": True},
+                    {"id": 12, "title": "자료구조", "is_approved": False},
+                    {"id": 13, "title": "컴퓨터 네트워크", "is_approved": False},
+                    {"id": 14, "title": "컴퓨터 구조", "is_approved": True},
+                    {"id": 15, "title": "컴퓨터 네트워크", "is_approved": False},
+                    {"id": 16, "title": "자료구조", "is_approved": False},
+                    {"id": 17, "title": "알고리즘", "is_approved": True},
+                    {"id": 18, "title": "운영체제", "is_approved": True},
+                    {"id": 19, "title": "컴퓨터 구조", "is_approved": True},
+                    {"id": 20, "title": "컴파일러", "is_approved": True},
+                    {"id": 21, "title": "이산수학", "is_approved": True},
+                    {"id": 22, "title": "디지털 논리 회로", "is_approved": True},
+                    {"id": 23, "title": "프로그래밍 언어", "is_approved": True},
+                    {"id": 24, "title": "소프트웨어 공학", "is_approved": True},
+                    {"id": 25, "title": "알고리즘", "is_approved": True},
+                    {"id": 26, "title": "자료구조", "is_approved": False},
+                    {"id": 27, "title": "컴퓨터 네트워크", "is_approved": False},
+                    {"id": 28, "title": "컴퓨터 구조", "is_approved": True},
+                    {"id": 29, "title": "자료구조", "is_approved": False},
+                    {"id": 30, "title": "알고리즘", "is_approved": True},
                 ],
             }
         }
