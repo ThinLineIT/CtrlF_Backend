@@ -170,7 +170,7 @@ class Note(Schema):
     is_approved: bool
 
 
-class NoteResponse(Schema):
+class NoteListResponse(Schema):
     next_cursor: int
     notes: List[Note]
 
