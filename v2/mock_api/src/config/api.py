@@ -25,6 +25,9 @@ from config.schema import (
     SendEmailAuthOut,
     SignUpRequestIn,
     SignUpRequestOut,
+    VerificationCodeCheck400Response,
+    VerificationCodeCheckResponse,
+    VerificationCodeRequestBody,
 )
 from ninja import NinjaAPI, Router
 
@@ -137,3 +140,12 @@ def retrieve_main_etc_info(request):
 @api.post("/notes", summary="note 생성", response={201: NoteCreateResponse, 400: ErrorNoteCreate400Response})
 def create_note(request, request_body: NoteRequestBody):
     return 201, {"message": "Note가 생성 되었습니다."}
+
+
+@api.post(
+    "/verification-code/check",
+    summary="인증코드 검증",
+    response={200: VerificationCodeCheckResponse, 400: VerificationCodeCheck400Response},
+)
+def check_valid_verification_code(request, request_body: VerificationCodeRequestBody):
+    return 200, {"message": "유효한 인증코드 입니다."}
