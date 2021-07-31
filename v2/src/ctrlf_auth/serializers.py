@@ -76,7 +76,7 @@ class SendingAuthEmailSerializer(serializers.Serializer):
 
 class NicknameDuplicateSerializer(serializers.Serializer):
     _INVALID_ERR_MESSAGE = "전달 된 값이 올바르지 않습니다.\n영어,숫자,한글2~10자\n특수문자x\n공백x"
-    _VALID_REGEX = "^[a-zA-Z0-9ㅏ-ㅣㄱ-ㅎ가-힣]{2,10}$"
+    _VALID_REGEX = "^[a-zA-Z0-9가-힣]{2,10}$"
     data = serializers.RegexField(regex=_VALID_REGEX, error_messages={"invalid": _INVALID_ERR_MESSAGE})
 
     def validate_data(self, nickname):
