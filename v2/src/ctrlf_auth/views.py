@@ -1,6 +1,7 @@
 from ctrlf_auth.helpers import generate_auth_code
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import (
+    CheckEmailDuplicateSerializer,
     LoginSerializer,
     NicknameDuplicateSerializer,
     SendingAuthEmailSerializer,
@@ -78,3 +79,16 @@ class CheckNicknameDuplicateView(APIView):
             for _, message in serializer.errors.items():
                 message = message[0]
         return Response(data={"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CheckEmailDuplicateView(APIView):
+    @swagger_auto_schema(query_serializer=CheckEmailDuplicateSerializer)
+    def get(self, request):
+        serializer = CheckEmailDuplicateSerializer(data=request.query_params)
+
+        if serializer.is_valid():
+            return Response({"message": "사용 가능한 이메일 입니다."}, status=status.HTTP_200_OK)
+        else:
+            for _, message in serializer.errors.items():
+                err = message[0]
+            return Response({"message": err}, status=err.code)
