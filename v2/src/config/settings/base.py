@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "ctrlf_auth",
     "corsheaders",
+    "ctrlfbe",
 ]
 
 MIDDLEWARE = [
