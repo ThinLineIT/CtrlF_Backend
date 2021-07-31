@@ -18,9 +18,10 @@ from config.schema import (
     LogoutResponse,
     MainEtcInfoResponse,
     NickNameDuplicateCheckOut,
+    Note,
     NoteCreateResponse,
+    NoteListResponse,
     NoteRequestBody,
-    NoteResponse,
     SendEmailAuthIn,
     SendEmailAuthOut,
     SignUpRequestIn,
@@ -82,11 +83,52 @@ def logout(request, request_body: LogoutRequest):
     return 200, {"message": "로그아웃 되었습니다."}
 
 
-@api.get("/notes", summary="전체 Note 리스트", response={200: NoteResponse})
+@api.get("/notes/{note_id}", summary="Note 디테일 API", response={200: Note})
+def retrieve_notes(request, note_id: int):
+    temp_note_map = {
+        1: {"id": note_id, "title": "컴퓨터 네트워크", "is_approved": False},
+        2: {"id": note_id, "title": "자료구조", "is_approved": False},
+        3: {"id": note_id, "title": "알고리즘", "is_approved": True},
+        4: {"id": note_id, "title": "운영체제", "is_approved": True},
+        5: {"id": note_id, "title": "컴퓨터 구조", "is_approved": True},
+        6: {"id": note_id, "title": "컴파일러", "is_approved": True},
+        7: {"id": note_id, "title": "이산수학", "is_approved": True},
+        8: {"id": note_id, "title": "디지털 논리 회로", "is_approved": True},
+        9: {"id": note_id, "title": "프로그래밍 언어", "is_approved": True},
+        10: {"id": note_id, "title": "소프트웨어 공학", "is_approved": True},
+        11: {"id": note_id, "title": "알고리즘", "is_approved": True},
+        12: {"id": note_id, "title": "자료구조", "is_approved": False},
+        13: {"id": note_id, "title": "컴퓨터 네트워크", "is_approved": False},
+        14: {"id": note_id, "title": "컴퓨터 구조", "is_approved": True},
+        15: {"id": note_id, "title": "컴퓨터 네트워크", "is_approved": False},
+        16: {"id": note_id, "title": "자료구조", "is_approved": False},
+        17: {"id": note_id, "title": "알고리즘", "is_approved": True},
+        18: {"id": note_id, "title": "운영체제", "is_approved": True},
+        19: {"id": note_id, "title": "컴퓨터 구조", "is_approved": True},
+        20: {"id": note_id, "title": "컴파일러", "is_approved": True},
+        21: {"id": note_id, "title": "이산수학", "is_approved": True},
+        22: {"id": note_id, "title": "디지털 논리 회로", "is_approved": True},
+        23: {"id": note_id, "title": "프로그래밍 언어", "is_approved": True},
+        24: {"id": note_id, "title": "소프트웨어 공학", "is_approved": True},
+        25: {"id": note_id, "title": "알고리즘", "is_approved": True},
+        26: {"id": note_id, "title": "자료구조", "is_approved": False},
+        27: {"id": note_id, "title": "컴퓨터 네트워크", "is_approved": False},
+        28: {"id": note_id, "title": "컴퓨터 구조", "is_approved": True},
+        29: {"id": note_id, "title": "자료구조", "is_approved": False},
+    }
+    result = note_id % 30
+
+    if result:
+        return 200, temp_note_map[result]
+    else:
+        return 200, {"id": note_id, "title": "알고리즘", "is_approved": True}
+
+
+@api.get("/notes", summary="전체 Note 리스트", response={200: NoteListResponse})
 def retrieve_notes_list(request, cursor: int):
     return (
         200,
-        NoteResponse(
+        NoteListResponse(
             next_cursor=cursor + 30,
             notes=[
                 {"id": 1 + cursor, "title": "컴퓨터 네트워크", "is_approved": False},
