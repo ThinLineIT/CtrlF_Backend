@@ -5,6 +5,8 @@ from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 
 class TestLogin(TestCase):
@@ -236,3 +238,22 @@ class TestCheckEmailDuplicate(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         # And   : 메세지는 "이미 존재하는 이메일 입니다." 이어야 함.
         self.assertEqual(response.data["message"], "이미 존재하는 이메일 입니다.")
+
+
+class MockAuthAPI(APIView):
+    def get(self, request):
+        return Response(status=status.HTTP_200_OK)
+
+
+class TestJWTAuth(TestCase):
+    def setUp(self):
+        self.c = Client()
+
+    def _call_mock_api(self):
+        return self.c.get(reverse("auth:mock_auth_api"))
+
+    def test_jwt_auth_on_success(self):
+        # When: 인증이 필수인 mock api를 호출 했을 때,
+        response = self._call_mock_api()
+        # Then: 200을 리턴해야한다
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
