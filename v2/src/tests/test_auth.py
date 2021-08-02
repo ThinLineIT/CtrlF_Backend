@@ -1,7 +1,9 @@
 from unittest.mock import patch
 
+from ctrlf_auth.authentication import CtrlfAuthentication
 from ctrlf_auth.helpers import generate_auth_code
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
+from ctrlf_auth.serializers import LoginSerializer
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -241,6 +243,8 @@ class TestCheckEmailDuplicate(TestCase):
 
 
 class MockAuthAPI(APIView):
+    authentication_classes = [CtrlfAuthentication]
+
     def get(self, request):
         return Response(status=status.HTTP_200_OK)
 
@@ -249,11 +253,27 @@ class TestJWTAuth(TestCase):
     def setUp(self):
         self.c = Client()
 
-    def _call_mock_api(self):
-        return self.c.get(reverse("auth:mock_auth_api"))
+    def _call_mock_api(self, token):
+        return self.c.get(
+            reverse("auth:mock_auth_api"),
+            **{"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        )
 
     def test_jwt_auth_on_success(self):
+        # Given: kwon5604@naver.com email로 이미 가입이 되어 있고,
+        data = {
+            "email": "kwon5604@naver.com",
+            "password": "1234",
+        }
+        CtrlfUser.objects.create_user(**data)
+        # And: login 하여서 token을 발급 받은 상황 일 때,
+        serializer = LoginSerializer()
+        serialized = serializer.validate(data)
+
         # When: 인증이 필수인 mock api를 호출 했을 때,
-        response = self._call_mock_api()
+        response = self._call_mock_api(token=serialized["token"])
+
         # Then: 200을 리턴해야한다
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # # And: 토큰 payload에 일치하는 ctrlf user instance를 리턴해야한다
+        # self.assertEqual(json.loads(response.content), user)
