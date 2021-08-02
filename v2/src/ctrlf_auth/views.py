@@ -71,6 +71,7 @@ class CheckEmailDuplicateView(APIView):
 
 
 class CheckVerificationCodeView(APIView):
+    @swagger_auto_schema(request_body=CheckVerificationCodeSerializer)
     def post(self, request):
         serializer = CheckVerificationCodeSerializer(data=request.data)
 
