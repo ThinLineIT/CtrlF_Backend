@@ -97,3 +97,12 @@ class CheckEmailDuplicateSerializer(serializers.Serializer):
         except DjangoValidationError:
             raise DjangoValidationError("이메일 형식이 유효하지 않습니다.", code=status.HTTP_400_BAD_REQUEST)
         return input_email
+
+
+class CheckVerificationCodeSerializer(serializers.Serializer):
+    code = serializers.CharField()
+
+    def validate_code(self, code):
+        if not EmailAuthCode.objects.filter(code=code).exists():
+            raise ValidationError("인증코드가 올바르지 않습니다.")
+        return code

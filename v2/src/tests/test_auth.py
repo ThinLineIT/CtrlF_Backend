@@ -236,3 +236,34 @@ class TestCheckEmailDuplicate(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         # And   : 메세지는 "이미 존재하는 이메일 입니다." 이어야 함.
         self.assertEqual(response.data["message"], "이미 존재하는 이메일 입니다.")
+
+
+class TestCheckVerificationCode(TestCase):
+    def setUp(self):
+        self.c = Client()
+        self.code = generate_auth_code()
+        EmailAuthCode.objects.create(code=self.code)
+
+    def _call_api(self, request_body):
+        return self.c.post(reverse("auth:check_verification_code"), request_body)
+
+    def test_verification_code_should_return_200(self):
+        # Given: 일치하는 코드
+        request_body = {"code": self.code}
+        # When : API 실행
+        response = self._call_api(request_body)
+        # Then : 상태코드 200 리턴.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And  : 메세지는 "유효한 인증코드 입니다." 이어야 함.
+        self.assertEqual(response.data["message"], "유효한 인증코드 입니다.")
+
+    def test_verification_code_should_return_400_by_incorrect_verification_code(self):
+        # Given : 불일치하는 코드
+        incorrect_code = "incorrect"
+        request_body = {"code": incorrect_code}
+        # When  : API 실행
+        response = self._call_api(request_body)
+        # Then  : 상태코드 400 리턴.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And   : 메세지는 "인증코드가 올바르지 않습니다." 이어야 함.
+        self.assertEqual(response.data["message"], "인증코드가 올바르지 않습니다.")
