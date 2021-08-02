@@ -125,6 +125,7 @@ celerybeat.pid
 v2/src/config/.env
 v2/src/config/.env/
 .venv/
+.env
 env/
 venv/
 ENV/

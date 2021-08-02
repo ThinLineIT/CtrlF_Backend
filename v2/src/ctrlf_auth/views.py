@@ -2,6 +2,7 @@ from ctrlf_auth.helpers import generate_auth_code
 from ctrlf_auth.models import EmailAuthCode
 from ctrlf_auth.serializers import (
     CheckEmailDuplicateSerializer,
+    CheckVerificationCodeSerializer,
     LoginSerializer,
     SendingAuthEmailSerializer,
     SignUpSerializer,
@@ -67,3 +68,15 @@ class CheckEmailDuplicateView(APIView):
             for _, message in serializer.errors.items():
                 err = message[0]
             return Response({"message": err}, status=err.code)
+
+
+class CheckVerificationCodeView(APIView):
+    def post(self, request):
+        serializer = CheckVerificationCodeSerializer(data=request.data)
+
+        if serializer.is_valid():
+            return Response({"message": "유효한 인증코드 입니다."}, status=status.HTTP_200_OK)
+        else:
+            for _, message in serializer.errors.items():
+                err = message[0]
+            return Response({"message": err}, status=status.HTTP_400_BAD_REQUEST)

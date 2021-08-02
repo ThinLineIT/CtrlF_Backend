@@ -1,5 +1,6 @@
 from ctrlf_auth.views import (
     CheckEmailDuplicateView,
+    CheckVerificationCodeView,
     LoginAPIView,
     SendingAuthEmailView,
     SignUpAPIView,
@@ -13,4 +14,5 @@ urlpatterns = [
     path("signup/email", SendingAuthEmailView.as_view(), name="sending_auth_email"),
     path("login/", LoginAPIView.as_view(), name="login"),
     path("signup/email/duplicate", CheckEmailDuplicateView.as_view(), name="check_email_duplicate"),
+    path("verification-code/check", CheckVerificationCodeView.as_view(), name="check_verification_code"),
 ]
