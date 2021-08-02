@@ -1,3 +1,4 @@
+import json
 from unittest.mock import patch
 
 from ctrlf_auth.authentication import CtrlfAuthentication
@@ -246,7 +247,7 @@ class MockAuthAPI(APIView):
     authentication_classes = [CtrlfAuthentication]
 
     def get(self, request):
-        return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_200_OK, data={"email": request.user.email})
 
 
 class TestJWTAuth(TestCase):
@@ -265,7 +266,7 @@ class TestJWTAuth(TestCase):
             "email": "kwon5604@naver.com",
             "password": "1234",
         }
-        CtrlfUser.objects.create_user(**data)
+        user = CtrlfUser.objects.create_user(**data)
         # And: login 하여서 token을 발급 받은 상황 일 때,
         serializer = LoginSerializer()
         serialized = serializer.validate(data)
@@ -275,5 +276,5 @@ class TestJWTAuth(TestCase):
 
         # Then: 200을 리턴해야한다
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # # And: 토큰 payload에 일치하는 ctrlf user instance를 리턴해야한다
-        # self.assertEqual(json.loads(response.content), user)
+        # And: 토큰 payload에 일치하는 ctrlf user instance를 리턴해야한
+        self.assertEqual(json.loads(response.content)["email"], user.email)
