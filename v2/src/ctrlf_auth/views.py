@@ -1,3 +1,5 @@
+from typing import List
+
 from ctrlf_auth.helpers import generate_auth_code
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import (
@@ -16,6 +18,8 @@ from rest_framework_jwt.views import ObtainJSONWebToken
 
 
 class LoginAPIView(ObtainJSONWebToken):
+    authentication_classes: List[str] = []
+
     serializer_class = LoginSerializer
 
     @swagger_auto_schema(method="post")
@@ -26,6 +30,8 @@ class LoginAPIView(ObtainJSONWebToken):
 
 
 class SignUpAPIView(APIView):
+    authentication_classes: List[str] = []
+
     _SIGNUP_MSG = "환영합니다.\n가입이 완료되었습니다\n\n로그인 후 이용해주세요."
 
     @swagger_auto_schema(request_body=SignUpSerializer)
@@ -41,6 +47,8 @@ class SignUpAPIView(APIView):
 
 
 class SendingAuthEmailView(APIView):
+    authentication_classes: List[str] = []
+
     @swagger_auto_schema(request_body=SendingAuthEmailSerializer)
     def post(self, request, *args, **kwargs):
         serializer = SendingAuthEmailSerializer(data=request.data)
@@ -58,6 +66,8 @@ class SendingAuthEmailView(APIView):
 
 
 class TempDeleteEmailView(APIView):
+    authentication_classes: List[str] = []
+
     @swagger_auto_schema(request_body=SendingAuthEmailSerializer)
     def delete(self, request):
         serializer = SendingAuthEmailSerializer(data=request.data)
@@ -68,6 +78,8 @@ class TempDeleteEmailView(APIView):
 
 
 class CheckNicknameDuplicateView(APIView):
+    authentication_classes: List[str] = []
+
     _SUCCESS_MSG = "사용 가능한 닉네임입니다."
 
     @swagger_auto_schema(query_serializer=NicknameDuplicateSerializer)
@@ -83,6 +95,8 @@ class CheckNicknameDuplicateView(APIView):
 
 
 class CheckEmailDuplicateView(APIView):
+    authentication_classes: List[str] = []
+
     @swagger_auto_schema(query_serializer=CheckEmailDuplicateSerializer)
     def get(self, request):
         serializer = CheckEmailDuplicateSerializer(data=request.query_params)
@@ -96,6 +110,8 @@ class CheckEmailDuplicateView(APIView):
 
 
 class CheckVerificationCodeView(APIView):
+    authentication_classes: List[str] = []
+
     @swagger_auto_schema(request_body=CheckVerificationCodeSerializer)
     def post(self, request):
         serializer = CheckVerificationCodeSerializer(data=request.data)
