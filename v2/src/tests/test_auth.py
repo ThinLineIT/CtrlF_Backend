@@ -254,11 +254,12 @@ class TestJWTAuth(TestCase):
     def setUp(self):
         self.c = Client()
 
-    def _call_mock_api(self, token):
-        return self.c.get(
-            reverse("auth:mock_auth_api"),
-            **{"HTTP_AUTHORIZATION": f"Bearer {token}"},
-        )
+    def _call_mock_api(self, token=None):
+        if token:
+            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        else:
+            header = {}
+        return self.c.get(reverse("auth:mock_auth_api"), **header)
 
     def test_jwt_auth_on_success(self):
         # Given: kwon5604@naver.com email로 이미 가입이 되어 있고,
@@ -278,3 +279,21 @@ class TestJWTAuth(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And: 토큰 payload에 일치하는 ctrlf user instance를 리턴해야한
         self.assertEqual(json.loads(response.content)["email"], user.email)
+
+    def test_jwt_auth_should_return_401_unauthorized_on_not_including_auth_header(self):
+        # When: 로그인이 되지 않은 상황(토큰없음) 인증이 필수인 mock api를 호출 했을 때,
+        response = self._call_mock_api()
+
+        # Then: 401을 리턴해야한다
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        # And: 인증이 유효하지 않습니다. 메세지를 리턴해야한다
+        self.assertEqual(json.loads(response.content)["message"], "인증이 유효하지 않습니다.")
+
+    def test_jwt_auth_should_return_401_unauthorized_on_token_is_invalid(self):
+        # When: 유효하지 않은 토큰으로 인증이 필수인 mock api를 호출 했을 때,
+        response = self._call_mock_api(token="invalid_token")
+
+        # Then: 401을 리턴해야한다
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        # And: 인증이 유효하지 않습니다. 메세지를 리턴해야한다
+        self.assertEqual(json.loads(response.content)["message"], "인증이 유효하지 않습니다.")
