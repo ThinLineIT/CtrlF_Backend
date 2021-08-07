@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "ctrlf_auth",
     "corsheaders",
+    "ctrlfbe",
 ]
 
 MIDDLEWARE = [
@@ -155,3 +156,8 @@ CORS_ALLOW_HEADERS = (
     "x-csrftoken",
     "x-requested-with",
 )
+
+REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "src.common.exceptions.custom_exception_handler",
+    "DEFAULT_AUTHENTICATION_CLASSES": ["ctrlf_auth.authentication.CtrlfAuthentication"],
+}

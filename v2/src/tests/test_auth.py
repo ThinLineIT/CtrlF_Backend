@@ -1,10 +1,15 @@
+import json
 from unittest.mock import patch
 
+from ctrlf_auth.authentication import CtrlfAuthentication
 from ctrlf_auth.helpers import generate_auth_code
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
+from ctrlf_auth.serializers import LoginSerializer
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 
 class TestLogin(TestCase):
@@ -236,3 +241,59 @@ class TestCheckEmailDuplicate(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         # And   : 메세지는 "이미 존재하는 이메일 입니다." 이어야 함.
         self.assertEqual(response.data["message"], "이미 존재하는 이메일 입니다.")
+
+
+class MockAuthAPI(APIView):
+    authentication_classes = [CtrlfAuthentication]
+
+    def get(self, request):
+        return Response(status=status.HTTP_200_OK, data={"email": request.user.email})
+
+
+class TestJWTAuth(TestCase):
+    def setUp(self):
+        self.c = Client()
+
+    def _call_mock_api(self, token=None):
+        if token:
+            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        else:
+            header = {}
+        return self.c.get(reverse("auth:mock_auth_api"), **header)
+
+    def test_jwt_auth_on_success(self):
+        # Given: kwon5604@naver.com email로 이미 가입이 되어 있고,
+        data = {
+            "email": "kwon5604@naver.com",
+            "password": "1234",
+        }
+        user = CtrlfUser.objects.create_user(**data)
+        # And: login 하여서 token을 발급 받은 상황 일 때,
+        serializer = LoginSerializer()
+        serialized = serializer.validate(data)
+
+        # When: 인증이 필수인 mock api를 호출 했을 때,
+        response = self._call_mock_api(token=serialized["token"])
+
+        # Then: 200을 리턴해야한다
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: 토큰 payload에 일치하는 ctrlf user instance를 리턴해야한
+        self.assertEqual(json.loads(response.content)["email"], user.email)
+
+    def test_jwt_auth_should_return_401_unauthorized_on_not_including_auth_header(self):
+        # When: 로그인이 되지 않은 상황(토큰없음) 인증이 필수인 mock api를 호출 했을 때,
+        response = self._call_mock_api()
+
+        # Then: 401을 리턴해야한다
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        # And: 인증이 유효하지 않습니다. 메세지를 리턴해야한다
+        self.assertEqual(json.loads(response.content)["message"], "인증이 유효하지 않습니다.")
+
+    def test_jwt_auth_should_return_401_unauthorized_on_token_is_invalid(self):
+        # When: 유효하지 않은 토큰으로 인증이 필수인 mock api를 호출 했을 때,
+        response = self._call_mock_api(token="invalid_token")
+
+        # Then: 401을 리턴해야한다
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        # And: 인증이 유효하지 않습니다. 메세지를 리턴해야한다
+        self.assertEqual(json.loads(response.content)["message"], "인증이 유효하지 않습니다.")
