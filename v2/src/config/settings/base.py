@@ -170,3 +170,5 @@ JWT_AUTH = {
     "JWT_ALLOW_REFRESH": True,
     "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=30),
 }
+
+SWAGGER_SETTINGS = {"SECURITY_DEFINITIONS": {"Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"}}}
