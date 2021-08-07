@@ -267,3 +267,14 @@ class TestCheckVerificationCode(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         # And   : 메세지는 "인증코드가 올바르지 않습니다." 이어야 함.
         self.assertEqual(response.data["message"], "인증코드가 올바르지 않습니다.")
+
+    def test_verification_code_should_return_400_by_incorrect_length_code(self):
+        # Given : 인증코드 최대길이를 넘어가는 코드
+        incorrect_code = "incorrect_length_code"
+        request_body = {"code": incorrect_code}
+        # When  : API 실행
+        response = self._call_api(request_body)
+        # Then  : 상태코드 400 리턴.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And   : 메세지는 "인증코드가 올바르지 않습니다." 이어야 함.
+        self.assertEqual(response.data["message"], "인증코드가 올바르지 않습니다.")

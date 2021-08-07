@@ -7,6 +7,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework_jwt.serializers import jwt_payload_handler
 from rest_framework_jwt.utils import jwt_encode_handler
 
+from .helpers import CODE_MAX_LENGTH
+
 
 class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, required=True, style={"input_type": "password"})
@@ -103,6 +105,12 @@ class CheckVerificationCodeSerializer(serializers.Serializer):
     code = serializers.CharField()
 
     def validate_code(self, code):
+        err_msg = "인증코드가 올바르지 않습니다."
+
+        if len(code) > CODE_MAX_LENGTH:
+            raise ValidationError(err_msg)
+
         if not EmailAuthCode.objects.filter(code=code).exists():
-            raise ValidationError("인증코드가 올바르지 않습니다.")
+            raise ValidationError(err_msg)
+
         return code
