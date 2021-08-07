@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import os
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -158,6 +159,15 @@ CORS_ALLOW_HEADERS = (
 )
 
 REST_FRAMEWORK = {
-    "EXCEPTION_HANDLER": "src.common.exceptions.custom_exception_handler",
-    "DEFAULT_AUTHENTICATION_CLASSES": ["ctrlf_auth.authentication.CtrlfAuthentication"],
+    "EXCEPTION_HANDLER": "common.exceptions.custom_exception_handler",
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "ctrlf_auth.authentication.CtrlfAuthentication",
+    ],
+}
+
+JWT_AUTH = {
+    "JWT_EXPIRATION_DELTA": timedelta(days=7),
+    "JWT_ALLOW_REFRESH": True,
+    "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=30),
 }
