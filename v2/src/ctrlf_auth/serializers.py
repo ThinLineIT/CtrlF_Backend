@@ -102,15 +102,11 @@ class CheckEmailDuplicateSerializer(serializers.Serializer):
 
 
 class CheckVerificationCodeSerializer(serializers.Serializer):
-    code = serializers.CharField()
+    _err_msg = "인증코드가 올바르지 않습니다."
+
+    code = serializers.CharField(max_length=CODE_MAX_LENGTH, error_messages={"max_length": _err_msg})
 
     def validate_code(self, code):
-        err_msg = "인증코드가 올바르지 않습니다."
-
-        if len(code) > CODE_MAX_LENGTH:
-            raise ValidationError(err_msg)
-
         if not EmailAuthCode.objects.filter(code=code).exists():
-            raise ValidationError(err_msg)
-
+            raise ValidationError(self._err_msg)
         return code
