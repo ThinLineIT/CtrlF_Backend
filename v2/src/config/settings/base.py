@@ -161,7 +161,6 @@ CORS_ALLOW_HEADERS = (
 REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "common.exceptions.custom_exception_handler",
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
         "ctrlf_auth.authentication.CtrlfAuthentication",
     ],
 }
@@ -171,3 +170,5 @@ JWT_AUTH = {
     "JWT_ALLOW_REFRESH": True,
     "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=30),
 }
+
+SWAGGER_SETTINGS = {"SECURITY_DEFINITIONS": {"Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"}}}

@@ -27,4 +27,4 @@ class CtrlfAuthentication(BaseAuthentication):
         return CtrlfUser.objects.get(email=payload["email"]), raw_token
 
     def authenticate_header(self, request):
-        return "Basic realm='api'"
+        return "Bearer realm='api'"
