@@ -1,6 +1,7 @@
 import jwt
 from ctrlf_auth.models import CtrlfUser
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_jwt.settings import api_settings
 
 
@@ -13,6 +14,17 @@ class CtrlfAuthentication(BaseAuthentication):
         )
 
     def authenticate(self, request):
-        auth_key, raw_token = get_authorization_header(request).split()
-        payload = self._decode_token(raw_token)
+        try:
+            auth_key, raw_token = get_authorization_header(request).split()
+        except ValueError:
+            raise AuthenticationFailed("인증이 유효하지 않습니다.")
+
+        try:
+            payload = self._decode_token(raw_token)
+        except jwt.DecodeError:
+            raise AuthenticationFailed("인증이 유효하지 않습니다.")
+
         return CtrlfUser.objects.get(email=payload["email"]), raw_token
+
+    def authenticate_header(self, request):
+        return "Basic realm='api'"
