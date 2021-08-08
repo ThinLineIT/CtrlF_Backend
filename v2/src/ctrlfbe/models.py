@@ -1,3 +1,4 @@
+from common.models import CommonTimestamp
 from ctrlf_auth.models import CtrlfUser
 from django.db import models
 
@@ -21,7 +22,7 @@ class CtrlfIssueStatus(models.TextChoices):
     CLOSED = "CLOSED", "닫힘"
 
 
-class ContentHistory(models.Model):
+class ContentHistory(CommonTimestamp):
     user = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="수정 혹은 삭제의 주체자")
     sub_id = models.IntegerField(help_text="type에 대한 id")
     type = models.CharField(max_length=30, choices=CtrlfContentType.choices, help_text="NOTE, TOPIC, PAGE")
@@ -32,7 +33,7 @@ class ContentHistory(models.Model):
         return f"{self.user}-{self.type}-{self.action}"
 
 
-class Note(models.Model):
+class Note(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)
     title = models.CharField(max_length=100)
     is_approved = models.BooleanField(default=False)
@@ -41,7 +42,7 @@ class Note(models.Model):
         return self.title
 
 
-class Topic(models.Model):
+class Topic(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)
     note = models.ForeignKey("Note", on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
@@ -51,7 +52,7 @@ class Topic(models.Model):
         return self.title
 
 
-class Page(models.Model):
+class Page(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)
     topic = models.ForeignKey("Topic", on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
@@ -61,7 +62,7 @@ class Page(models.Model):
         return self.title
 
 
-class Issue(models.Model):
+class Issue(CommonTimestamp):
     owner = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="이슈를 생성한 사람")
     content_history = models.ForeignKey(
         "ContentHistory", on_delete=models.CASCADE, help_text="Issue와 관련된 content " "history"
