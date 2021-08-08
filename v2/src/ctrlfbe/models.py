@@ -63,6 +63,13 @@ class Page(CommonTimestamp):
         return self.title
 
 
+class PageComment(CommonTimestamp):
+    user = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="페이지의 코멘트를 생성한 유저")
+    page = models.ForeignKey(Page, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+
+
 class Issue(CommonTimestamp):
     owner = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="이슈를 생성한 사람")
     content_request = models.ForeignKey(
