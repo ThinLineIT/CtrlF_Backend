@@ -26,7 +26,10 @@ class LoginAPIView(ObtainJSONWebToken):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response(data={"token": serializer.validated_data.get("token")}, status=status.HTTP_200_OK)
+        serialized = serializer.validated_data
+        return Response(
+            data={"token": serialized["token"], "user_id": serialized["user"].id}, status=status.HTTP_200_OK
+        )
 
 
 class SignUpAPIView(APIView):
