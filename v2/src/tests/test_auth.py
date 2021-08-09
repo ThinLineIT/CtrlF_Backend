@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 class TestLogin(TestCase):
     def setUp(self) -> None:
         self.c = Client()
-        CtrlfUser.objects.create_user(email="test123@naver.com", password="12345")
+        self.user = CtrlfUser.objects.create_user(email="test123@naver.com", password="12345")
 
     def _call_api(self):
         return self.c.post(reverse("auth:login"), {"email": "test123@naver.com", "password": "12345"})
@@ -24,9 +24,10 @@ class TestLogin(TestCase):
         response = self._call_api()
         self.assertEqual(response.status_code, 200)
 
-    def test_login_should_return_token(self):
+    def test_login_should_return_token_with_user_id(self):
         response = self._call_api()
         self.assertIn("token", response.data)
+        self.assertEqual(response.data["user_id"], self.user.id)
 
 
 class TestSignUp(TestCase):
