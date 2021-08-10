@@ -181,7 +181,7 @@ def retrieve_main_etc_info(request):
 
 @api.post("/notes", summary="note 생성", response={201: NoteCreateResponse, 400: ErrorNoteCreate400Response})
 def create_note(request, request_body: NoteRequestBody):
-    return 201, {"message": "Note가 생성 되었습니다."}
+    return 201, {"message": "새 Note가 생성 되었습니다."}
 
 
 @api.post(

@@ -241,7 +241,7 @@ class ErrorNoteCreate400Response(Schema):
     message: str
 
     class Config:
-        schema_extra = {"example": {"request body가 유효하지 않음": {"message": "타이틀과 요청 내용 설명을 채워주세요."}}}
+        schema_extra = {"example": {"request body가 유효하지 않음": {"message": "제목과 내용을 채워주세요."}}}
 
 
 class VerificationCodeCheckResponse(Schema):
