@@ -265,11 +265,11 @@ def retrieve_issue_list(request):
 
 
 @api.get(
-    "/topics",
+    "/notes/{note_id}/topics",
     summary="Topic 리스트 보기",
     response={200: List[TopicListOut]},
 )
-def retrieve_topic_list(request):
+def retrieve_topic_list(request, note_id):
     return 200, [
         {
             "id": 1,
