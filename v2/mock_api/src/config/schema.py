@@ -1,5 +1,7 @@
-from typing import List
+from datetime import datetime
+from typing import List, Optional
 
+from django.db import models
 from ninja import Schema
 
 
@@ -167,10 +169,10 @@ class ErrorLogout404Response(Schema):
 class Note(Schema):
     id: int
     title: str
-    status: str
+    is_approved: bool
 
 
-class NoteResponse(Schema):
+class NoteListResponse(Schema):
     next_cursor: int
     notes: List[Note]
 
@@ -179,20 +181,36 @@ class NoteResponse(Schema):
             "example": {
                 "next_cursor": 30,
                 "notes": [
-                    {"id": 1, "title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
-                    {"id": 2, "title": "자료구조", "status": "NOT_APPROVED"},
-                    {"id": 3, "title": "알고리즘", "status": "APPROVED"},
-                    {"id": 4, "title": "운영체제", "status": "APPROVED"},
-                    {"id": 5, "title": "컴퓨터 구조", "status": "APPROVED"},
-                    {"id": 6, "title": "컴파일러", "status": "APPROVED"},
-                    {"id": 7, "title": "이산수학", "status": "APPROVED"},
-                    {"id": 8, "title": "디지털 논리 회로", "status": "APPROVED"},
-                    {"id": 9, "title": "프로그래밍 언어", "status": "APPROVED"},
-                    {"id": 10, "title": "소프트웨어 공학", "status": "APPROVED"},
-                    {"id": 11, "title": "알고리즘", "status": "APPROVED"},
-                    {"id": 12, "title": "자료구조", "status": "NOT_APPROVED"},
-                    {"id": 13, "title": "컴퓨터 네트워크", "status": "NOT_APPROVED"},
-                    {"id": 14, "title": "컴퓨터 구조", "status": "APPROVED"},
+                    {"id": 1, "title": "컴퓨터 네트워크", "is_approved": False},
+                    {"id": 2, "title": "자료구조", "is_approved": False},
+                    {"id": 3, "title": "알고리즘", "is_approved": True},
+                    {"id": 4, "title": "운영체제", "is_approved": True},
+                    {"id": 5, "title": "컴퓨터 구조", "is_approved": True},
+                    {"id": 6, "title": "컴파일러", "is_approved": True},
+                    {"id": 7, "title": "이산수학", "is_approved": True},
+                    {"id": 8, "title": "디지털 논리 회로", "is_approved": True},
+                    {"id": 9, "title": "프로그래밍 언어", "is_approved": True},
+                    {"id": 10, "title": "소프트웨어 공학", "is_approved": True},
+                    {"id": 11, "title": "알고리즘", "is_approved": True},
+                    {"id": 12, "title": "자료구조", "is_approved": False},
+                    {"id": 13, "title": "컴퓨터 네트워크", "is_approved": False},
+                    {"id": 14, "title": "컴퓨터 구조", "is_approved": True},
+                    {"id": 15, "title": "컴퓨터 네트워크", "is_approved": False},
+                    {"id": 16, "title": "자료구조", "is_approved": False},
+                    {"id": 17, "title": "알고리즘", "is_approved": True},
+                    {"id": 18, "title": "운영체제", "is_approved": True},
+                    {"id": 19, "title": "컴퓨터 구조", "is_approved": True},
+                    {"id": 20, "title": "컴파일러", "is_approved": True},
+                    {"id": 21, "title": "이산수학", "is_approved": True},
+                    {"id": 22, "title": "디지털 논리 회로", "is_approved": True},
+                    {"id": 23, "title": "프로그래밍 언어", "is_approved": True},
+                    {"id": 24, "title": "소프트웨어 공학", "is_approved": True},
+                    {"id": 25, "title": "알고리즘", "is_approved": True},
+                    {"id": 26, "title": "자료구조", "is_approved": False},
+                    {"id": 27, "title": "컴퓨터 네트워크", "is_approved": False},
+                    {"id": 28, "title": "컴퓨터 구조", "is_approved": True},
+                    {"id": 29, "title": "자료구조", "is_approved": False},
+                    {"id": 30, "title": "알고리즘", "is_approved": True},
                 ],
             }
         }
@@ -225,4 +243,63 @@ class ErrorNoteCreate400Response(Schema):
     message: str
 
     class Config:
-        schema_extra = {"example": {"request body가 유효하지 않음": {"message": "타이틀과 요청 내용 설명을 채워주세요."}}}
+        schema_extra = {"example": {"request body가 유효하지 않음": {"message": "제목과 내용을 채워주세요."}}}
+
+
+class VerificationCodeCheckResponse(Schema):
+    message: str
+
+
+class VerificationCodeCheck400Response(Schema):
+    message: str
+
+    class Config:
+        schema_extra = {"example": {"전달된 값이 유효하지 않을 때": {"message": "인증코드가 올바르지 않습니다."}}}
+
+
+class VerificationCodeRequestBody(Schema):
+    code: str
+
+
+class CtrlfIssueStatus(models.TextChoices):
+    REQUESTED = "REQUESTED", "요청"
+    REJECTED = "REJECTED", "거절"
+    APPROVED = "APPROVED", "승인"
+    CLOSED = "CLOSED", "닫힘"
+
+
+class CtrlfActionType(models.TextChoices):
+    CREATE = "CREATE", "생성"
+    UPDATE = "UPDATE", "수정"
+    DELETE = "DELETE", "삭제"
+
+
+class CtrlfContentType(models.TextChoices):
+    NOTE = "NOTE", "노트"
+    TOPIC = "TOPIC", "토픽"
+    PAGE = "PAGE", "페이지"
+
+
+class ContentRequest(Schema):
+    user_id: int
+    type: CtrlfContentType
+    action: CtrlfActionType
+    reason: str
+    sub_id: Optional[int]
+
+
+class IssueListOut(Schema):
+    id: int
+    owner_id: int
+    title: str
+    content: str
+    status: CtrlfIssueStatus
+    content_request: ContentRequest
+
+
+class TopicListOut(Schema):
+    id: int
+    title: str
+    created_at: datetime
+    is_approved: bool
+    owner_id: int

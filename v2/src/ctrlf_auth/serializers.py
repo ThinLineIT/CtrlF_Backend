@@ -2,10 +2,12 @@ from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
-from rest_framework import serializers
+from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
 from rest_framework_jwt.serializers import jwt_payload_handler
 from rest_framework_jwt.utils import jwt_encode_handler
+
+from .helpers import CODE_MAX_LENGTH
 
 
 class LoginSerializer(serializers.Serializer):
@@ -76,9 +78,35 @@ class SendingAuthEmailSerializer(serializers.Serializer):
 
 
 class NicknameDuplicateSerializer(serializers.Serializer):
-    data = serializers.CharField(max_length=30)
+    _INVALID_ERR_MESSAGE = "전달 된 값이 올바르지 않습니다.\n영어,숫자,한글2~10자\n특수문자x\n공백x"
+    _VALID_REGEX = "^[a-zA-Z0-9가-힣]{2,10}$"
+    data = serializers.RegexField(regex=_VALID_REGEX, error_messages={"invalid": _INVALID_ERR_MESSAGE})
 
-    def validate_data(self, data):
-        if CtrlfUser.objects.filter(nickname=data).exists():
+    def validate_data(self, nickname):
+        if CtrlfUser.objects.filter(nickname=nickname).exists():
             raise ValidationError("이미 존재하는 닉네임입니다.")
-        return data
+        return nickname
+
+
+class CheckEmailDuplicateSerializer(serializers.Serializer):
+    data = serializers.CharField()
+
+    def validate_data(self, input_email):
+        if CtrlfUser.objects.filter(email=input_email).exists():
+            raise ValidationError("이미 존재하는 이메일 입니다.", code=status.HTTP_404_NOT_FOUND)
+        try:
+            validate_email(input_email)
+        except DjangoValidationError:
+            raise DjangoValidationError("이메일 형식이 유효하지 않습니다.", code=status.HTTP_400_BAD_REQUEST)
+        return input_email
+
+
+class CheckVerificationCodeSerializer(serializers.Serializer):
+    _err_msg = "인증코드가 올바르지 않습니다."
+
+    code = serializers.CharField(max_length=CODE_MAX_LENGTH, error_messages={"max_length": _err_msg})
+
+    def validate_code(self, code):
+        if not EmailAuthCode.objects.filter(code=code).exists():
+            raise ValidationError(self._err_msg)
+        return code
