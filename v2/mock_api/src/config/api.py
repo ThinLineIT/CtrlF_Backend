@@ -1,3 +1,5 @@
+from typing import List
+
 from config.constants import MOCK_ACCESS_TOKEN
 from config.schema import (
     EmailDuplicateCheckOut,
@@ -31,6 +33,8 @@ from config.schema import (
     VerificationCodeRequestBody,
 )
 from ninja import NinjaAPI, Router
+
+from .schema import CtrlfIssueStatus, IssueListOut
 
 api = NinjaAPI(title="CtrlF Mock API Doc")
 api_auth = Router(tags=["인증(SignUp, Login, Logout)"])
@@ -191,3 +195,69 @@ def create_note(request, request_body: NoteRequestBody):
 )
 def check_valid_verification_code(request, request_body: VerificationCodeRequestBody):
     return 200, {"message": "유효한 인증코드 입니다."}
+
+
+@api.get(
+    "/issues",
+    summary="Issue 리스트 보기",
+    response={200: List[IssueListOut]},
+)
+def retrieve_issue_list(request):
+    return 200, [
+        {
+            "id": 1,
+            "owner": 1,
+            "title": "1계층",
+            "content": "네트와크 계층 ~~~ ",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "content_request": {
+                "user": 4,
+                "type": "PAGE",
+                "action": "UPDATE",
+                "reason": "7계층 이름에 오타가 있습니다",
+                "sub_id": 3,
+            },
+        },
+        {
+            "id": 2,
+            "owner": 1,
+            "title": "운영체제",
+            "content": "",
+            "status": CtrlfIssueStatus.APPROVED,
+            "content_request": {
+                "user": 3,
+                "type": "NOTE",
+                "action": "CREATE",
+                "reason": "운영체제가 없는 것 같아서 신청합니다",
+                "sub_id": None,
+            },
+        },
+        {
+            "id": 3,
+            "owner": 2,
+            "title": "자료구조",
+            "content": "",
+            "status": CtrlfIssueStatus.REJECTED,
+            "content_request": {
+                "user": 2,
+                "type": "TOPIC",
+                "action": "CREATE",
+                "reason": "네트워크에 자료구조가 없는 것 같아 생성 요청합니다.",
+                "sub_id": None,
+            },
+        },
+        {
+            "id": 4,
+            "owner": 1,
+            "title": "OSI 7계층",
+            "content": "",
+            "status": CtrlfIssueStatus.CLOSED,
+            "content_request": {
+                "user": 1,
+                "type": "TOPIC",
+                "action": "DELETE",
+                "reason": "중복 생성되어서 삭제하려고 합니다.",
+                "sub_id": 1,
+            },
+        },
+    ]
