@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List
 
 from config.constants import MOCK_ACCESS_TOKEN
@@ -34,7 +35,7 @@ from config.schema import (
 )
 from ninja import NinjaAPI, Router
 
-from .schema import CtrlfIssueStatus, IssueListOut
+from .schema import CtrlfIssueStatus, IssueListOut, TopicListOut
 
 api = NinjaAPI(title="CtrlF Mock API Doc")
 api_auth = Router(tags=["인증(SignUp, Login, Logout)"])
@@ -206,12 +207,12 @@ def retrieve_issue_list(request):
     return 200, [
         {
             "id": 1,
-            "owner": 1,
+            "owner_id": 1,
             "title": "1계층",
             "content": "네트와크 계층 ~~~ ",
             "status": CtrlfIssueStatus.REQUESTED,
             "content_request": {
-                "user": 4,
+                "user_id": 4,
                 "type": "PAGE",
                 "action": "UPDATE",
                 "reason": "7계층 이름에 오타가 있습니다",
@@ -220,12 +221,12 @@ def retrieve_issue_list(request):
         },
         {
             "id": 2,
-            "owner": 1,
+            "owner_id": 1,
             "title": "운영체제",
             "content": "",
             "status": CtrlfIssueStatus.APPROVED,
             "content_request": {
-                "user": 3,
+                "user_id": 3,
                 "type": "NOTE",
                 "action": "CREATE",
                 "reason": "운영체제가 없는 것 같아서 신청합니다",
@@ -234,12 +235,12 @@ def retrieve_issue_list(request):
         },
         {
             "id": 3,
-            "owner": 2,
+            "owner_id": 2,
             "title": "자료구조",
             "content": "",
             "status": CtrlfIssueStatus.REJECTED,
             "content_request": {
-                "user": 2,
+                "user_id": 2,
                 "type": "TOPIC",
                 "action": "CREATE",
                 "reason": "네트워크에 자료구조가 없는 것 같아 생성 요청합니다.",
@@ -248,16 +249,41 @@ def retrieve_issue_list(request):
         },
         {
             "id": 4,
-            "owner": 1,
+            "owner_id": 1,
             "title": "OSI 7계층",
             "content": "",
             "status": CtrlfIssueStatus.CLOSED,
             "content_request": {
-                "user": 1,
+                "user_id": 1,
                 "type": "TOPIC",
                 "action": "DELETE",
                 "reason": "중복 생성되어서 삭제하려고 합니다.",
                 "sub_id": 1,
             },
         },
+    ]
+
+
+@api.get(
+    "/topics",
+    summary="Topic 리스트 보기",
+    response={200: List[TopicListOut]},
+)
+def retrieve_topic_list(request):
+    return 200, [
+        {
+            "id": 1,
+            "title": "topic1 title",
+            "created_at": datetime.now(),
+            "is_approved": True,
+            "owner_id": 3,
+        },
+        {
+            "id": 2,
+            "title": "topic2 title",
+            "created_at": datetime.now(),
+            "is_approved": False,
+            "owner_id": 1,
+        },
+        {"id": 3, "title": "topic3 title", "created_at": datetime.now(), "is_approved": True, "owner_id": 123},
     ]

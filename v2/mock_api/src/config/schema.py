@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from django.db import models
@@ -280,7 +281,7 @@ class CtrlfContentType(models.TextChoices):
 
 
 class ContentRequest(Schema):
-    user: int
+    user_id: int
     type: CtrlfContentType
     action: CtrlfActionType
     reason: str
@@ -289,8 +290,16 @@ class ContentRequest(Schema):
 
 class IssueListOut(Schema):
     id: int
-    owner: int
+    owner_id: int
     title: str
     content: str
     status: CtrlfIssueStatus
     content_request: ContentRequest
+
+
+class TopicListOut(Schema):
+    id: int
+    title: str
+    created_at: datetime
+    is_approved: bool
+    owner_id: int
