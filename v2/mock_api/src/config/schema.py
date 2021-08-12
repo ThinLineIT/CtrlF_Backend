@@ -1,5 +1,7 @@
-from typing import List
+from datetime import datetime
+from typing import List, Optional
 
+from django.db import models
 from ninja import Schema
 
 
@@ -241,7 +243,7 @@ class ErrorNoteCreate400Response(Schema):
     message: str
 
     class Config:
-        schema_extra = {"example": {"request body가 유효하지 않음": {"message": "타이틀과 요청 내용 설명을 채워주세요."}}}
+        schema_extra = {"example": {"request body가 유효하지 않음": {"message": "제목과 내용을 채워주세요."}}}
 
 
 class VerificationCodeCheckResponse(Schema):
@@ -257,3 +259,55 @@ class VerificationCodeCheck400Response(Schema):
 
 class VerificationCodeRequestBody(Schema):
     code: str
+
+
+class CtrlfIssueStatus(models.TextChoices):
+    REQUESTED = "REQUESTED", "요청"
+    REJECTED = "REJECTED", "거절"
+    APPROVED = "APPROVED", "승인"
+    CLOSED = "CLOSED", "닫힘"
+
+
+class CtrlfActionType(models.TextChoices):
+    CREATE = "CREATE", "생성"
+    UPDATE = "UPDATE", "수정"
+    DELETE = "DELETE", "삭제"
+
+
+class CtrlfContentType(models.TextChoices):
+    NOTE = "NOTE", "노트"
+    TOPIC = "TOPIC", "토픽"
+    PAGE = "PAGE", "페이지"
+
+
+class ContentRequest(Schema):
+    user_id: int
+    type: CtrlfContentType
+    action: CtrlfActionType
+    reason: str
+    sub_id: Optional[int]
+
+
+class IssueListOut(Schema):
+    id: int
+    owner_id: int
+    title: str
+    content: str
+    status: CtrlfIssueStatus
+    content_request: ContentRequest
+
+
+class TopicListOut(Schema):
+    id: int
+    title: str
+    created_at: datetime
+    is_approved: bool
+    owner_id: int
+
+
+class PageListOut(Schema):
+    id: int
+    title: str
+    content: str
+    created_at: datetime
+    owners: List[int]

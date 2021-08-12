@@ -7,6 +7,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework_jwt.serializers import jwt_payload_handler
 from rest_framework_jwt.utils import jwt_encode_handler
 
+from .helpers import CODE_MAX_LENGTH
+
 
 class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, required=True, style={"input_type": "password"})
@@ -97,3 +99,14 @@ class CheckEmailDuplicateSerializer(serializers.Serializer):
         except DjangoValidationError:
             raise DjangoValidationError("이메일 형식이 유효하지 않습니다.", code=status.HTTP_400_BAD_REQUEST)
         return input_email
+
+
+class CheckVerificationCodeSerializer(serializers.Serializer):
+    _err_msg = "인증코드가 올바르지 않습니다."
+
+    code = serializers.CharField(max_length=CODE_MAX_LENGTH, error_messages={"max_length": _err_msg})
+
+    def validate_code(self, code):
+        if not EmailAuthCode.objects.filter(code=code).exists():
+            raise ValidationError(self._err_msg)
+        return code

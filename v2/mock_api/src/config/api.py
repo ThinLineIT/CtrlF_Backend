@@ -1,4 +1,13 @@
-from config.constants import MOCK_ACCESS_TOKEN
+from datetime import datetime
+from typing import List
+
+from config.constants import (
+    MOCK_ACCESS_TOKEN,
+    PAGE_CONTENT_1,
+    PAGE_CONTENT_2,
+    PAGE_CONTENT_3,
+    PAGE_CONTENT_4,
+)
 from config.schema import (
     EmailDuplicateCheckOut,
     ErrorduplicateEmail400Response,
@@ -22,6 +31,7 @@ from config.schema import (
     NoteCreateResponse,
     NoteListResponse,
     NoteRequestBody,
+    PageListOut,
     SendEmailAuthIn,
     SendEmailAuthOut,
     SignUpRequestIn,
@@ -31,6 +41,8 @@ from config.schema import (
     VerificationCodeRequestBody,
 )
 from ninja import NinjaAPI, Router
+
+from .schema import CtrlfIssueStatus, IssueListOut, TopicListOut
 
 api = NinjaAPI(title="CtrlF Mock API Doc")
 api_auth = Router(tags=["인증(SignUp, Login, Logout)"])
@@ -181,7 +193,7 @@ def retrieve_main_etc_info(request):
 
 @api.post("/notes", summary="note 생성", response={201: NoteCreateResponse, 400: ErrorNoteCreate400Response})
 def create_note(request, request_body: NoteRequestBody):
-    return 201, {"message": "Note가 생성 되었습니다."}
+    return 201, {"message": "새 Note가 생성 되었습니다."}
 
 
 @api.post(
@@ -191,3 +203,132 @@ def create_note(request, request_body: NoteRequestBody):
 )
 def check_valid_verification_code(request, request_body: VerificationCodeRequestBody):
     return 200, {"message": "유효한 인증코드 입니다."}
+
+
+@api.get(
+    "/issues",
+    summary="Issue 리스트 보기",
+    response={200: List[IssueListOut]},
+)
+def retrieve_issue_list(request):
+    return 200, [
+        {
+            "id": 1,
+            "owner_id": 1,
+            "title": "1계층",
+            "content": "네트와크 계층 ~~~ ",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "content_request": {
+                "user_id": 4,
+                "type": "PAGE",
+                "action": "UPDATE",
+                "reason": "7계층 이름에 오타가 있습니다",
+                "sub_id": 3,
+            },
+        },
+        {
+            "id": 2,
+            "owner_id": 1,
+            "title": "운영체제",
+            "content": "",
+            "status": CtrlfIssueStatus.APPROVED,
+            "content_request": {
+                "user_id": 3,
+                "type": "NOTE",
+                "action": "CREATE",
+                "reason": "운영체제가 없는 것 같아서 신청합니다",
+                "sub_id": None,
+            },
+        },
+        {
+            "id": 3,
+            "owner_id": 2,
+            "title": "자료구조",
+            "content": "",
+            "status": CtrlfIssueStatus.REJECTED,
+            "content_request": {
+                "user_id": 2,
+                "type": "TOPIC",
+                "action": "CREATE",
+                "reason": "네트워크에 자료구조가 없는 것 같아 생성 요청합니다.",
+                "sub_id": None,
+            },
+        },
+        {
+            "id": 4,
+            "owner_id": 1,
+            "title": "OSI 7계층",
+            "content": "",
+            "status": CtrlfIssueStatus.CLOSED,
+            "content_request": {
+                "user_id": 1,
+                "type": "TOPIC",
+                "action": "DELETE",
+                "reason": "중복 생성되어서 삭제하려고 합니다.",
+                "sub_id": 1,
+            },
+        },
+    ]
+
+
+@api.get(
+    "/notes/{note_id}/topics",
+    summary="Topic 리스트 보기",
+    response={200: List[TopicListOut]},
+)
+def retrieve_topic_list(request, note_id):
+    return 200, [
+        {
+            "id": 1,
+            "title": "topic1 title",
+            "created_at": datetime.now(),
+            "is_approved": True,
+            "owner_id": 3,
+        },
+        {
+            "id": 2,
+            "title": "topic2 title",
+            "created_at": datetime.now(),
+            "is_approved": False,
+            "owner_id": 1,
+        },
+        {"id": 3, "title": "topic3 title", "created_at": datetime.now(), "is_approved": True, "owner_id": 123},
+    ]
+
+
+@api.get(
+    "/topics/{topic_id}/pages",
+    summary="page 리스트 보기",
+    response={200: List[PageListOut]},
+)
+def retrieve_page_list(request, topic_id):
+    return 200, [
+        {
+            "id": 1,
+            "title": "서로소 집합 알고리즘",
+            "content": PAGE_CONTENT_1,
+            "created_at": datetime.now(),
+            "owners": [1, 2, 3],
+        },
+        {
+            "id": 2,
+            "title": "동적 계획법",
+            "content": PAGE_CONTENT_2,
+            "created_at": datetime.now(),
+            "owners": [4, 5, 6],
+        },
+        {
+            "id": 3,
+            "title": "Prim's algorithm",
+            "content": PAGE_CONTENT_3,
+            "created_at": datetime.now(),
+            "owners": [11, 12, 13],
+        },
+        {
+            "id": 4,
+            "title": "선택 정렬(selection sort)",
+            "content": PAGE_CONTENT_4,
+            "created_at": datetime.now(),
+            "owners": [4, 5, 6],
+        },
+    ]

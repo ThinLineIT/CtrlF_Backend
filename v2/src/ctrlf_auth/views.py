@@ -4,6 +4,7 @@ from ctrlf_auth.helpers import generate_auth_code
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import (
     CheckEmailDuplicateSerializer,
+    CheckVerificationCodeSerializer,
     LoginSerializer,
     NicknameDuplicateSerializer,
     SendingAuthEmailSerializer,
@@ -25,7 +26,10 @@ class LoginAPIView(ObtainJSONWebToken):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response(data={"token": serializer.validated_data.get("token")}, status=status.HTTP_200_OK)
+        serialized = serializer.validated_data
+        return Response(
+            data={"token": serialized["token"], "user_id": serialized["user"].id}, status=status.HTTP_200_OK
+        )
 
 
 class SignUpAPIView(APIView):
@@ -106,3 +110,18 @@ class CheckEmailDuplicateView(APIView):
             for _, message in serializer.errors.items():
                 err = message[0]
             return Response({"message": err}, status=err.code)
+
+
+class CheckVerificationCodeView(APIView):
+    authentication_classes: List[str] = []
+
+    @swagger_auto_schema(request_body=CheckVerificationCodeSerializer)
+    def post(self, request):
+        serializer = CheckVerificationCodeSerializer(data=request.data)
+
+        if serializer.is_valid():
+            return Response({"message": "유효한 인증코드 입니다."}, status=status.HTTP_200_OK)
+        else:
+            for _, message in serializer.errors.items():
+                err = message[0]
+            return Response({"message": err}, status=status.HTTP_400_BAD_REQUEST)
