@@ -25,6 +25,7 @@ from config.schema import (
     NoteCreateResponse,
     NoteListResponse,
     NoteRequestBody,
+    PageListOut,
     SendEmailAuthIn,
     SendEmailAuthOut,
     SignUpRequestIn,
@@ -265,11 +266,11 @@ def retrieve_issue_list(request):
 
 
 @api.get(
-    "/topics",
+    "/notes/{note_id}/topics",
     summary="Topic 리스트 보기",
     response={200: List[TopicListOut]},
 )
-def retrieve_topic_list(request):
+def retrieve_topic_list(request, note_id):
     return 200, [
         {
             "id": 1,
@@ -286,4 +287,42 @@ def retrieve_topic_list(request):
             "owner_id": 1,
         },
         {"id": 3, "title": "topic3 title", "created_at": datetime.now(), "is_approved": True, "owner_id": 123},
+    ]
+
+
+@api.get(
+    "/topics/{topic_id}/pages",
+    summary="page 리스트 보기",
+    response={200: List[PageListOut]},
+)
+def retrieve_page_list(request, topic_id):
+    return 200, [
+        {
+            "id": 1,
+            "title": "page1 title",
+            "content": "page1 content",
+            "created_at": datetime.now(),
+            "owners": [1, 2, 3],
+        },
+        {
+            "id": 2,
+            "title": "page2 title",
+            "content": "page2 content",
+            "created_at": datetime.now(),
+            "owners": [1, 2, 3],
+        },
+        {
+            "id": 3,
+            "title": "page3 title",
+            "content": "page3 content",
+            "created_at": datetime.now(),
+            "owners": [1, 2, 3],
+        },
+        {
+            "id": 4,
+            "title": "page4 title",
+            "content": "page4 content",
+            "created_at": datetime.now(),
+            "owners": [1, 2, 3],
+        },
     ]
