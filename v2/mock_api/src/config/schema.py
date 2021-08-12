@@ -303,3 +303,11 @@ class TopicListOut(Schema):
     created_at: datetime
     is_approved: bool
     owner_id: int
+
+
+class PageListOut(Schema):
+    id: int
+    title: str
+    content: str
+    created_at: datetime
+    owners: List[int]
