@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .constants import ERR_MSG
 from .models import Note
 from .serializers import NoteSerializer
 
@@ -14,7 +15,6 @@ class NoteDetailUpdateDeleteView(APIView):
 
     @swagger_auto_schema(responses={200: NoteSerializer()})
     def get(self, request, note_id):
-        ERR_MSG = "노트를 찾을 수 없습니다."
         try:
             note = Note.objects.get(pk=note_id)
         except Note.DoesNotExist:
