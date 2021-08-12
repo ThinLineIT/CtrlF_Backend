@@ -1,7 +1,7 @@
 from typing import List
 
 # from ctrlf_auth.authentication import CtrlfAuthentication
-# from drf_yasg.utils import swagger_auto_schema
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +13,7 @@ from .serializers import NoteSerializer
 class NoteDetailUpdateDeleteView(APIView):
     authentication_classes: List[str] = []
 
+    @swagger_auto_schema(responses={200: NoteSerializer()})
     def get(self, request, note_id):
         ERR_MSG = "노트를 찾을 수 없습니다."
         try:
