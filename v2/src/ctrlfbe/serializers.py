@@ -2,8 +2,6 @@ from rest_framework import serializers
 
 from .models import Note, Topic
 
-# from rest_framework.exceptions import ValidationError
-
 
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
