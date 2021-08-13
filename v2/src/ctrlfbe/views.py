@@ -28,8 +28,8 @@ class NoteDetailUpdateDeleteView(APIView):
 class TopicListView(APIView):
     authentication_classes: List[str] = []
 
+    @swagger_auto_schema(responses={200: TopicSerializer(many=True)})
     def get(self, request, note_id):
-
         topics = Topic.objects.filter(note=note_id)
 
         if not len(topics):
