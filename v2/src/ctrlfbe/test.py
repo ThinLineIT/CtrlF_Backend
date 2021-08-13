@@ -70,3 +70,15 @@ class TestTopicList(TestCase):
         # And  : 이미 저장된 topic 개수와 같아야 함.
         response = response.data
         self.assertEqual(len(response), len(topic_list))
+
+    def test_topic_list_should_return_404_by_invalid_note_id(self):
+        # Given: 이미 저장된 topic들, 유효하지 않은 note id
+        invalid_not_id = 9999
+        self._add_topics()
+        # When : API 실행
+        response = self._call_api(invalid_not_id)
+        # Then : 상태코드 404
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And  : 메세지는 "노트를 찾을 수 없습니다." 이어야 함.
+        response = response.data
+        self.assertEqual(response["message"], "노트를 찾을 수 없습니다.")
