@@ -10,6 +10,7 @@ from ctrlf_auth.serializers import (
     SendingAuthEmailSerializer,
     SignUpSerializer,
 )
+from ctrlf_auth.tasks import send_email
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
@@ -57,10 +58,7 @@ class SendingAuthEmailView(APIView):
         serializer = SendingAuthEmailSerializer(data=request.data)
         if serializer.is_valid():
             email_auth_code = EmailAuthCode.objects.create(code=generate_auth_code())
-            success = email_auth_code.send_email(to=serializer.data["email"])
-            if not success:
-                # TODO: 메일발송 실패 로그 남기기
-                pass
+            send_email.delay(code=email_auth_code.code, to=serializer.data["email"])
             return Response(status=status.HTTP_200_OK)
         else:
             for _, message in serializer.errors.items():
