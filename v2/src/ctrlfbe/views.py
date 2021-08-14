@@ -13,7 +13,11 @@ from .serializers import NoteSerializer, TopicSerializer
 class NoteDetailUpdateDeleteView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(responses={200: NoteSerializer()})
+    @swagger_auto_schema(
+        responses={200: NoteSerializer()},
+        operation_summary="Note Detail API",
+        operation_description="note_id에 해당하는 Note의 상세 내용을 리턴합니다",
+    )
     def get(self, request, note_id):
         try:
             note = Note.objects.get(pk=note_id)
@@ -27,7 +31,11 @@ class NoteDetailUpdateDeleteView(APIView):
 class TopicListView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(responses={200: TopicSerializer(many=True)})
+    @swagger_auto_schema(
+        responses={200: TopicSerializer(many=True)},
+        operation_summary="Topic List API",
+        operation_description="note_id에 해당하는 topic들의 list를 리턴해줍니다",
+    )
     def get(self, request, note_id):
         try:
             Note.objects.get(pk=note_id)

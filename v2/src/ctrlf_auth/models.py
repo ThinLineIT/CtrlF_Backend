@@ -1,6 +1,5 @@
 from common.models import CommonTimestamp
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
-from django.core.mail import EmailMessage
 from django.db import models
 
 
@@ -53,7 +52,3 @@ class CtrlfUser(AbstractBaseUser):
 
 class EmailAuthCode(CommonTimestamp):
     code = models.CharField(max_length=8, help_text="이메일 인증용 코드")
-
-    def send_email(self, to):
-        email = EmailMessage("[Ctrlf] 이메일 인증코드가 도착 하였습니다!", f"커넵 이메일 인증 코드: {self.code}", to=[to])
-        return email.send()

@@ -101,14 +101,13 @@ class TestSendingAuthEmail(TestCase):
         return self.c.post(reverse("auth:sending_auth_email"), request_body)
 
     @patch("ctrlf_auth.views.generate_auth_code")
-    @patch("ctrlf_auth.views.EmailAuthCode.send_email")
-    def test_sending_auth_email_should_return_200_on_success(self, mock_send_email, mock_generate_auth_code):
+    @patch("ctrlf_auth.views.send_email.delay")
+    def test_sending_auth_email_should_return_200_on_success(self, mock_send_email_delay, mock_generate_auth_code):
         mock_generate_auth_code.return_value = "1q2w3e4r"
         request_body = {"email": "test1234@test.com"}
-        response = self._call_api(request_body)
-        self.assertEqual(response.status_code, 200)
+        self._call_api(request_body)
         self.assertTrue(EmailAuthCode.objects.filter(code="1q2w3e4r").exists())
-        mock_send_email.assert_called_once_with(to="test1234@test.com")
+        mock_send_email_delay.assert_called_once_with(code="1q2w3e4r", to="test1234@test.com")
 
     def test_sending_auth_email_should_return_400_on_email_from_request_body_is_invalid_format(self):
         request_body = {"email": "test1234test.com"}  # invalid email format
