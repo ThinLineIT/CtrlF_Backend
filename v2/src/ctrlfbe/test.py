@@ -1,5 +1,5 @@
 from ctrlf_auth.models import CtrlfUser
-from ctrlfbe.models import Note, Topic
+from ctrlfbe.models import Note, Page, Topic
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -92,3 +92,38 @@ class TestTopicList(TestCase):
         # And  : 메세지는 "노트를 찾을 수 없습니다." 이어야 함.
         response = response.data
         self.assertEqual(response["message"], "노트를 찾을 수 없습니다.")
+
+
+class TestPageList(TestCase):
+    def setUp(self):
+        self.c = Client()
+        self.user = CtrlfUser.objects.create_user(email="test@test.com", password="12345")
+        self.note = Note.objects.create(title="test note")
+        self.note.owners.add(self.user)
+        topic_data = {"note": self.note, "title": "test topic"}
+        self.topic = Topic.objects.create(**topic_data)
+        self.topic.owners.add(self.user)
+
+    def _add_pages(self):
+        page_list = []
+        for i in range(10):
+            page_data = {"topic": self.topic, "title": f"test topic{i + 1}", "content": f"test content{i + 1}"}
+            page = Page.objects.create(**page_data)
+            page.owners.add(self.user)
+            page_list.append(page)
+        return page_list
+
+    def _call_api(self, topic_id):
+        return self.c.get(reverse("topics:page_list", kwargs={"topic_id": topic_id}))
+
+    def test_page_list_should_return_200(self):
+        # Given: 이미 저장된 page들, 유효한 topic id
+        topic_id = self.topic.id
+        page_list = self._add_pages()
+        # When : API 실행
+        response = self._call_api(topic_id)
+        # Then : 상태코드 200
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And  : 이미 저장된 page 개수와 같아야 함.
+        response = response.data
+        self.assertEqual(len(response), len(page_list))
