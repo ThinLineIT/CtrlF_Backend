@@ -51,6 +51,11 @@ class TopicListView(APIView):
 class PageListView(APIView):
     authentication_classes: List[str] = []
 
+    @swagger_auto_schema(
+        responses={200: PageSerializer(many=True)},
+        operation_summary="Page List API",
+        operation_description="topic_id에 해당하는 page들의 list를 리턴해줍니다",
+    )
     def get(self, request, topic_id):
         try:
             Topic.objects.get(pk=topic_id)
