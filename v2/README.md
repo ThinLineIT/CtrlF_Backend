@@ -67,7 +67,7 @@ BASE_URL : "https://..."
             }
             ```
 
-            
+
 
             ```json
             {
@@ -82,13 +82,13 @@ BASE_URL : "https://..."
         * url
 
           ```
-          
+
           ```
 
         * Request
 
           ```json
-          
+
           ```
 
         * Response
@@ -96,7 +96,7 @@ BASE_URL : "https://..."
           * 2XX
           * 4XX
 
-          
+
 
       * GET 이메일 중복 확인
 
@@ -134,7 +134,7 @@ BASE_URL : "https://..."
             }
             ```
 
-          
+
 
     * POST 이메일 인증 메일 보내기
 
@@ -160,9 +160,9 @@ BASE_URL : "https://..."
              {
                  "message": "인증 메일이 발송되었습니다."
              }
-             ``` 
+             ```
         * 4XX
-            * 400 
+            * 400
              ```json
              {
                  "message": "email이 유효하지 않습니다."
@@ -199,7 +199,7 @@ BASE_URL : "https://..."
          }
          ```
 
-         
+
 
      * 4XX
 
@@ -225,9 +225,9 @@ BASE_URL : "https://..."
          }
          ```
 
-         
 
-       
+
+
 
 2. POST 로그아웃
 
@@ -257,7 +257,7 @@ BASE_URL : "https://..."
          }
          ```
 
-         
+
 
      * 4XX
 
@@ -283,7 +283,7 @@ BASE_URL : "https://..."
          }
          ```
 
-       
+
 
 ## Contents
 ### Note
@@ -356,7 +356,7 @@ BASE_URL : "https://..."
             "approved_issues_count": 16,
             "not_approved_issues_count": 14"
         }
-        
+
         ```
 
 * POST Note 추가하기
@@ -401,4 +401,7 @@ BASE_URL : "https://..."
 ### Page
 * CRUD
 ### Issue
-* 
+*
+
+
+adsfadsf
