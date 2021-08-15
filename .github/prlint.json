@@ -2,7 +2,7 @@
   "title": [
     {
       "pattern": "^(TH-|JH-|SH-|JG-)\\d+: \\w+$",
-      "message": "Your title needs to be prefixed with a jira ticket name"
+      "message": "{personal initial above}-{issue number}: {pr title} - ex) TH-150: add test prlint.json"
     }
   ]
 }
