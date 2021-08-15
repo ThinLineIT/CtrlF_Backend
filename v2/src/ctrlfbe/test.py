@@ -127,3 +127,25 @@ class TestPageList(TestCase):
         # And  : 이미 저장된 page 개수와 같아야 함.
         response = response.data
         self.assertEqual(len(response), len(page_list))
+
+    def test_page_list_should_return_200_by_empty_page_list(self):
+        # Given: 유효한 topic id
+        topic_id = self.topic.id
+        # When : API 실행
+        response = self._call_api(topic_id)
+        # Then : 상태코드 200
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And  : 빈 배열을 return 해야함.
+        self.assertEqual(response.data, [])
+
+    def test_page_list_should_return_404_by_invalid_topic_id(self):
+        # Given: 이미 저장된 page들, 유효하지 않은 topic id
+        invalid_topic_id = 9999
+        self._add_pages()
+        # When : API 실행
+        response = self._call_api(invalid_topic_id)
+        # Then : 상태코드 404
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And  : 메세지는 "토픽을 찾을 수 없습니다." 이어야 함.
+        response = response.data
+        self.assertEqual(response["message"], "토픽을 찾을 수 없습니다.")
