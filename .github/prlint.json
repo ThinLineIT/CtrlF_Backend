@@ -1,6 +1,14 @@
-"title": [
-  {
-    "pattern": "^(TH-|JH-|SH-|JG-)\d+: \w+$",
-    "message": "{personal initial above}-{issue number}: {pr title} - ex) TH-150: add test prlint.json"
-  }
-]
+{
+  "title": [
+    {
+      "pattern": "^(TH-|JH-|SH-|JG-)\d+: \w+$",
+      "message": "Your title needs to be prefixed with a jira ticket name"
+    }
+  ],
+  "head.ref": [
+    {
+      "pattern": "^[a-z]{2,5}-\\d+(-[0-9a-z]+)+$",
+      "message": "Your branch name is invalid: Need lowercase with a jira ticket name"
+    }
+  ]
+}
