@@ -5,9 +5,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .constants import ERR_NOTE_NOT_FOUND
-from .models import Note, Topic
-from .serializers import NoteSerializer, TopicSerializer
+from .constants import ERR_NOTE_NOT_FOUND, ERR_TOPIC_NOT_FOUND
+from .models import Note, Page, Topic
+from .serializers import NoteSerializer, PageSerializer, TopicSerializer
 
 
 class NoteDetailUpdateDeleteView(APIView):
@@ -45,4 +45,19 @@ class TopicListView(APIView):
         topics = Topic.objects.filter(note=note_id)
 
         serializer = TopicSerializer(topics, many=True)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+
+class PageListView(APIView):
+    authentication_classes: List[str] = []
+
+    def get(self, request, topic_id):
+        try:
+            Topic.objects.get(pk=topic_id)
+        except Topic.DoesNotExist:
+            return Response({"message": ERR_TOPIC_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
+
+        pages = Page.objects.filter(topic=topic_id)
+
+        serializer = PageSerializer(pages, many=True)
         return Response(serializer.data, status.HTTP_200_OK)

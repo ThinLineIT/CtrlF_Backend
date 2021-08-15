@@ -24,4 +24,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("ctrlf_auth.urls"), name="auth"),
     path("api/notes/", include("ctrlfbe.note_urls"), name="notes"),
+    path("api/topics/", include("ctrlfbe.topic_urls"), name="topics"),
 ]
