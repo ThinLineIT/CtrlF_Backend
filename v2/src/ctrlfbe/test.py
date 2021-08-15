@@ -71,6 +71,16 @@ class TestTopicList(TestCase):
         response = response.data
         self.assertEqual(len(response), len(topic_list))
 
+    def test_topic_list_should_return_200_by_empty_topic_list(self):
+        # Given: 유효한 note id
+        note_id = self.note.id
+        # When : API 실행
+        response = self._call_api(note_id)
+        # Then : 상태코드 200
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And  : 빈 배열을 return 해야함.
+        self.assertEqual(response.data, [])
+
     def test_topic_list_should_return_404_by_invalid_note_id(self):
         # Given: 이미 저장된 topic들, 유효하지 않은 note id
         invalid_not_id = 9999
