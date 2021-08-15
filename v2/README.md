@@ -82,21 +82,38 @@ BASE_URL : "https://..."
         * url
 
           ```
-          
+          GET {BASE_URL}/api/auth/signup/nickname/duplicate
           ```
 
         * Request
 
           ```json
-          
+          GET {BASE_URL}/api/auth/signup/nickname/duplicate?data=nick
           ```
 
         * Response
 
           * 2XX
+
+            ```json
+            {
+              "message" : "사용 가능한 닉네임입니다."
+            }
+            ```
+
           * 4XX
 
-          
+            ```json
+            {
+              "message" : "전달된 값이 올바르지 않습니다."
+            }
+            ```
+
+            ```json
+            {
+              "message" : "이미 존재하는 닉네임입니다."
+            }
+            ```
 
       * GET 이메일 중복 확인
 
