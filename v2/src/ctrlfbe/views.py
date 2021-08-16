@@ -7,6 +7,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .constants import MAX_PRINTABLE__NOTE_COUNT
+
 
 class NoteAPIView(APIView):
     authentication_classes: List[str] = []
@@ -14,7 +16,7 @@ class NoteAPIView(APIView):
     @swagger_auto_schema(query_serializer=NoteSerializer)
     def get(self, request):
         current_cursor = int(request.query_params["cursor"])
-        notes = Note.objects.all()[current_cursor : current_cursor + 30]
+        notes = Note.objects.all()[current_cursor : current_cursor + MAX_PRINTABLE__NOTE_COUNT]
         serializer = NoteSerializer(notes, many=True)
         serialized_notes = serializer.data
         return Response(
