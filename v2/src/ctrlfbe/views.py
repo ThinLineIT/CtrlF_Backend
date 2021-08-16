@@ -1,6 +1,7 @@
-from typing import List
+from typing import List, Optional
 
 from ctrlfbe.serializers import NoteListQuerySerializer
+from django.db.models import Model
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
@@ -28,6 +29,7 @@ class NoteAPIView(APIView):
 
 class BaseContentView(APIView):
     authentication_classes: List[str] = []
+    child_model: Optional[Model] = None
     many = False
 
     def get(self, request, *args, **kwargs):
@@ -37,6 +39,9 @@ class BaseContentView(APIView):
         if result is None:
             return Response(data={"message": self.error_msg}, status=status.HTTP_404_NOT_FOUND)
 
+        if self.child_model:
+            key_ = str(result._meta).split(".")[1]
+            result = self.child_model.objects.filter(**{key_: result})
         if self.many:
             serializer = self.serializer(result, many=True)
         else:
@@ -59,23 +64,20 @@ class NoteDetailUpdateDeleteView(BaseContentView):
         return super().get(request, *args, **kwargs)
 
 
-class TopicListView(APIView):
-    authentication_classes: List[str] = []
+class TopicListView(BaseContentView):
+    model = Note
+    child_model = Topic
+    serializer = NoteSerializer
+    many = True
+    error_msg = ERR_NOTE_NOT_FOUND
 
     @swagger_auto_schema(
         responses={200: TopicSerializer(many=True)},
         operation_summary="Topic List API",
         operation_description="note_id에 해당하는 topic들의 list를 리턴해줍니다",
     )
-    def get(self, request, note_id):
-        note = Note.objects.filter(id=note_id).first()
-        if note is None:
-            return Response({"message": ERR_NOTE_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
-
-        topics = Topic.objects.filter(note=note)
-
-        serializer = TopicSerializer(topics, many=True)
-        return Response(serializer.data, status.HTTP_200_OK)
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 
 class PageListView(APIView):
