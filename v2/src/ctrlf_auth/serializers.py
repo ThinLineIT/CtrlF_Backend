@@ -10,6 +10,11 @@ from rest_framework_jwt.utils import jwt_encode_handler
 from .helpers import CODE_MAX_LENGTH
 
 
+class LoginRequestBody(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+
 class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, required=True, style={"input_type": "password"})
     token = serializers.CharField(read_only=True)

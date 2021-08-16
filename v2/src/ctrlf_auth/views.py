@@ -10,6 +10,15 @@ from ctrlf_auth.serializers import (
     SendingAuthEmailSerializer,
     SignUpSerializer,
 )
+from ctrlf_auth.swagger import (
+    SWAGGER_CHECK_EMAIL_DUPLICATE_VIEW,
+    SWAGGER_CHECK_NICKNAME_DUPLICATE_VIEW,
+    SWAGGER_CHECK_VERIFICATION_CODE_VIEW,
+    SWAGGER_LOGIN_API_VIEW,
+    SWAGGER_SENDING_AUTH_EMAIL_VIEW,
+    SWAGGER_SIGN_UP_API_VIEW,
+    SWAGGER_TEMP_DELETE_EMAIL_VIEW,
+)
 from ctrlf_auth.tasks import send_email
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -23,7 +32,7 @@ class LoginAPIView(ObtainJSONWebToken):
 
     serializer_class = LoginSerializer
 
-    @swagger_auto_schema(method="post")
+    @swagger_auto_schema(**SWAGGER_LOGIN_API_VIEW)
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -38,7 +47,7 @@ class SignUpAPIView(APIView):
 
     _SIGNUP_MSG = "환영합니다.\n가입이 완료되었습니다\n\n로그인 후 이용해주세요."
 
-    @swagger_auto_schema(request_body=SignUpSerializer)
+    @swagger_auto_schema(**SWAGGER_SIGN_UP_API_VIEW)
     def post(self, request, *args, **kwargs):
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
@@ -53,7 +62,7 @@ class SignUpAPIView(APIView):
 class SendingAuthEmailView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(request_body=SendingAuthEmailSerializer)
+    @swagger_auto_schema(**SWAGGER_SENDING_AUTH_EMAIL_VIEW)
     def post(self, request, *args, **kwargs):
         serializer = SendingAuthEmailSerializer(data=request.data)
         if serializer.is_valid():
@@ -69,7 +78,7 @@ class SendingAuthEmailView(APIView):
 class TempDeleteEmailView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(request_body=SendingAuthEmailSerializer)
+    @swagger_auto_schema(**SWAGGER_TEMP_DELETE_EMAIL_VIEW)
     def delete(self, request):
         serializer = SendingAuthEmailSerializer(data=request.data)
         if serializer.is_valid():
@@ -83,7 +92,7 @@ class CheckNicknameDuplicateView(APIView):
 
     _SUCCESS_MSG = "사용 가능한 닉네임입니다."
 
-    @swagger_auto_schema(query_serializer=NicknameDuplicateSerializer)
+    @swagger_auto_schema(**SWAGGER_CHECK_NICKNAME_DUPLICATE_VIEW)
     def get(self, request):
         nickname = request.query_params
         serializer = NicknameDuplicateSerializer(data=nickname)
@@ -98,7 +107,7 @@ class CheckNicknameDuplicateView(APIView):
 class CheckEmailDuplicateView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(query_serializer=CheckEmailDuplicateSerializer)
+    @swagger_auto_schema(**SWAGGER_CHECK_EMAIL_DUPLICATE_VIEW)
     def get(self, request):
         serializer = CheckEmailDuplicateSerializer(data=request.query_params)
 
@@ -113,7 +122,7 @@ class CheckEmailDuplicateView(APIView):
 class CheckVerificationCodeView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(request_body=CheckVerificationCodeSerializer)
+    @swagger_auto_schema(**SWAGGER_CHECK_VERIFICATION_CODE_VIEW)
     def post(self, request):
         serializer = CheckVerificationCodeSerializer(data=request.data)
 

@@ -1,20 +1,52 @@
-from typing import List
+from typing import List, Optional
 
-from ctrlfbe.serializers import NoteListQuerySerializer
+from ctrlfbe.swagger import (
+    SWAGGER_NOTE_DETAIL_VIEW,
+    SWAGGER_NOTE_LIST_VIEW,
+    SWAGGER_PAGE_LIST_VIEW,
+    SWAGGER_TOPIC_LIST_VIEW,
+)
+from django.db.models import Model
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .constants import ERR_NOTE_NOT_FOUND, ERR_TOPIC_NOT_FOUND, MAX_PRINTABLE_NOTE_COUNT
+from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE_COUNT
 from .models import Note, Page, Topic
 from .serializers import NoteSerializer, PageSerializer, TopicSerializer
+
+
+class BaseContentView(APIView):
+    authentication_classes: List[str] = []
+    child_model: Optional[Model] = None
+    many = False
+
+    def get(self, request, *args, **kwargs):
+        id_from_path_param = list(kwargs.values())[0]
+        result = self.parent_model.objects.filter(id=id_from_path_param).first()
+        class_name_lower = str(self.parent_model._meta).split(".")[1]
+
+        if result is None:
+            return Response(
+                data={"message": ERR_NOT_FOUND_MSG_MAP.get(class_name_lower, ERR_UNEXPECTED)},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if self.child_model:
+            result = self.child_model.objects.filter(**{class_name_lower: result})
+        if self.many:
+            serializer = self.serializer(result, many=True)
+        else:
+            serializer = self.serializer(result)
+
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
 class NoteAPIView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(query_serializer=NoteListQuerySerializer)
+    @swagger_auto_schema(**SWAGGER_NOTE_LIST_VIEW)
     def get(self, request):
         current_cursor = int(request.query_params["cursor"])
         notes = Note.objects.all()[current_cursor : current_cursor + MAX_PRINTABLE_NOTE_COUNT]
@@ -26,59 +58,32 @@ class NoteAPIView(APIView):
         )
 
 
-class NoteDetailUpdateDeleteView(APIView):
-    authentication_classes: List[str] = []
+class NoteDetailUpdateDeleteView(BaseContentView):
+    parent_model = Note
+    serializer = NoteSerializer
 
-    @swagger_auto_schema(
-        responses={200: NoteSerializer()},
-        operation_summary="Note Detail API",
-        operation_description="note_id에 해당하는 Note의 상세 내용을 리턴합니다",
-    )
-    def get(self, request, note_id):
-        try:
-            note = Note.objects.get(id=note_id)
-        except Note.DoesNotExist:
-            return Response({"message": ERR_NOTE_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
-
-        serializer = NoteSerializer(note)
-        return Response(serializer.data, status.HTTP_200_OK)
+    @swagger_auto_schema(**SWAGGER_NOTE_DETAIL_VIEW)
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 
-class TopicListView(APIView):
-    authentication_classes: List[str] = []
+class TopicListView(BaseContentView):
+    parent_model = Note
+    child_model = Topic
+    serializer = TopicSerializer
+    many = True
 
-    @swagger_auto_schema(
-        responses={200: TopicSerializer(many=True)},
-        operation_summary="Topic List API",
-        operation_description="note_id에 해당하는 topic들의 list를 리턴해줍니다",
-    )
-    def get(self, request, note_id):
-        try:
-            note = Note.objects.get(id=note_id)
-        except Note.DoesNotExist:
-            return Response({"message": ERR_NOTE_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
-
-        topics = Topic.objects.filter(note=note)
-
-        serializer = TopicSerializer(topics, many=True)
-        return Response(serializer.data, status.HTTP_200_OK)
+    @swagger_auto_schema(**SWAGGER_TOPIC_LIST_VIEW)
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 
-class PageListView(APIView):
-    authentication_classes: List[str] = []
+class PageListView(BaseContentView):
+    parent_model = Topic
+    child_model = Page
+    serializer = PageSerializer
+    many = True
 
-    @swagger_auto_schema(
-        responses={200: PageSerializer(many=True)},
-        operation_summary="Page List API",
-        operation_description="topic_id에 해당하는 page들의 list를 리턴해줍니다",
-    )
-    def get(self, request, topic_id):
-        try:
-            topic = Topic.objects.get(id=topic_id)
-        except Topic.DoesNotExist:
-            return Response({"message": ERR_TOPIC_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
-
-        pages = Page.objects.filter(topic=topic)
-
-        serializer = PageSerializer(pages, many=True)
-        return Response(serializer.data, status.HTTP_200_OK)
+    @swagger_auto_schema(**SWAGGER_PAGE_LIST_VIEW)
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
