@@ -20,7 +20,7 @@ class NoteDetailUpdateDeleteView(APIView):
     )
     def get(self, request, note_id):
         try:
-            note = Note.objects.get(pk=note_id)
+            note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
             return Response({"message": ERR_NOTE_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
 
@@ -38,11 +38,11 @@ class TopicListView(APIView):
     )
     def get(self, request, note_id):
         try:
-            Note.objects.get(pk=note_id)
+            note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
             return Response({"message": ERR_NOTE_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
 
-        topics = Topic.objects.filter(note=note_id)
+        topics = Topic.objects.filter(note=note)
 
         serializer = TopicSerializer(topics, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
@@ -58,11 +58,11 @@ class PageListView(APIView):
     )
     def get(self, request, topic_id):
         try:
-            Topic.objects.get(pk=topic_id)
+            topic = Topic.objects.get(id=topic_id)
         except Topic.DoesNotExist:
             return Response({"message": ERR_TOPIC_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
 
-        pages = Page.objects.filter(topic=topic_id)
+        pages = Page.objects.filter(topic=topic)
 
         serializer = PageSerializer(pages, many=True)
         return Response(serializer.data, status.HTTP_200_OK)

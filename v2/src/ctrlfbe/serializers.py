@@ -20,5 +20,5 @@ class TopicSerializer(serializers.ModelSerializer):
 class PageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
-        fields = ["id", "title", "content", "created_at", "is_approved", "owners"]
+        fields = "__all__"
         read_only_fields = ["id", "created_at"]
