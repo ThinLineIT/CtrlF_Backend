@@ -13,11 +13,14 @@ class TestNoteList(TestCase):
     def _call_api(self, cursor):
         return self.client.get(reverse("notes:retrieve_note_list"), {"cursor": cursor})
 
-    def test_retrieve_note_list_should_return_200(self):
-        # Given: 미리 30개의 노트를 생성하고, 시작 cursor가 주어진다.
-        for i in range(0, 30):
+    def _make_notes(self, count):
+        for i in range(0, count):
             note = Note.objects.create(title=f"test title {i}")
             note.owners.add(self.user)
+
+    def test_retrieve_note_list_should_return_200(self):
+        # Given: 미리 30개의 노트를 생성하고, 시작 cursor가 주어진다.
+        self._make_notes(30)
         given_cursor = 0
 
         # When: retrieve note list api를 호출한다.
@@ -32,9 +35,7 @@ class TestNoteList(TestCase):
 
     def test_retrieve_note_list_on_note_count_less_than_30(self):
         # Given: 10개의 note를 생성하고 시작 cursor를 0으로 주어진다.
-        for i in range(0, 10):
-            note = Note.objects.create(title=f"test title - {i}")
-            note.owners.add(self.user)
+        self._make_notes(10)
         given_cursor = 3
 
         # When: retrieve note list api를 호출한다.
