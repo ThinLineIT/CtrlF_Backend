@@ -6,9 +6,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .constants import ERR_NOTE_NOT_FOUND, MAX_PRINTABLE_NOTE_COUNT
-from .models import Note, Topic
-from .serializers import NoteSerializer, TopicSerializer
+from .constants import ERR_NOTE_NOT_FOUND, ERR_TOPIC_NOT_FOUND, MAX_PRINTABLE_NOTE_COUNT
+from .models import Note, Page, Topic
+from .serializers import NoteSerializer, PageSerializer, TopicSerializer
 
 
 class NoteAPIView(APIView):
@@ -36,7 +36,7 @@ class NoteDetailUpdateDeleteView(APIView):
     )
     def get(self, request, note_id):
         try:
-            note = Note.objects.get(pk=note_id)
+            note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
             return Response({"message": ERR_NOTE_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
 
@@ -54,11 +54,31 @@ class TopicListView(APIView):
     )
     def get(self, request, note_id):
         try:
-            Note.objects.get(pk=note_id)
+            note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
             return Response({"message": ERR_NOTE_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
 
-        topics = Topic.objects.filter(note=note_id)
+        topics = Topic.objects.filter(note=note)
 
         serializer = TopicSerializer(topics, many=True)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+
+class PageListView(APIView):
+    authentication_classes: List[str] = []
+
+    @swagger_auto_schema(
+        responses={200: PageSerializer(many=True)},
+        operation_summary="Page List API",
+        operation_description="topic_id에 해당하는 page들의 list를 리턴해줍니다",
+    )
+    def get(self, request, topic_id):
+        try:
+            topic = Topic.objects.get(id=topic_id)
+        except Topic.DoesNotExist:
+            return Response({"message": ERR_TOPIC_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
+
+        pages = Page.objects.filter(topic=topic)
+
+        serializer = PageSerializer(pages, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
