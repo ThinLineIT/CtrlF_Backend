@@ -11,3 +11,7 @@ class NoteSerializer(serializers.ModelSerializer):
         model = Note
         fields = "__all__"
         list_serializer_class = NoteListSerializer
+
+
+class NoteListQuerySerializer(serializers.Serializer):
+    cursor = serializers.IntegerField()

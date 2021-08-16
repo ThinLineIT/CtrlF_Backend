@@ -1,22 +1,22 @@
 from typing import List
 
 from ctrlfbe.models import Note
-from ctrlfbe.serializers import NoteSerializer
+from ctrlfbe.serializers import NoteListQuerySerializer, NoteSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .constants import MAX_PRINTABLE__NOTE_COUNT
+from .constants import MAX_PRINTABLE_NOTE_COUNT
 
 
 class NoteAPIView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(query_serializer=NoteSerializer)
+    @swagger_auto_schema(query_serializer=NoteListQuerySerializer)
     def get(self, request):
         current_cursor = int(request.query_params["cursor"])
-        notes = Note.objects.all()[current_cursor : current_cursor + MAX_PRINTABLE__NOTE_COUNT]
+        notes = Note.objects.all()[current_cursor : current_cursor + MAX_PRINTABLE_NOTE_COUNT]
         serializer = NoteSerializer(notes, many=True)
         serialized_notes = serializer.data
         return Response(
