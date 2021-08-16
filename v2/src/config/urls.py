@@ -23,5 +23,5 @@ urlpatterns = [
     path("", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
     path("admin/", admin.site.urls),
     path("api/auth/", include("ctrlf_auth.urls"), name="auth"),
-    path("api/notes/", include("ctrlfbe.urls"), name="note"),
+    path("api/notes/", include("ctrlfbe.note_urls"), name="notes"),
 ]
