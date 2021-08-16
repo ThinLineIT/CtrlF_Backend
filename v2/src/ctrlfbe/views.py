@@ -12,21 +12,6 @@ from .models import Note, Page, Topic
 from .serializers import NoteSerializer, PageSerializer, TopicSerializer
 
 
-class NoteAPIView(APIView):
-    authentication_classes: List[str] = []
-
-    @swagger_auto_schema(query_serializer=NoteListQuerySerializer)
-    def get(self, request):
-        current_cursor = int(request.query_params["cursor"])
-        notes = Note.objects.all()[current_cursor : current_cursor + MAX_PRINTABLE_NOTE_COUNT]
-        serializer = NoteSerializer(notes, many=True)
-        serialized_notes = serializer.data
-        return Response(
-            data={"next_cursor": current_cursor + len(serialized_notes), "notes": serialized_notes},
-            status=status.HTTP_200_OK,
-        )
-
-
 class BaseContentView(APIView):
     authentication_classes: List[str] = []
     child_model: Optional[Model] = None
@@ -50,6 +35,21 @@ class BaseContentView(APIView):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
+class NoteAPIView(APIView):
+    authentication_classes: List[str] = []
+
+    @swagger_auto_schema(query_serializer=NoteListQuerySerializer)
+    def get(self, request):
+        current_cursor = int(request.query_params["cursor"])
+        notes = Note.objects.all()[current_cursor : current_cursor + MAX_PRINTABLE_NOTE_COUNT]
+        serializer = NoteSerializer(notes, many=True)
+        serialized_notes = serializer.data
+        return Response(
+            data={"next_cursor": current_cursor + len(serialized_notes), "notes": serialized_notes},
+            status=status.HTTP_200_OK,
+        )
+
+
 class NoteDetailUpdateDeleteView(BaseContentView):
     model = Note
     serializer = NoteSerializer
@@ -67,7 +67,7 @@ class NoteDetailUpdateDeleteView(BaseContentView):
 class TopicListView(BaseContentView):
     model = Note
     child_model = Topic
-    serializer = NoteSerializer
+    serializer = TopicSerializer
     many = True
     error_msg = ERR_NOTE_NOT_FOUND
 
@@ -80,20 +80,17 @@ class TopicListView(BaseContentView):
         return super().get(request, *args, **kwargs)
 
 
-class PageListView(APIView):
-    authentication_classes: List[str] = []
+class PageListView(BaseContentView):
+    model = Topic
+    child_model = Page
+    serializer = PageSerializer
+    many = True
+    error_msg = ERR_TOPIC_NOT_FOUND
 
     @swagger_auto_schema(
         responses={200: PageSerializer(many=True)},
         operation_summary="Page List API",
         operation_description="topic_id에 해당하는 page들의 list를 리턴해줍니다",
     )
-    def get(self, request, topic_id):
-        topic = Topic.objects.filter(id=topic_id).first()
-        if topic is None:
-            return Response({"message": ERR_TOPIC_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
-
-        pages = Page.objects.filter(topic=topic)
-
-        serializer = PageSerializer(pages, many=True)
-        return Response(serializer.data, status.HTTP_200_OK)
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
