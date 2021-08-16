@@ -1,4 +1,5 @@
 from ctrlfbe.serializers import (
+    IssueSerializer,
     NoteListQuerySerializer,
     NoteSerializer,
     PageSerializer,
@@ -31,4 +32,11 @@ SWAGGER_NOTE_LIST_VIEW = {
     "operation_summary": "Note List API",
     "operation_description": "Cursor based pagination 처리된 Note List를 리턴 합니다",
     "tags": ["메인 화면"],
+}
+
+SWAGGER_ISSUE_LIST_VIEW = {
+    "responses": {200: IssueSerializer(many=True)},
+    "operation_summary": "Issue List API",
+    "operation_description": "모든 issue들의 list를 리턴해줍니다",
+    "tags": ["이슈 화면"],
 }

@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from ctrlfbe.swagger import (
+    SWAGGER_ISSUE_LIST_VIEW,
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
@@ -13,8 +14,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE_COUNT
-from .models import Note, Page, Topic
-from .serializers import NoteSerializer, PageSerializer, TopicSerializer
+from .models import Issue, Note, Page, Topic
+from .serializers import (
+    IssueSerializer,
+    NoteSerializer,
+    PageSerializer,
+    TopicSerializer,
+)
 
 
 class BaseContentView(APIView):
@@ -87,3 +93,14 @@ class PageListView(BaseContentView):
     @swagger_auto_schema(**SWAGGER_PAGE_LIST_VIEW)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class IssueListView(BaseContentView):
+    authentication_classes: List[str] = []
+
+    @swagger_auto_schema(**SWAGGER_ISSUE_LIST_VIEW)
+    def get(self, request):
+        issues = Issue.objects.all()
+
+        serializer = IssueSerializer(issues, many=True)
+        return Response(serializer.data, status.HTTP_200_OK)

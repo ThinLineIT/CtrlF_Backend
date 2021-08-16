@@ -1,6 +1,18 @@
 from rest_framework import serializers
 
-from .models import Note, Page, Topic
+from .models import ContentRequest, Issue, Note, Page, Topic
+
+
+class ContentRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContentRequest
+        fields = "__all__"
+
+
+class IssueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Issue
+        fields = "__all__"
 
 
 class NoteListSerializer(serializers.ListSerializer):
