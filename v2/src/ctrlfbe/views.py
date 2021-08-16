@@ -26,22 +26,37 @@ class NoteAPIView(APIView):
         )
 
 
-class NoteDetailUpdateDeleteView(APIView):
+class BaseContentView(APIView):
     authentication_classes: List[str] = []
+    many = False
+
+    def get(self, request, *args, **kwargs):
+        id_from_path_param = list(kwargs.values())[0]
+        result = self.model.objects.filter(id=id_from_path_param).first()
+
+        if result is None:
+            return Response(data={"message": self.error_msg}, status=status.HTTP_404_NOT_FOUND)
+
+        if self.many:
+            serializer = self.serializer(result, many=True)
+        else:
+            serializer = self.serializer(result)
+
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+class NoteDetailUpdateDeleteView(BaseContentView):
+    model = Note
+    serializer = NoteSerializer
+    error_msg = ERR_NOTE_NOT_FOUND
 
     @swagger_auto_schema(
         responses={200: NoteSerializer()},
         operation_summary="Note Detail API",
         operation_description="note_id에 해당하는 Note의 상세 내용을 리턴합니다",
     )
-    def get(self, request, note_id):
-        try:
-            note = Note.objects.get(id=note_id)
-        except Note.DoesNotExist:
-            return Response({"message": ERR_NOTE_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
-
-        serializer = NoteSerializer(note)
-        return Response(serializer.data, status.HTTP_200_OK)
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 
 class TopicListView(APIView):
@@ -53,9 +68,8 @@ class TopicListView(APIView):
         operation_description="note_id에 해당하는 topic들의 list를 리턴해줍니다",
     )
     def get(self, request, note_id):
-        try:
-            note = Note.objects.get(id=note_id)
-        except Note.DoesNotExist:
+        note = Note.objects.filter(id=note_id).first()
+        if note is None:
             return Response({"message": ERR_NOTE_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
 
         topics = Topic.objects.filter(note=note)
@@ -73,9 +87,8 @@ class PageListView(APIView):
         operation_description="topic_id에 해당하는 page들의 list를 리턴해줍니다",
     )
     def get(self, request, topic_id):
-        try:
-            topic = Topic.objects.get(id=topic_id)
-        except Topic.DoesNotExist:
+        topic = Topic.objects.filter(id=topic_id).first()
+        if topic is None:
             return Response({"message": ERR_TOPIC_NOT_FOUND}, status.HTTP_404_NOT_FOUND)
 
         pages = Page.objects.filter(topic=topic)
