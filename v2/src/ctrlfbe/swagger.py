@@ -1,4 +1,9 @@
-from ctrlfbe.serializers import NoteSerializer, PageSerializer, TopicSerializer
+from ctrlfbe.serializers import (
+    NoteListQuerySerializer,
+    NoteSerializer,
+    PageSerializer,
+    TopicSerializer,
+)
 
 SWAGGER_PAGE_LIST_VIEW = {
     "responses": {200: PageSerializer(many=True)},
@@ -16,4 +21,10 @@ SWAGGER_NOTE_DETAIL_VIEW = {
     "responses": {200: NoteSerializer()},
     "operation_summary": "Note Detail API",
     "operation_description": "note_id에 해당하는 Note의 상세 내용을 리턴합니다",
+}
+
+SWAGGER_NOTE_LIST_VIEW = {
+    "query_serializer": NoteListQuerySerializer,
+    "operation_summary": "Note List API",
+    "operation_description": "Cursor based pagination 처리된 Note List를 리턴 합니다",
 }

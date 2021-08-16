@@ -1,8 +1,8 @@
 from typing import List, Optional
 
-from ctrlfbe.serializers import NoteListQuerySerializer
 from ctrlfbe.swagger import (
     SWAGGER_NOTE_DETAIL_VIEW,
+    SWAGGER_NOTE_LIST_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
 )
@@ -46,7 +46,7 @@ class BaseContentView(APIView):
 class NoteAPIView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(query_serializer=NoteListQuerySerializer)
+    @swagger_auto_schema(**SWAGGER_NOTE_LIST_VIEW)
     def get(self, request):
         current_cursor = int(request.query_params["cursor"])
         notes = Note.objects.all()[current_cursor : current_cursor + MAX_PRINTABLE_NOTE_COUNT]
