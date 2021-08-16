@@ -7,6 +7,7 @@ from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import LoginSerializer
 from django.test import Client, TestCase
 from django.urls import reverse
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -288,6 +289,7 @@ class TestCheckVerificationCode(TestCase):
 class MockAuthAPI(APIView):
     authentication_classes = [CtrlfAuthentication]
 
+    @swagger_auto_schema(deprecated=True, tags=["기타"])
     def get(self, request):
         return Response(status=status.HTTP_200_OK, data={"email": request.user.email})
 
