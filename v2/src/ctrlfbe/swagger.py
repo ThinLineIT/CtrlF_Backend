@@ -32,3 +32,10 @@ SWAGGER_NOTE_LIST_VIEW = {
     "operation_description": "Cursor based pagination 처리된 Note List를 리턴 합니다",
     "tags": ["메인 화면"],
 }
+
+SWAGGER_TOPIC_DETAIL_VIEW = {
+    "responses": {200: TopicSerializer()},
+    "operation_summary": "Topic Detail API",
+    "operation_description": "topic_id에 해당하는 Topic의 상세 내용을 리턴합니다",
+    "tags": ["디테일 화면"],
+}
