@@ -296,39 +296,55 @@ def retrieve_topic_list(request, note_id):
     ]
 
 
+page_list = [
+    {
+        "id": 1,
+        "title": "서로소 집합 알고리즘",
+        "content": PAGE_CONTENT_1,
+        "created_at": datetime.now(),
+        "owners": [1, 2, 3],
+        "is_approved": True,
+    },
+    {
+        "id": 2,
+        "title": "동적 계획법",
+        "content": PAGE_CONTENT_2,
+        "created_at": datetime.now(),
+        "owners": [4, 5, 6],
+        "is_approved": True,
+    },
+    {
+        "id": 3,
+        "title": "Prim's algorithm",
+        "content": PAGE_CONTENT_3,
+        "created_at": datetime.now(),
+        "owners": [11, 12, 13],
+        "is_approved": False,
+    },
+    {
+        "id": 4,
+        "title": "선택 정렬(selection sort)",
+        "content": PAGE_CONTENT_4,
+        "created_at": datetime.now(),
+        "owners": [4, 5, 6],
+        "is_approved": False,
+    },
+]
+
+
 @api.get(
     "/topics/{topic_id}/pages",
     summary="page 리스트 보기",
     response={200: List[PageListOut]},
 )
 def retrieve_page_list(request, topic_id):
-    return 200, [
-        {
-            "id": 1,
-            "title": "서로소 집합 알고리즘",
-            "content": PAGE_CONTENT_1,
-            "created_at": datetime.now(),
-            "owners": [1, 2, 3],
-        },
-        {
-            "id": 2,
-            "title": "동적 계획법",
-            "content": PAGE_CONTENT_2,
-            "created_at": datetime.now(),
-            "owners": [4, 5, 6],
-        },
-        {
-            "id": 3,
-            "title": "Prim's algorithm",
-            "content": PAGE_CONTENT_3,
-            "created_at": datetime.now(),
-            "owners": [11, 12, 13],
-        },
-        {
-            "id": 4,
-            "title": "선택 정렬(selection sort)",
-            "content": PAGE_CONTENT_4,
-            "created_at": datetime.now(),
-            "owners": [4, 5, 6],
-        },
-    ]
+    return 200, page_list
+
+
+@api.get(
+    "/pages/{page_id}",
+    summary="page_id 에 해당하는 컨텐츠 보기",
+    response={200: PageListOut},
+)
+def retrieve_page_detail(request, page_id):
+    return (200, page_list[int(page_id) - 1])
