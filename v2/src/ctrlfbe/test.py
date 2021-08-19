@@ -171,3 +171,14 @@ class TestTopicDetail(TestCase):
         response = response.data
         self.assertEqual(response["title"], "test topic")
         self.assertEqual(response["note"], self.note.id)
+
+    def test_topic_detail_should_return_404_by_invalid_topic_id(self):
+        # Given : 유효하지 않은 topic id, 이미 저장된 topic
+        invalid_topic_id = 1234
+        # When  : API 실행
+        response = self.c.get(reverse("topics:topic_detail", kwargs={"topic_id": invalid_topic_id}))
+        # Then  : 상태코드 404
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And   : 메세지는 "토픽을 찾을 수 없습니다." 이어야 한다.
+        response = response.data
+        self.assertEqual(response["message"], "토픽을 찾을 수 없습니다.")
