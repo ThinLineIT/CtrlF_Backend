@@ -78,6 +78,14 @@ class TopicListView(BaseContentView):
         return super().get(request, *args, **kwargs)
 
 
+class TopicDetailUpdateDeleteView(BaseContentView):
+    parent_model = Topic
+    serializer = TopicSerializer
+
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
 class PageListView(BaseContentView):
     parent_model = Topic
     child_model = Page
