@@ -175,3 +175,14 @@ class TestPageDetail(TestCase):
         self.assertEqual(response["title"], "test page")
         self.assertEqual(response["content"], "test content")
         self.assertEqual(response["topic"], self.topic.id)
+
+    def test_page_detail_should_return_404_by_invalid_page_id(self):
+        # Given : 유효하지 않은 page id, 이미 저장된 page
+        invalid_page_id = 1234
+        # When  : API 실행
+        response = self.c.get(reverse("pages:page_detail", kwargs={"page_id": invalid_page_id}))
+        # Then  : 상태코드 404
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And   : 메세지는 "페이지를 찾을 수 없습니다." 이어야 한다.
+        response = response.data
+        self.assertEqual(response["message"], "페이지를 찾을 수 없습니다.")
