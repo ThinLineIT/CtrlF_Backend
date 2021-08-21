@@ -87,3 +87,11 @@ class PageListView(BaseContentView):
     @swagger_auto_schema(**SWAGGER_PAGE_LIST_VIEW)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class PageDetailUpdateDeleteView(BaseContentView):
+    parent_model = Page
+    serializer = PageSerializer
+
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)

@@ -149,3 +149,29 @@ class TestPageList(TestCase):
         # And  : 메세지는 "토픽을 찾을 수 없습니다." 이어야 함.
         response = response.data
         self.assertEqual(response["message"], "토픽을 찾을 수 없습니다.")
+
+
+class TestPageDetail(TestCase):
+    def setUp(self):
+        self.c = Client()
+        self.user = CtrlfUser.objects.create_user(email="test@test.com", password="12345")
+        self.note = Note.objects.create(title="test note")
+        self.note.owners.add(self.user)
+        self.topic = Topic.objects.create(note=self.note, title="test topic")
+        self.topic.owners.add(self.user)
+        page_data = {"topic": self.topic, "title": "test page", "content": "test content"}
+        self.page = Page.objects.create(**page_data)
+        self.page.owners.add(self.user)
+
+    def test_page_detail_should_return_200(self):
+        # Given : 유효한 page id, 이미 저장된 page
+        page_id = self.page.id
+        # When  : API 실행
+        response = self.c.get(reverse("pages:page_detail", kwargs={"page_id": page_id}))
+        # Then  : 상태코드 200
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And   : 불러온 정보가 저장된 정보와 일치해야 한다.
+        response = response.data
+        self.assertEqual(response["title"], "test page")
+        self.assertEqual(response["content"], "test content")
+        self.assertEqual(response["topic"], self.topic.id)
