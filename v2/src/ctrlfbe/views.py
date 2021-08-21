@@ -3,6 +3,7 @@ from typing import List, Optional
 from ctrlfbe.swagger import (
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
+    SWAGGER_PAGE_DETAIL_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
 )
@@ -93,5 +94,6 @@ class PageDetailUpdateDeleteView(BaseContentView):
     parent_model = Page
     serializer = PageSerializer
 
+    @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
