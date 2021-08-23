@@ -1,4 +1,5 @@
 from ctrlf_auth.models import CtrlfUser
+from ctrlf_auth.serializers import LoginSerializer
 from ctrlfbe.models import Note
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -8,10 +9,18 @@ from rest_framework import status
 class TestNoteList(TestCase):
     def setUp(self) -> None:
         self.client = Client()
-        self.user = CtrlfUser.objects.create(email="test@test.com", password="12345", nickname="nickname")
+        self.data = {
+            "email": "test@test.com",
+            "password": "12345",
+        }
+        self.user = CtrlfUser.objects.create_user(**self.data)
+        serializer = LoginSerializer()
+        serialized = serializer.validate(self.data)
+        self.token = serialized["token"]
 
     def _call_api(self, cursor):
-        return self.client.get(reverse("notes:retrieve_note_list"), {"cursor": cursor})
+        header = {"HTTP_AUTHORIZATION": f"Bearer {self.token}"}
+        return self.client.get(reverse("notes:note_list_create"), {"cursor": cursor}, **header)
 
     def _make_notes(self, count):
         for i in range(0, count):

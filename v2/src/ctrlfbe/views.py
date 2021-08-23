@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+from ctrlf_auth.authentication import CtrlfAuthentication
 from ctrlfbe.swagger import (
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
@@ -43,8 +44,10 @@ class BaseContentView(APIView):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
-class NoteAPIView(APIView):
-    authentication_classes: List[str] = []
+class NoteListView(APIView):
+    authentication_classes = [
+        CtrlfAuthentication,
+    ]
 
     @swagger_auto_schema(**SWAGGER_NOTE_LIST_VIEW)
     def get(self, request):

@@ -1,11 +1,11 @@
 from django.urls import path
 
-from .views import NoteAPIView, NoteDetailUpdateDeleteView, TopicListView
+from .views import NoteDetailUpdateDeleteView, NoteListView, TopicListView
 
 app_name = "notes"
 
 urlpatterns = [
-    path("", NoteAPIView.as_view(), name="retrieve_note_list"),
+    path("", NoteListView.as_view(), name="note_list_create"),
     path("<int:note_id>", NoteDetailUpdateDeleteView.as_view(), name="note_detail_update_delete"),
     path("<int:note_id>/topics", TopicListView.as_view(), name="topic_list"),
 ]
