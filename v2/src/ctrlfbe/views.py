@@ -14,8 +14,22 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE_COUNT
-from .models import Note, Page, Topic
-from .serializers import NoteSerializer, PageSerializer, TopicSerializer
+from .models import (
+    CtrlfActionType,
+    CtrlfContentType,
+    CtrlfIssueStatus,
+    Note,
+    Page,
+    Topic,
+)
+from .serializers import (
+    ContentRequestSerializer,
+    IssueCreateSerializer,
+    NoteSerializer,
+    OwnerSerializer,
+    PageSerializer,
+    TopicSerializer,
+)
 
 
 class BaseContentView(APIView):
@@ -59,6 +73,39 @@ class NoteListView(APIView):
             data={"next_cursor": current_cursor + len(serialized_notes), "notes": serialized_notes},
             status=status.HTTP_200_OK,
         )
+
+    @swagger_auto_schema(query_serializer=NoteSerializer)
+    def post(self, request, *args, **kwargs):
+        user_serializer = OwnerSerializer(request.user)
+        note_data = {"title": request.data.get("title"), "owners": [user_serializer.data]}
+        note_serializer = NoteSerializer(data=note_data)
+
+        if note_serializer.is_valid():
+            note_serializer.save()
+
+        content_request_data = {
+            "user": user_serializer.data,
+            "sub_id": 1,
+            "type": CtrlfContentType.NOTE,
+            "reason": "create",
+            "action": CtrlfActionType.CREATE,
+        }
+        content_request_serializer = ContentRequestSerializer(data=content_request_data)
+        if content_request_serializer.is_valid():
+            content_request_serializer.save()
+
+        issue_data = {
+            "title": request.data.get("title"),
+            "content": request.data.get("content"),
+            "owner": user_serializer.data,
+            "status": CtrlfIssueStatus.REQUESTED,
+            "content_request": content_request_serializer.data,
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        if issue_serializer.is_valid():
+            issue_serializer.save()
+
+        return Response(status=status.HTTP_201_CREATED)
 
 
 class NoteDetailUpdateDeleteView(BaseContentView):
