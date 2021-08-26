@@ -83,6 +83,8 @@ class NoteListView(APIView):
         if note_serializer.is_valid() and issue_serializer.is_valid():
             note_serializer.save()
             issue_serializer.save()
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_201_CREATED)
 

@@ -136,3 +136,19 @@ class TestNoteCreate(TestCase):
         # And: Note와 Issue는 생성되지 않는다.
         self.assertEqual(Note.objects.count(), 0)
         self.assertEqual(Issue.objects.count(), 0)
+
+    def test_create_note_should_return_400_when_valid_title(self):
+        # Given: invalid title과 content가 주어진다.
+        invalid_title = ""
+        request_body = {"title": invalid_title, "content": "test issue content"}
+        # And: 로그인 해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
+        # When: 인증이 필요한 create note api를 호출한다.
+        response = self._call_api(request_body, token)
+
+        # Then: status code는 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And: Note와 Issue는 생성되지 않는다.
+        self.assertEqual(Note.objects.count(), 0)
+        self.assertEqual(Issue.objects.count(), 0)
