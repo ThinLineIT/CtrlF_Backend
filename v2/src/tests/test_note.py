@@ -1,6 +1,6 @@
 from ctrlf_auth.models import CtrlfUser
 from ctrlf_auth.serializers import LoginSerializer
-from ctrlfbe.models import Note
+from ctrlfbe.models import Issue, Note
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -113,3 +113,13 @@ class TestNoteCreate(TestCase):
 
         # Then: status code는 201을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # And: Note가 정상적으로 생성된다.
+        note = Note.objects.all()[0]
+        self.assertEqual(Note.objects.count(), 1)
+        self.assertEqual(note.title, "test note title")
+        self.assertEqual(note.owners.first().id, 1)
+        # And: Issue가 정상적으로 생성된다.
+        issue = Issue.objects.all()[0]
+        self.assertEqual(Issue.objects.count(), 1)
+        self.assertEqual(issue.content, "test issue content")
+        self.assertEqual(issue.owner_id, 1)
