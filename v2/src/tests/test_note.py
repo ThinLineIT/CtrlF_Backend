@@ -91,17 +91,25 @@ class TestNoteCreate(TestCase):
         }
         self.user = CtrlfUser.objects.create_user(**self.data)
 
+    def _login(self):
+        serializer = LoginSerializer()
+        return serializer.validate(self.data)["token"]
+
+    def _call_api(self, request_body, token):
+        if token:
+            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        else:
+            header = {}
+        return self.client.post(reverse("notes:note_list_create"), request_body, **header)
+
     def test_create_note_should_return_201(self):
         # Given: note title과 issue 내용이 주어진다
         request_body = {"title": "test note title", "content": "test issue content"}
         # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
-        serializer = LoginSerializer()
-        serialized = serializer.validate(self.data)
-        token = serialized["token"]
+        token = self._login()
 
         # When: 인증이 필요한 create note api를 호출한다.
-        header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
-        response = self.client.post(reverse("notes:note_list_create"), request_body, **header)
+        response = self._call_api(request_body, token)
 
         # Then: status code는 201을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
