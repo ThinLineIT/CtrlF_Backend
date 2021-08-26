@@ -137,7 +137,7 @@ class TestNoteCreate(TestCase):
         self.assertEqual(Note.objects.count(), 0)
         self.assertEqual(Issue.objects.count(), 0)
 
-    def test_create_note_should_return_400_when_valid_title(self):
+    def test_create_note_should_return_400_when_invalid_title(self):
         # Given: invalid title과 content가 주어진다.
         invalid_title = ""
         request_body = {"title": invalid_title, "content": "test issue content"}
