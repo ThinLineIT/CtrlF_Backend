@@ -95,7 +95,7 @@ class TestNoteCreate(TestCase):
         serializer = LoginSerializer()
         return serializer.validate(self.data)["token"]
 
-    def _call_api(self, request_body, token):
+    def _call_api(self, request_body, token=None):
         if token:
             header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
         else:
@@ -123,3 +123,16 @@ class TestNoteCreate(TestCase):
         self.assertEqual(Issue.objects.count(), 1)
         self.assertEqual(issue.content, "test issue content")
         self.assertEqual(issue.owner_id, 1)
+
+    def test_create_note_should_return_401_when_not_login(self):
+        # Given: note title과 issue 내용이 주어진다, 로그인은 하지 않는다.
+        request_body = {"title": "test note title", "content": "test issue content"}
+
+        # When: 인증이 필요한 create note api를 호출한다.
+        response = self._call_api(request_body)
+
+        # Then: status code는 401을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        # And: Note와 Issue는 생성되지 않는다.
+        self.assertEqual(Note.objects.count(), 0)
+        self.assertEqual(Issue.objects.count(), 0)
