@@ -39,3 +39,10 @@ SWAGGER_TOPIC_DETAIL_VIEW = {
     "operation_description": "topic_id에 해당하는 Topic의 상세 내용을 리턴합니다",
     "tags": ["디테일 화면"],
 }
+
+SWAGGER_PAGE_DETAIL_VIEW = {
+    "responses": {200: PageSerializer()},
+    "operation_summary": "Page Detail API",
+    "operation_description": "page_id에 해당하는 Page의 상세 내용을 리턴합니다",
+    "tags": ["디테일 화면"],
+}
