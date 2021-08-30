@@ -2,6 +2,7 @@ from typing import Optional
 
 from ctrlfbe.mixins import CtrlfAuthenticationMixin
 from ctrlfbe.swagger import (
+    SWAGGER_NOTE_CREATE_VIEW,
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
     SWAGGER_PAGE_DETAIL_VIEW,
@@ -19,7 +20,6 @@ from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE
 from .models import CtrlfIssueStatus, Note, Page, Topic
 from .serializers import (
     IssueCreateSerializer,
-    NoteCreateRequestBodySerializer,
     NoteSerializer,
     PageSerializer,
     TopicSerializer,
@@ -63,7 +63,7 @@ class NoteListCreateView(CtrlfAuthenticationMixin, APIView):
             status=status.HTTP_200_OK,
         )
 
-    @swagger_auto_schema(request_body=NoteCreateRequestBodySerializer)
+    @swagger_auto_schema(**SWAGGER_NOTE_CREATE_VIEW)
     def post(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
         note_data = {
