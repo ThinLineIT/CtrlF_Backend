@@ -36,9 +36,10 @@ class IssueCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         owner = validated_data.pop("owner")
+        note = validated_data.pop("note")
         content_request_data = {
             "user": owner,
-            "sub_id": Note.objects.count(),
+            "sub_id": note.id,
             "type": CtrlfContentType.NOTE,
             "action": CtrlfActionType.CREATE,
             "reason": "create note",
@@ -46,6 +47,11 @@ class IssueCreateSerializer(serializers.ModelSerializer):
         content_request = ContentRequest.objects.create(**content_request_data)
         issue = Issue.objects.create(owner=owner, content_request=content_request, **validated_data)
         return issue
+
+
+class NoteCreateRequestBodySerializer(serializers.Serializer):
+    title = serializers.CharField()
+    content = serializers.CharField()
 
 
 class NoteListQuerySerializer(serializers.Serializer):

@@ -17,6 +17,7 @@ from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE
 from .models import CtrlfIssueStatus, Note, Page, Topic
 from .serializers import (
     IssueCreateSerializer,
+    NoteCreateRequestBodySerializer,
     NoteSerializer,
     PageSerializer,
     TopicSerializer,
@@ -49,7 +50,7 @@ class BaseContentView(APIView):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
-class NoteListView(APIView):
+class NoteListCreateView(APIView):
     authentication_classes = [
         CtrlfAuthentication,
     ]
@@ -65,7 +66,7 @@ class NoteListView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    @swagger_auto_schema(query_serializer=NoteSerializer)
+    @swagger_auto_schema(request_body=NoteCreateRequestBodySerializer)
     def post(self, request, *args, **kwargs):
         note_data = {
             "title": request.data["title"],
@@ -81,8 +82,8 @@ class NoteListView(APIView):
         issue_serializer = IssueCreateSerializer(data=issue_data)
 
         if note_serializer.is_valid() and issue_serializer.is_valid():
-            note_serializer.save()
-            issue_serializer.save()
+            issue_serializer.save(note=note_serializer.save())
+
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
