@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+from ctrlf_auth.authentication import CtrlfAuthentication
 from ctrlfbe.swagger import (
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
@@ -15,8 +16,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE_COUNT
-from .models import Note, Page, Topic
-from .serializers import NoteSerializer, PageSerializer, TopicSerializer
+from .models import CtrlfIssueStatus, Note, Page, Topic
+from .serializers import (
+    IssueCreateSerializer,
+    NoteCreateRequestBodySerializer,
+    NoteSerializer,
+    PageSerializer,
+    TopicSerializer,
+)
 
 
 class BaseContentView(APIView):
@@ -45,8 +52,10 @@ class BaseContentView(APIView):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
-class NoteAPIView(APIView):
-    authentication_classes: List[str] = []
+class NoteListCreateView(APIView):
+    authentication_classes = [
+        CtrlfAuthentication,
+    ]
 
     @swagger_auto_schema(**SWAGGER_NOTE_LIST_VIEW)
     def get(self, request):
@@ -58,6 +67,29 @@ class NoteAPIView(APIView):
             data={"next_cursor": current_cursor + len(serialized_notes), "notes": serialized_notes},
             status=status.HTTP_200_OK,
         )
+
+    @swagger_auto_schema(request_body=NoteCreateRequestBodySerializer)
+    def post(self, request, *args, **kwargs):
+        note_data = {
+            "title": request.data["title"],
+            "owners": [request.user.id],
+        }
+        issue_data = {
+            "title": request.data["title"],
+            "content": request.data["content"],
+            "owner": request.user.id,
+            "status": CtrlfIssueStatus.REQUESTED,
+        }
+        note_serializer = NoteSerializer(data=note_data)
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+
+        if note_serializer.is_valid() and issue_serializer.is_valid():
+            issue_serializer.save(note=note_serializer.save())
+
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(status=status.HTTP_201_CREATED)
 
 
 class NoteDetailUpdateDeleteView(BaseContentView):
