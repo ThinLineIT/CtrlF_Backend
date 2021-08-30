@@ -149,3 +149,36 @@ class TestPageList(TestCase):
         # And  : 메세지는 "토픽을 찾을 수 없습니다." 이어야 함.
         response = response.data
         self.assertEqual(response["message"], "토픽을 찾을 수 없습니다.")
+
+
+class TestTopicDetail(TestCase):
+    def setUp(self):
+        self.c = Client()
+        self.user = CtrlfUser.objects.create_user(email="test@test.com", password="12345")
+        self.note = Note.objects.create(title="test note")
+        self.note.owners.add(self.user)
+        self.topic = Topic.objects.create(note=self.note, title="test topic")
+        self.topic.owners.add(self.user)
+
+    def test_topic_detail_should_return_200(self):
+        # Given : 유효한 topic id, 이미 저장된 topic
+        topic_id = self.topic.id
+        # When  : API 실행
+        response = self.c.get(reverse("topics:topic_detail", kwargs={"topic_id": topic_id}))
+        # Then  : 상태코드 200
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And   : 불러온 정보가 저장된 정보와 일치해야 한다.
+        response = response.data
+        self.assertEqual(response["title"], "test topic")
+        self.assertEqual(response["note"], self.note.id)
+
+    def test_topic_detail_should_return_404_by_invalid_topic_id(self):
+        # Given : 유효하지 않은 topic id, 이미 저장된 topic
+        invalid_topic_id = 1234
+        # When  : API 실행
+        response = self.c.get(reverse("topics:topic_detail", kwargs={"topic_id": invalid_topic_id}))
+        # Then  : 상태코드 404
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And   : 메세지는 "토픽을 찾을 수 없습니다." 이어야 한다.
+        response = response.data
+        self.assertEqual(response["message"], "토픽을 찾을 수 없습니다.")

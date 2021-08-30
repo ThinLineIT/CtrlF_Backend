@@ -22,7 +22,7 @@ class NoteListQuerySerializer(serializers.Serializer):
 class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
-        fields = ["id", "title", "created_at", "is_approved", "owners"]
+        fields = "__all__"
         read_only_fields = ["id", "created_at"]
 
 

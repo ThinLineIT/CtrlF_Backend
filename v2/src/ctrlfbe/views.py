@@ -4,6 +4,7 @@ from ctrlfbe.swagger import (
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
+    SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
 )
 from django.db.models import Model
@@ -74,6 +75,15 @@ class TopicListView(BaseContentView):
     many = True
 
     @swagger_auto_schema(**SWAGGER_TOPIC_LIST_VIEW)
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+class TopicDetailUpdateDeleteView(BaseContentView):
+    parent_model = Topic
+    serializer = TopicSerializer
+
+    @swagger_auto_schema(**SWAGGER_TOPIC_DETAIL_VIEW)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
