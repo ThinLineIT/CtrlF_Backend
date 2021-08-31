@@ -26,4 +26,5 @@ urlpatterns = [
     path("api/notes/", include("ctrlfbe.note_urls"), name="notes"),
     path("api/topics/", include("ctrlfbe.topic_urls"), name="topics"),
     path("api/issues/", include("ctrlfbe.issue_urls"), name="issues"),
+    path("api/pages/", include("ctrlfbe.page_urls"), name="pages"),
 ]

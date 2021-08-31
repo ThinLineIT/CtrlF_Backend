@@ -160,9 +160,7 @@ CORS_ALLOW_HEADERS = (
 
 REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "common.exceptions.custom_exception_handler",
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "ctrlf_auth.authentication.CtrlfAuthentication",
-    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
 }
 
 JWT_AUTH = {

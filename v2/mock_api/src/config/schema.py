@@ -310,4 +310,5 @@ class PageListOut(Schema):
     title: str
     content: str
     created_at: datetime
+    is_approved: bool
     owners: List[int]
