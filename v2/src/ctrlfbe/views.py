@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from ctrlfbe.mixins import CtrlfAuthenticationMixin
 from ctrlfbe.swagger import (
@@ -18,15 +18,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE_COUNT
-from .models import Issue, Note, Page, Topic
-from .serializers import (
-    IssueSerializer,
-from .models import CtrlfIssueStatus, Note, Page, Topic
+from .models import CtrlfIssueStatus, Issue, Note, Page, Topic
 from .serializers import (
     IssueCreateSerializer,
     NoteSerializer,
     PageSerializer,
     TopicSerializer,
+    IssueSerializer,
 )
 
 
@@ -141,6 +139,8 @@ class IssueListView(BaseContentView):
 
         serializer = IssueSerializer(issues, many=True)
         return Response(serializer.data, status.HTTP_200_OK)
+
+
 class PageDetailUpdateDeleteView(BaseContentView):
     parent_model = Page
     serializer = PageSerializer

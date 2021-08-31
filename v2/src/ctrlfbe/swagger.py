@@ -35,13 +35,13 @@ SWAGGER_NOTE_LIST_VIEW = {
     "tags": ["메인 화면"],
 }
 
-<<<<<<< HEAD
 SWAGGER_ISSUE_LIST_VIEW = {
     "responses": {200: IssueSerializer(many=True)},
     "operation_summary": "Issue List API",
     "operation_description": "모든 issue들의 list를 리턴해줍니다",
     "tags": ["이슈 화면"],
-=======
+}
+
 SWAGGER_NOTE_CREATE_VIEW = {
     "operation_summary": "Note Create API",
     "operation_description": "비활성화된 Note와 이슈를 생성 합니다.",
@@ -61,5 +61,4 @@ SWAGGER_PAGE_DETAIL_VIEW = {
     "operation_summary": "Page Detail API",
     "operation_description": "page_id에 해당하는 Page의 상세 내용을 리턴합니다",
     "tags": ["디테일 화면"],
->>>>>>> 8afbcec26e912e880b5ca0aa71731f7c50dfc9cf
 }
