@@ -1,4 +1,5 @@
 from ctrlf_auth.models import CtrlfUser
+from ctrlf_auth.serializers import LoginSerializer
 from ctrlfbe.models import (
     ContentRequest,
     CtrlfActionType,
@@ -18,7 +19,11 @@ from rest_framework import status
 class TestIssueList(TestCase):
     def setUp(self):
         self.c = Client()
-        self.note_creator1 = CtrlfUser.objects.create_user(email="note_creator1@test.com", password="12345")
+        self.user_data = {
+            "email": "note_creator1@test.com",
+            "password": "12345",
+        }
+        self.note_creator1 = CtrlfUser.objects.create_user(**self.user_data)
         self.note_creator2 = CtrlfUser.objects.create_user(email="note_creator2@test.com", password="12345")
         self.topic_creator = CtrlfUser.objects.create_user(email="topic_creator@test.com", password="12345")
         self.page_creator1 = CtrlfUser.objects.create_user(email="page_creator1@test.com", password="12345")
@@ -101,8 +106,16 @@ class TestIssueList(TestCase):
         issue = Issue.objects.create(**issue_data)
         return issue
 
-    def _call_api(self, cursor, type, mine):
-        return self.c.get(reverse("issues:issue_list"), {"cursor": cursor, "type": type, "mine": mine})
+    def _call_api(self, cursor, type, mine, token=None):
+        if token:
+            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        else:
+            header = {}
+        return self.c.get(reverse("issues:issue_list"), {"cursor": cursor, "type": type, "mine": mine}, **header)
+
+    def _login(self):
+        serializer = LoginSerializer()
+        return serializer.validate(self.user_data)["token"]
 
     def test_issue_list_should_return_200(self):
         # Given: 2개의 이슈를 생성하고, cursor는 0, type은 [], mine은 false로 주어진다.
@@ -110,8 +123,12 @@ class TestIssueList(TestCase):
         given_cursor = 0
         given_type = "[]"
         given_mine = "false"
+
+        # And: 로그인해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
         # When : API 실행
-        response = self._call_api(given_cursor, given_type, given_mine)
+        response = self._call_api(given_cursor, given_type, given_mine, token)
         # Then : 상태코드 200
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And  : 첫번째 이슈의 title은 "test issue1" 이어야 한다.
@@ -125,8 +142,12 @@ class TestIssueList(TestCase):
         given_cursor = 0
         given_type = "[]"
         given_mine = "false"
+
+        # And: 로그인해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
         # When : API 실행
-        response = self._call_api(given_cursor, given_type, given_mine)
+        response = self._call_api(given_cursor, given_type, given_mine, token)
         # Then : 상태코드 200
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And  : 이슈의 creator의 노트의 값은 [1, 2] 이어야 한다.
@@ -138,8 +159,12 @@ class TestIssueList(TestCase):
         given_cursor = 0
         given_type = "[]"
         given_mine = "false"
+
+        # And: 로그인해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
         # When : API 실행
-        response = self._call_api(given_cursor, given_type, given_mine)
+        response = self._call_api(given_cursor, given_type, given_mine, token)
         # Then : 상태코드 200
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And  : 이슈의 creator의 노트의 값은 [1, 2] 이어야 한다.
@@ -153,8 +178,12 @@ class TestIssueList(TestCase):
         given_cursor = 0
         given_type = "[]"
         given_mine = "false"
+
+        # And: 로그인해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
         # When : API 실행
-        response = self._call_api(given_cursor, given_type, given_mine)
+        response = self._call_api(given_cursor, given_type, given_mine, token)
         # Then : 상태코드 200
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And  : 이슈의 creator의 노트의 값은 [1, 2] 이어야 한다.
@@ -171,8 +200,12 @@ class TestIssueList(TestCase):
         given_cursor = 0
         given_type = "[]"
         given_mine = "false"
+
+        # And: 로그인해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
         # When : API 실행
-        response = self._call_api(given_cursor, given_type, given_mine)
+        response = self._call_api(given_cursor, given_type, given_mine, token)
         # Then : 상태코드 200
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And  : next_cursor는 30을 리턴한다.
@@ -186,8 +219,12 @@ class TestIssueList(TestCase):
         given_cursor = 5
         given_type = "[]"
         given_mine = "false"
+
+        # And: 로그인해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
         # When : API 실행
-        response = self._call_api(given_cursor, given_type, given_mine)
+        response = self._call_api(given_cursor, given_type, given_mine, token)
         # Then : 상태코드 200
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And  : next_cursor는 10을 리턴한다.
@@ -201,8 +238,12 @@ class TestIssueList(TestCase):
         given_cursor = 15
         given_type = "[]"
         given_mine = "false"
+
+        # And: 로그인해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
         # When : API 실행
-        response = self._call_api(given_cursor, given_type, given_mine)
+        response = self._call_api(given_cursor, given_type, given_mine, token)
         # Then : 상태코드 200
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And  : next_cursor는 10을 리턴한다.
@@ -215,8 +256,12 @@ class TestIssueList(TestCase):
         given_cursor = 0
         given_type = "[]"
         given_mine = "false"
+
+        # And: 로그인해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
         # When : API 실행
-        response = self._call_api(given_cursor, given_type, given_mine)
+        response = self._call_api(given_cursor, given_type, given_mine, token)
         # Then : 상태코드 200
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And  : next_cursor는 0, type은 [], mine은 false 리턴한다.
