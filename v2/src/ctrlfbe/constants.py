@@ -1,4 +1,5 @@
 MAX_PRINTABLE_NOTE_COUNT = 30
+MAX_PRINTABLE_ISSUE_COUNT = 30
 ERR_NOTE_NOT_FOUND = "노트를 찾을 수 없습니다."
 ERR_TOPIC_NOT_FOUND = "토픽을 찾을 수 없습니다."
 ERR_PAGE_NOT_FOUND = "페이지를 찾을 수 없습니다."

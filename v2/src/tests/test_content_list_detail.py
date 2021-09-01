@@ -1,73 +1,8 @@
 from ctrlf_auth.models import CtrlfUser
-from ctrlfbe.models import (
-    CtrlfActionType,
-    CtrlfContentType,
-    CtrlfIssueStatus,
-    Issue,
-    Note,
-    Page,
-    Topic,
-)
+from ctrlfbe.models import Note, Page, Topic
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
-
-from .serializers import ContentRequestSerializer
-
-
-class TestIssueList(TestCase):
-    def setUp(self):
-        self.c = Client()
-        self.owner = CtrlfUser.objects.create_user(email="creator@test.com", password="12345")
-        self.note = Note.objects.create(title="test note")
-        self.note.owners.add(self.owner)
-        self.creator = CtrlfUser.objects.create_user(email="owner@test.com", password="12345")
-
-    def _add_issues(self):
-        issue_list = []
-        for i in range(10):
-            content_request_data = {
-                "user": self.creator,
-                "sub_id": self.note.id,
-                "type": CtrlfContentType.NOTE,
-                "action": CtrlfActionType.CREATE,
-                "reason": "test reason{}".format(i + 1),
-                "is_active": True,
-            }
-            serializer = ContentRequestSerializer(content_request_data)
-            issue_data = {
-                "owner": self.owner,
-                "title": "test issue{}".format(i + 1),
-                "content": "test content{}".format(i + 1),
-                "status": CtrlfIssueStatus.REQUESTED,
-                "content_request": serializer.data,
-            }
-            issue = Issue.objects.create(**issue_data)
-            issue_list.append(issue)
-        return issue_list
-
-    def _call_api(self):
-        return self.c.get(reverse("issues:issue_list"))
-
-    def test_issue_list_should_return_200(self):
-        # Given: 이미 저장된 issue들
-        issue_list = self._add_issues()
-        # When : API 실행
-        response = self._call_api()
-        # Then : 상태코드 200
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # And  : 이미 저장된 issue 개수와 같아야 함.
-        response = response.data
-        self.assertEqual(len(response), len(issue_list))
-
-    def test_issue_list_should_return_200_by_empty_issue_list(self):
-        # Given: 저장되지 않은 issue들
-        # When : API 실행
-        response = self._call_api()
-        # Then : 상태코드 200
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # And  : 빈 배열을 return 해야함.
-        self.assertEqual(response.data, [])
 
 
 class TestNoteDetail(TestCase):

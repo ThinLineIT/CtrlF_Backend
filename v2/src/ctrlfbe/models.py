@@ -17,9 +17,13 @@ class CtrlfActionType(models.TextChoices):
 
 class CtrlfIssueStatus(models.TextChoices):
     REQUESTED = "REQUESTED", "요청"
-    REJECTED = "REJECTED", "거절"
-    APPROVED = "APPROVED", "승인"
     CLOSED = "CLOSED", "닫힘"
+
+
+class CtrlfContentStatus(models.TextChoices):
+    PENDING = "PENDING", "보류"
+    REJECTED = "REJECTED", "거절"
+    ACCEPTED = "ACCEPTED", "승인"
 
 
 class ContentRequest(CommonTimestamp):
@@ -27,6 +31,9 @@ class ContentRequest(CommonTimestamp):
     sub_id = models.IntegerField(help_text="type에 대한 id")
     type = models.CharField(max_length=30, choices=CtrlfContentType.choices, help_text="NOTE, TOPIC, PAGE")
     action = models.CharField(max_length=30, choices=CtrlfActionType.choices, help_text="CRUD")
+    status = models.CharField(
+        max_length=30, choices=CtrlfContentStatus.choices, default=CtrlfContentStatus.PENDING, help_text="Content 상태들"
+    )
     reason = models.TextField(default="", help_text="수정 혹은 삭제 이유")
     is_active = models.BooleanField(default=False)
 

@@ -1,3 +1,4 @@
+import json
 from typing import List, Optional
 
 from ctrlfbe.mixins import CtrlfAuthenticationMixin
@@ -17,14 +18,19 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE_COUNT
+from .constants import (
+    ERR_NOT_FOUND_MSG_MAP,
+    ERR_UNEXPECTED,
+    MAX_PRINTABLE_ISSUE_COUNT,
+    MAX_PRINTABLE_NOTE_COUNT,
+)
 from .models import CtrlfIssueStatus, Issue, Note, Page, Topic
 from .serializers import (
     IssueCreateSerializer,
+    IssueSerializer,
     NoteSerializer,
     PageSerializer,
     TopicSerializer,
-    IssueSerializer,
 )
 
 
@@ -130,15 +136,46 @@ class PageListView(BaseContentView):
         return super().get(request, *args, **kwargs)
 
 
-class IssueListView(BaseContentView):
+class IssueListView(CtrlfAuthenticationMixin, APIView):
     authentication_classes: List[str] = []
 
     @swagger_auto_schema(**SWAGGER_ISSUE_LIST_VIEW)
     def get(self, request):
-        issues = Issue.objects.all()
+        ctrlf_user = self._ctrlf_authentication(request)
 
-        serializer = IssueSerializer(issues, many=True)
-        return Response(serializer.data, status.HTTP_200_OK)
+        current_cursor = int(request.query_params["cursor"])
+        typeList = json.loads(request.query_params["type"])
+        mine = request.query_params["mine"]
+
+        issues = Issue.objects.all()
+        filtered_issues = issues
+
+        if mine == "true":
+            temp_list = []
+            for issue in filtered_issues:
+                if ctrlf_user.id == issue["owner_id"]:
+                    temp_list.append(issue)
+            filtered_issues = temp_list
+
+        if len(typeList) > 0:
+            temp_list = []
+            for issue in filtered_issues:
+                if typeList in issue["content_type"]:
+                    temp_list.append(issue)
+            filtered_issues = temp_list
+
+        if current_cursor >= len(issues):
+            return Response({"next_cursor": len(issues), "issues": []}, status.HTTP_200_OK)
+        elif current_cursor + MAX_PRINTABLE_ISSUE_COUNT > len(issues):
+            sliced_issues = issues[current_cursor : len(issues)]
+            next_cursor = len(issues)
+        else:
+            sliced_issues = issues[current_cursor : current_cursor + MAX_PRINTABLE_ISSUE_COUNT]
+            next_cursor = current_cursor + MAX_PRINTABLE_ISSUE_COUNT
+        serializer = IssueSerializer(data=sliced_issues, many=True)
+        serializer.is_valid()
+        serialized_issues = serializer.data
+        return Response(data={"next_cursor": next_cursor, "issues": serialized_issues}, status=status.HTTP_200_OK)
 
 
 class PageDetailUpdateDeleteView(BaseContentView):
