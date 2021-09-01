@@ -1,7 +1,8 @@
-from typing import List, Optional
+from typing import Optional
 
-from ctrlf_auth.authentication import CtrlfAuthentication
+from ctrlfbe.mixins import CtrlfAuthenticationMixin
 from ctrlfbe.swagger import (
+    SWAGGER_NOTE_CREATE_VIEW,
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
     SWAGGER_PAGE_DETAIL_VIEW,
@@ -19,7 +20,6 @@ from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE
 from .models import CtrlfIssueStatus, Note, Page, Topic
 from .serializers import (
     IssueCreateSerializer,
-    NoteCreateRequestBodySerializer,
     NoteSerializer,
     PageSerializer,
     TopicSerializer,
@@ -27,7 +27,6 @@ from .serializers import (
 
 
 class BaseContentView(APIView):
-    authentication_classes: List[str] = []
     child_model: Optional[Model] = None
     many = False
 
@@ -52,11 +51,7 @@ class BaseContentView(APIView):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
-class NoteListCreateView(APIView):
-    authentication_classes = [
-        CtrlfAuthentication,
-    ]
-
+class NoteListCreateView(CtrlfAuthenticationMixin, APIView):
     @swagger_auto_schema(**SWAGGER_NOTE_LIST_VIEW)
     def get(self, request):
         current_cursor = int(request.query_params["cursor"])
@@ -68,16 +63,17 @@ class NoteListCreateView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    @swagger_auto_schema(request_body=NoteCreateRequestBodySerializer)
+    @swagger_auto_schema(**SWAGGER_NOTE_CREATE_VIEW)
     def post(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
         note_data = {
             "title": request.data["title"],
-            "owners": [request.user.id],
+            "owners": [ctrlf_user.id],
         }
         issue_data = {
             "title": request.data["title"],
             "content": request.data["content"],
-            "owner": request.user.id,
+            "owner": ctrlf_user.id,
             "status": CtrlfIssueStatus.REQUESTED,
         }
         note_serializer = NoteSerializer(data=note_data)
