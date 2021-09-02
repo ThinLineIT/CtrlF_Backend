@@ -1,5 +1,6 @@
 from ctrlf_auth.models import CtrlfUser
-from ctrlfbe.models import Note, Page, Topic
+from ctrlf_auth.serializers import LoginSerializer
+from ctrlfbe.models import Issue, Note, Page, Topic
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -219,3 +220,50 @@ class TestPageDetail(TestCase):
         # And   : 메세지는 "페이지를 찾을 수 없습니다." 이어야 한다.
         response = response.data
         self.assertEqual(response["message"], "페이지를 찾을 수 없습니다.")
+
+
+class TestTopicCreate(TestCase):
+    def setUp(self) -> None:
+        self.client = Client()
+        self.data = {
+            "email": "test@test.com",
+            "password": "12345",
+        }
+        self.user = CtrlfUser.objects.create_user(**self.data)
+
+    def _login(self):
+        serializer = LoginSerializer()
+        return serializer.validate(self.data)["token"]
+
+    def _call_api(self, request_body, token=None):
+        if token:
+            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        else:
+            header = {}
+        return self.client.post(reverse("topics:topic_create"), request_body, **header)
+
+    def make_note(self):
+        self.note = Note.objects.create(title="test note title")
+        self.note.owners.add(self.user)
+
+    def test_topic_create_should_return_201(self):
+        # Given: 미리 생성된 노트, 로그인 하여 얻은 토큰, 유효한 토픽 생성 정보
+        self.make_note()
+        token = self._login()
+        request_body = {"note": self.note.id, "title": "test title", "content": "test issue content"}
+
+        # When : API 실행
+        response = self._call_api(request_body, token=token)
+
+        # Then : 상태코드 201이어야 함.
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # And : 생성된 토픽 정보가 일치해야 한다.
+        topic = Topic.objects.all()[0]
+        self.assertEqual(topic.note, self.note)
+        self.assertEqual(topic.title, "test title")
+
+        # And : 생성된 이슈 정보와 일치해야 한다.
+        issue = Issue.objects.all()[0]
+        self.assertEqual(issue.title, "test title")
+        self.assertEqual(issue.content, "test issue content")

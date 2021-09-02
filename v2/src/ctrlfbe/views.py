@@ -22,6 +22,7 @@ from .serializers import (
     IssueCreateSerializer,
     NoteSerializer,
     PageSerializer,
+    TopicCreateSerializer,
     TopicSerializer,
 )
 
@@ -106,6 +107,21 @@ class TopicListView(BaseContentView):
     @swagger_auto_schema(**SWAGGER_TOPIC_LIST_VIEW)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class TopicCreateView(CtrlfAuthenticationMixin, APIView):
+    def post(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        serializer = TopicCreateSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save(owner=ctrlf_user)
+            return Response(status=status.HTTP_201_CREATED)
+        else:
+            for _, message in serializer.errors.items():
+                err = message[0]
+                print(err)
+            return Response({"message": err}, status=err.code)
 
 
 class TopicDetailUpdateDeleteView(BaseContentView):
