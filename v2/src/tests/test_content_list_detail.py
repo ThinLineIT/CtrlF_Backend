@@ -267,3 +267,14 @@ class TestTopicCreate(TestCase):
         issue = Issue.objects.all()[0]
         self.assertEqual(issue.title, "test title")
         self.assertEqual(issue.content, "test issue content")
+
+    def test_topic_create_should_return_401_without_login(self):
+        # Given: 미리 생성된 노트, 로그인 하여 얻은 토큰, 유효한 토픽 생성 정보
+        self.make_note()
+        request_body = {"note": self.note.id, "title": "test title", "content": "test issue content"}
+
+        # When : API 실행
+        response = self._call_api(request_body)
+
+        # Then : 상태코드 401이어야 함.
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

@@ -120,7 +120,6 @@ class TopicCreateView(CtrlfAuthenticationMixin, APIView):
         else:
             for _, message in serializer.errors.items():
                 err = message[0]
-                print(err)
             return Response({"message": err}, status=err.code)
 
 
