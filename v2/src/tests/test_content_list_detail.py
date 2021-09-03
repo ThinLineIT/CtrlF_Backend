@@ -269,7 +269,7 @@ class TestTopicCreate(TestCase):
         self.assertEqual(issue.content, "test issue content")
 
     def test_topic_create_should_return_401_without_login(self):
-        # Given: 미리 생성된 노트, 로그인 하여 얻은 토큰, 유효한 토픽 생성 정보
+        # Given: 미리 생성된 노트, 유효한 토픽 생성 정보
         self.make_note()
         request_body = {"note": self.note.id, "title": "test title", "content": "test issue content"}
 
@@ -327,3 +327,164 @@ class TestTopicCreate(TestCase):
         # And : 메세지는 content을(를) 입력하세요. 이어야 함.
         response = response.data
         self.assertEqual(response["message"], "content을(를) 입력하세요.")
+
+
+class TestPageCreate(TestCase):
+    def setUp(self) -> None:
+        self.client = Client()
+        self.data = {
+            "email": "test@test.com",
+            "password": "12345",
+        }
+        self.user = CtrlfUser.objects.create_user(**self.data)
+
+    def _login(self):
+        serializer = LoginSerializer()
+        return serializer.validate(self.data)["token"]
+
+    def _call_api(self, request_body, token=None):
+        if token:
+            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        else:
+            header = {}
+        return self.client.post(reverse("pages:page_create"), request_body, **header)
+
+    def make_note(self):
+        self.note = Note.objects.create(title="test note title")
+        self.note.owners.add(self.user)
+
+    def make_topic(self):
+        self.topic = Topic.objects.create(note=self.note, title="test topic title")
+        self.topic.owners.add(self.user)
+
+    def test_page_create_should_return_201(self):
+        # Given: 미리 생성된 노트, 토픽, 로그인 하여 얻은 토큰, 유효한 페이지 생성 정보.
+        self.make_note()
+        self.make_topic()
+        token = self._login()
+        request_body = {
+            "topic": self.topic.id,
+            "title": "test title",
+            "content": "test page content",
+            "issue_content": "test issue content",
+        }
+
+        # When : API 실행.
+        response = self._call_api(request_body, token=token)
+
+        # Then : 상태코드 201이어야 함.
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # And : 생성된 페이지 정보가 일치해야 한다.
+        page = Page.objects.all()[0]
+        self.assertEqual(page.topic, self.topic)
+        self.assertEqual(page.title, "test title")
+        self.assertEqual(page.content, "test page content")
+
+        # And : 생성된 이슈 정보와 일치해야 한다.
+        issue = Issue.objects.all()[0]
+        self.assertEqual(issue.title, "test title")
+        self.assertEqual(issue.content, "test issue content")
+
+    def test_page_create_should_return_401_without_login(self):
+        # Given: 미리 생성된 노트, 토픽, 유효한 페이지 생성 정보
+        self.make_note()
+        self.make_topic()
+        request_body = {
+            "topic": self.topic.id,
+            "title": "test title",
+            "content": "test page content",
+            "issue_content": "test issue content",
+        }
+
+        # When : API 실행
+        response = self._call_api(request_body)
+
+        # Then : 상태코드 401이어야 함.
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_page_create_should_return_404_by_invalid_note_id(self):
+        # Given: 미리 생성된 노트, 토픽, 로그인 하여 얻은 토큰, 유효하지 않은 토픽 ID.
+        self.make_note()
+        self.make_topic()
+        token = self._login()
+        invalid_topic_id = 1234
+        request_body = {
+            "topic": invalid_topic_id,
+            "title": "test title",
+            "content": "test page content",
+            "issue_content": "test issue content",
+        }
+
+        # When : API 실행.
+        response = self._call_api(request_body, token=token)
+
+        # Then : 상태코드 404이어야 함.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        # And : 메세지는 토픽을 찾을 수 없습니다. 이어야 함.
+        response = response.data
+        self.assertEqual(response["message"], "토픽을 찾을 수 없습니다.")
+
+    def test_page_create_should_return_400_without_title(self):
+        # Given: 미리 생성된 노트, 토픽, 로그인 하여 얻은 토큰, title 없음.
+        self.make_note()
+        self.make_topic()
+        token = self._login()
+        request_body = {
+            "topic": self.topic.id,
+            "content": "test page content",
+            "issue_content": "test issue content",
+        }
+
+        # When : API 실행.
+        response = self._call_api(request_body, token=token)
+
+        # Then : 상태코드 400이어야 함.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # And : 메세지는 title을(를) 입력하세요. 이어야 함.
+        response = response.data
+        self.assertEqual(response["message"], "title을(를) 입력하세요.")
+
+    def test_page_create_should_return_400_without_content(self):
+        # Given: 미리 생성된 노트, 토픽, 로그인 하여 얻은 토큰, content 없음.
+        self.make_note()
+        self.make_topic()
+        token = self._login()
+        request_body = {
+            "topic": self.topic.id,
+            "title": "test title",
+            "issue_content": "test issue content",
+        }
+
+        # When : API 실행.
+        response = self._call_api(request_body, token=token)
+
+        # Then : 상태코드 400이어야 함.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # And : 메세지는 content을(를) 입력하세요. 이어야 함.
+        response = response.data
+        self.assertEqual(response["message"], "content을(를) 입력하세요.")
+
+    def test_page_create_should_return_400_without_issue_content(self):
+        # Given: 미리 생성된 노트, 토픽, 로그인 하여 얻은 토큰, issue_content 없음.
+        self.make_note()
+        self.make_topic()
+        token = self._login()
+        request_body = {
+            "topic": self.topic.id,
+            "title": "test title",
+            "content": "test content",
+        }
+
+        # When : API 실행.
+        response = self._call_api(request_body, token=token)
+
+        # Then : 상태코드 400이어야 함.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # And : 메세지는 issue_content을(를) 입력하세요. 이어야 함.
+        response = response.data
+        self.assertEqual(response["message"], "issue_content을(를) 입력하세요.")

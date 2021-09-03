@@ -27,6 +27,7 @@ from .models import CtrlfIssueStatus, Note, Page, Topic
 from .serializers import (
     IssueCreateSerializer,
     NoteSerializer,
+    PageCreateSerializer,
     PageSerializer,
     TopicCreateSerializer,
     TopicSerializer,
@@ -159,3 +160,19 @@ class PageDetailUpdateDeleteView(BaseContentView):
     @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class PageCreateView(CtrlfAuthenticationMixin, APIView):
+    def post(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        serializer = PageCreateSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save(owner=ctrlf_user)
+            return Response(status=status.HTTP_201_CREATED)
+        else:
+            for key, message in serializer.errors.items():
+                err = message[0]
+                if err.code == "required":
+                    return Response({"message": key + ERR_KEY_INPUT_MSG}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": err}, status=err.code)

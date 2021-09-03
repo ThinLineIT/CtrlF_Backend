@@ -1,7 +1,7 @@
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
 
-from .constants import ERR_NOTE_NOT_FOUND
+from .constants import ERR_NOTE_NOT_FOUND, ERR_TOPIC_NOT_FOUND
 from .models import (
     ContentRequest,
     CtrlfActionType,
@@ -78,8 +78,15 @@ class TopicSerializer(serializers.ModelSerializer):
 class PageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
-        fields = "__all__"
+        fields = ["id", "created_at", "updated_at", "title", "content", "topic", "is_approved"]
         read_only_fields = ["id", "created_at"]
+
+    def create(self, validated_data):
+        owner = validated_data.pop("owner")
+        page = Page.objects.create(**validated_data)
+        page.owners.add(owner)
+        page.save()
+        return page
 
 
 class ContentRequestSerializer(serializers.ModelSerializer):
@@ -142,6 +149,56 @@ class TopicCreateSerializer(serializers.Serializer):
             "content_request": content_request.id,
             "title": validated_data["title"],
             "content": validated_data["content"],
+            "status": CtrlfIssueStatus.REQUESTED,
+        }
+        issue = IssueSerializer(data=issue_data)
+        if not issue.is_valid():
+            raise ValidationError(detail="issue 생성 실패", code=status.HTTP_400_BAD_REQUEST)
+        issue = issue.save()
+
+        return issue
+
+
+class PageCreateSerializer(serializers.Serializer):
+    topic = serializers.IntegerField()
+    title = serializers.CharField()
+    content = serializers.CharField()
+    issue_content = serializers.CharField()
+
+    def validate(self, request_data):
+        try:
+            Topic.objects.get(id=request_data["topic"])
+        except Topic.DoesNotExist:
+            raise ValidationError(detail=ERR_TOPIC_NOT_FOUND, code=status.HTTP_404_NOT_FOUND)
+        return request_data
+
+    def create(self, validated_data):
+        page_data = {
+            "topic": validated_data["topic"],
+            "title": validated_data["title"],
+            "content": validated_data["content"],
+        }
+        page = PageSerializer(data=page_data)
+        if not page.is_valid():
+            raise ValidationError(detail="page 생성 실패", code=status.HTTP_400_BAD_REQUEST)
+        page = page.save(owner=validated_data["owner"])
+
+        content_request_data = {
+            "type": CtrlfContentType.PAGE,
+            "action": CtrlfActionType.CREATE,
+            "sub_id": page.id,
+            "user": validated_data["owner"].id,
+        }
+        content_request = ContentRequestSerializer(data=content_request_data)
+        if not content_request.is_valid():
+            raise ValidationError(detail="content_request 생성 실패", code=status.HTTP_400_BAD_REQUEST)
+        content_request = content_request.save()
+
+        issue_data = {
+            "owner": validated_data["owner"].id,
+            "content_request": content_request.id,
+            "title": validated_data["title"],
+            "content": validated_data["issue_content"],
             "status": CtrlfIssueStatus.REQUESTED,
         }
         issue = IssueSerializer(data=issue_data)
