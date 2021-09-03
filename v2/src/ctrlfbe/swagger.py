@@ -3,6 +3,7 @@ from ctrlfbe.serializers import (
     NoteListQuerySerializer,
     NoteSerializer,
     PageSerializer,
+    TopicCreateSerializer,
     TopicSerializer,
 )
 
@@ -52,5 +53,13 @@ SWAGGER_PAGE_DETAIL_VIEW = {
     "responses": {200: PageSerializer()},
     "operation_summary": "Page Detail API",
     "operation_description": "page_id에 해당하는 Page의 상세 내용을 리턴합니다",
+    "tags": ["디테일 화면"],
+}
+
+SWAGGER_TOPIC_CREATE_VIEW = {
+    "request_body": TopicCreateSerializer,
+    "responses": {201: ""},
+    "operation_summary": "Topic Create API",
+    "operation_description": "미승인 토픽을 생성하고 토픽 생성 이슈를 등록합니다.",
     "tags": ["디테일 화면"],
 }

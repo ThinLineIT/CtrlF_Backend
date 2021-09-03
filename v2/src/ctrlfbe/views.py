@@ -7,6 +7,7 @@ from ctrlfbe.swagger import (
     SWAGGER_NOTE_LIST_VIEW,
     SWAGGER_PAGE_DETAIL_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
+    SWAGGER_TOPIC_CREATE_VIEW,
     SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
 )
@@ -115,6 +116,7 @@ class TopicListView(BaseContentView):
 
 
 class TopicCreateView(CtrlfAuthenticationMixin, APIView):
+    @swagger_auto_schema(**SWAGGER_TOPIC_CREATE_VIEW)
     def post(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
         serializer = TopicCreateSerializer(data=request.data)
