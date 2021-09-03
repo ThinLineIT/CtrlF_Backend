@@ -16,7 +16,12 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE_COUNT
+from .constants import (
+    ERR_KEY_INPUT_MSG,
+    ERR_NOT_FOUND_MSG_MAP,
+    ERR_UNEXPECTED,
+    MAX_PRINTABLE_NOTE_COUNT,
+)
 from .models import CtrlfIssueStatus, Note, Page, Topic
 from .serializers import (
     IssueCreateSerializer,
@@ -118,8 +123,10 @@ class TopicCreateView(CtrlfAuthenticationMixin, APIView):
             serializer.save(owner=ctrlf_user)
             return Response(status=status.HTTP_201_CREATED)
         else:
-            for _, message in serializer.errors.items():
+            for key, message in serializer.errors.items():
                 err = message[0]
+                if err.code == "required":
+                    return Response({"message": key + ERR_KEY_INPUT_MSG}, status=status.HTTP_400_BAD_REQUEST)
             return Response({"message": err}, status=err.code)
 
 

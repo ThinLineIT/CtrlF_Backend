@@ -247,12 +247,12 @@ class TestTopicCreate(TestCase):
         self.note.owners.add(self.user)
 
     def test_topic_create_should_return_201(self):
-        # Given: 미리 생성된 노트, 로그인 하여 얻은 토큰, 유효한 토픽 생성 정보
+        # Given: 미리 생성된 노트, 로그인 하여 얻은 토큰, 유효한 토픽 생성 정보.
         self.make_note()
         token = self._login()
         request_body = {"note": self.note.id, "title": "test title", "content": "test issue content"}
 
-        # When : API 실행
+        # When : API 실행.
         response = self._call_api(request_body, token=token)
 
         # Then : 상태코드 201이어야 함.
@@ -278,3 +278,52 @@ class TestTopicCreate(TestCase):
 
         # Then : 상태코드 401이어야 함.
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_topic_create_should_return_404_by_invalid_note_id(self):
+        # Given: 미리 생성된 노트, 로그인 하여 얻은 토큰, 유효하지 않은 노트 ID.
+        self.make_note()
+        token = self._login()
+        invalid_note_id = 1234
+        request_body = {"note": invalid_note_id, "title": "test title", "content": "test issue content"}
+
+        # When : API 실행.
+        response = self._call_api(request_body, token=token)
+
+        # Then : 상태코드 404이어야 함.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        # And : 메세지는 노트를 찾을 수 없습니다. 이어야 함.
+        response = response.data
+        self.assertEqual(response["message"], "노트를 찾을 수 없습니다.")
+
+    def test_topic_create_should_return_400_without_title(self):
+        # Given: 미리 생성된 노트, 로그인 하여 얻은 토큰, title 없음.
+        self.make_note()
+        token = self._login()
+        request_body = {"note": self.note.id, "content": "test issue content"}
+
+        # When : API 실행.
+        response = self._call_api(request_body, token=token)
+
+        # Then : 상태코드 400이어야 함.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # And : 메세지는 title을(를) 입력하세요. 이어야 함.
+        response = response.data
+        self.assertEqual(response["message"], "title을(를) 입력하세요.")
+
+    def test_topic_create_should_return_400_without_content(self):
+        # Given: 미리 생성된 노트, 로그인 하여 얻은 토큰, content 없음.
+        self.make_note()
+        token = self._login()
+        request_body = {"note": self.note.id, "title": "test title"}
+
+        # When : API 실행.
+        response = self._call_api(request_body, token=token)
+
+        # Then : 상태코드 400이어야 함.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # And : 메세지는 content을(를) 입력하세요. 이어야 함.
+        response = response.data
+        self.assertEqual(response["message"], "content을(를) 입력하세요.")
