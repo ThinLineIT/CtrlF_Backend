@@ -403,7 +403,7 @@ class TestPageCreate(TestCase):
         # Then : 상태코드 401이어야 함.
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_page_create_should_return_404_by_invalid_note_id(self):
+    def test_page_create_should_return_404_by_invalid_topic_id(self):
         # Given: 미리 생성된 노트, 토픽, 로그인 하여 얻은 토큰, 유효하지 않은 토픽 ID.
         self.make_note()
         self.make_topic()
