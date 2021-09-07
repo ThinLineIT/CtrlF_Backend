@@ -9,6 +9,7 @@ from ctrlfbe.swagger import (
     SWAGGER_PAGE_LIST_VIEW,
     SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
+    SWAGGER_TOPIC_UPDATE_VIEW,
 )
 from django.db.models import Model
 from drf_yasg.utils import swagger_auto_schema
@@ -116,6 +117,7 @@ class TopicDetailUpdateDeleteView(CtrlfAuthenticationMixin, BaseContentView):
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
+    @swagger_auto_schema(**SWAGGER_TOPIC_UPDATE_VIEW)
     def put(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
         topic = Topic.objects.get(id=kwargs["topic_id"])

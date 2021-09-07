@@ -54,6 +54,10 @@ class NoteCreateRequestBodySerializer(serializers.Serializer):
     content = serializers.CharField()
 
 
+class TopicUpdateRequestBodySerializer(serializers.Serializer):
+    title = serializers.CharField()
+
+
 class NoteListQuerySerializer(serializers.Serializer):
     cursor = serializers.IntegerField()
 
