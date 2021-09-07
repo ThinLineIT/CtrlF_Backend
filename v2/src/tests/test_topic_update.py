@@ -13,13 +13,17 @@ class TestTopicUpdate(TestCase):
             "email": "test@test.com",
             "password": "12345",
         }
-        topic_owner = self._create_user(self.topic_owner_data)
-        self._create_note_topic(topic_owner)
+        self.another_user_data = {
+            "email": "test22@test.com",
+            "password": "54321",
+        }
+        self.topic_owner = CtrlfUser.objects.create_user(**self.topic_owner_data)
+        CtrlfUser.objects.create_user(**self.another_user_data)
 
     def _create_user(self, user_data):
         return CtrlfUser.objects.create_user(**user_data)
 
-    def _create_note_topic(self, owner):
+    def _create_topic(self, owner):
         self.note = Note.objects.create(title="test note title")
         self.note.owners.add(owner)
         self.topic = Topic.objects.create(note=self.note, title="test topic title")
@@ -44,7 +48,9 @@ class TestTopicUpdate(TestCase):
     def test_should_return_200_when_topic_owner_approve_update(self):
         # Given: update topic title이 주어진다.
         request_body = {"title": "update topic title"}
-        # And: note, topic을 생성한 계정으로 로그인 해서 token을 발급 받는다.
+        # And: topic을 생성한다.
+        self._create_topic(self.topic_owner)
+        # And: topic 생성한 계정으로 로그인 해서 token을 발급 받는다.
         token = self._login(user_data=self.topic_owner_data)
 
         # When: update topic api를 호출한다.
