@@ -7,4 +7,5 @@ app_name = "topics"
 urlpatterns = [
     path("<int:topic_id>/pages", PageListView.as_view(), name="page_list"),
     path("<int:topic_id>", TopicDetailUpdateDeleteView.as_view(), name="topic_detail"),
+    path("<int:topic_id>", TopicDetailUpdateDeleteView.as_view(), name="topic_update"),
 ]
