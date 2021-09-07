@@ -20,9 +20,6 @@ class TestTopicUpdate(TestCase):
         self.topic_owner = CtrlfUser.objects.create_user(**self.topic_owner_data)
         CtrlfUser.objects.create_user(**self.another_user_data)
 
-    def _create_user(self, user_data):
-        return CtrlfUser.objects.create_user(**user_data)
-
     def _create_topic(self, owner):
         self.note = Note.objects.create(title="test note title")
         self.note.owners.add(owner)
@@ -51,10 +48,10 @@ class TestTopicUpdate(TestCase):
         # And: topic을 생성한다.
         self._create_topic(self.topic_owner)
         # And: topic 생성한 계정으로 로그인 해서 token을 발급 받는다.
-        token = self._login(user_data=self.topic_owner_data)
+        topic_owner_token = self._login(user_data=self.topic_owner_data)
 
         # When: update topic api를 호출한다.
-        response = self._call_api(request_body, token)
+        response = self._call_api(request_body, topic_owner_token)
 
         # Then: status code는 200을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -62,3 +59,21 @@ class TestTopicUpdate(TestCase):
         self.assertEqual(response.data["message"], "수정되었습니다.")
         # And: 기존 topic의 title은 "update topic title"로 변경된다.
         self.assertEqual(Topic.objects.get(id=1).title, "update topic title")
+
+    def test_should_return_401_when_another_user_approve_update(self):
+        # Given: update topic title이 주어진다
+        request_body = {"title": "update topic title"}
+        # And: topic을 생성한다.
+        self._create_topic(self.topic_owner)
+        # And: topic을 생성한 계정과 다른 계정으로 로그인하여 token을 발급받는다.
+        another_user_token = self._login(user_data=self.another_user_data)
+
+        # When: update topic api를 호출한다.
+        response = self._call_api(request_body, another_user_token)
+
+        # Then: status code는 401을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        # And: message는 "권한이 없습니다."를 리턴한다.
+        self.assertEqual(response.data["message"], "권한이 없습니다.")
+        # And: 기존 topic title은 그대로 "test topic title"이다.
+        self.assertEqual(Topic.objects.get(id=1).title, "test topic title")

@@ -108,7 +108,7 @@ class TopicListView(BaseContentView):
         return super().get(request, *args, **kwargs)
 
 
-class TopicDetailUpdateDeleteView(BaseContentView):
+class TopicDetailUpdateDeleteView(CtrlfAuthenticationMixin, BaseContentView):
     parent_model = Topic
     serializer = TopicSerializer
 
@@ -117,7 +117,11 @@ class TopicDetailUpdateDeleteView(BaseContentView):
         return super().get(request, *args, **kwargs)
 
     def put(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
         topic = Topic.objects.get(id=kwargs["topic_id"])
+
+        if not topic.owners.filter(id=ctrlf_user.id).exists():
+            return Response(data={"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
         serializer = TopicSerializer(topic, data=request.data, partial=True)
         if serializer.is_valid():
