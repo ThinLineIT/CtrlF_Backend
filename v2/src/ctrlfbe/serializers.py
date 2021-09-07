@@ -64,6 +64,11 @@ class TopicSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["id", "created_at"]
 
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get("title", instance.title)
+        instance.save()
+        return instance
+
 
 class PageSerializer(serializers.ModelSerializer):
     class Meta:

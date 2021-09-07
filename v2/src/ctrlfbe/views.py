@@ -116,6 +116,15 @@ class TopicDetailUpdateDeleteView(BaseContentView):
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
+    def put(self, request, *args, **kwargs):
+        topic = Topic.objects.get(id=kwargs["topic_id"])
+
+        serializer = TopicSerializer(topic, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+
+        return Response(data={"message": "수정되었습니다."}, status=status.HTTP_200_OK)
+
 
 class PageListView(BaseContentView):
     parent_model = Topic
