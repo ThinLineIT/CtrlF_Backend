@@ -116,6 +116,11 @@ class TopicDetailUpdateDeleteView(BaseContentView):
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
+    def delete(self, request, *args, **kwargs):
+        topic = Topic.objects.get(id=kwargs["topic_id"])
+        topic.delete()
+        return Response(data={"message": "삭제 되었습니다."}, status=status.HTTP_204_NO_CONTENT)
+
 
 class PageListView(BaseContentView):
     parent_model = Topic
