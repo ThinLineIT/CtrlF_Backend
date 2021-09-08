@@ -50,8 +50,6 @@ class TestTopicDelete(TestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         # And: Topic count는 0이다.
         self.assertEqual(Topic.objects.count(), 0)
-        # And: message로 "삭제 되었습니다."를 리턴한다.
-        self.assertEqual(response.data["message"], "삭제 되었습니다.")
 
     def test_should_return_401_when_another_user_approve_delete(self):
         # Given: Topic을 생성한다.

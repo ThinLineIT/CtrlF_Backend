@@ -49,7 +49,7 @@ SWAGGER_TOPIC_DETAIL_VIEW = {
 }
 
 SWAGGER_TOPIC_DELETE_VIEW = {
-    "responses": {204: ""},
+    "responses": {204: "삭제 되었습니다", 401: "권한이 없습니다."},
     "operation_summary": "Topic Delete API",
     "operation_description": "topic_id에 해당하는 Topic을 삭제합니다",
     "tags": ["디테일 화면"],

@@ -124,7 +124,7 @@ class TopicDetailUpdateDeleteView(CtrlfAuthenticationMixin, BaseContentView):
 
         if topic.owners.filter(id=ctrlf_user.id).exists() or topic.note.owners.filter(id=ctrlf_user.id).exists():
             topic.delete()
-            return Response(data={"message": "삭제 되었습니다."}, status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response(data={"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
