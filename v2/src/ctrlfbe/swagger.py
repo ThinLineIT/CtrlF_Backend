@@ -48,6 +48,13 @@ SWAGGER_TOPIC_DETAIL_VIEW = {
     "tags": ["디테일 화면"],
 }
 
+SWAGGER_TOPIC_DELETE_VIEW = {
+    "responses": {204: ""},
+    "operation_summary": "Topic Delete API",
+    "operation_description": "topic_id에 해당하는 Topic을 삭제합니다",
+    "tags": ["디테일 화면"],
+}
+
 SWAGGER_PAGE_DETAIL_VIEW = {
     "responses": {200: PageSerializer()},
     "operation_summary": "Page Detail API",

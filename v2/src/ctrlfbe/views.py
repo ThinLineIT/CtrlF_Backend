@@ -7,6 +7,7 @@ from ctrlfbe.swagger import (
     SWAGGER_NOTE_LIST_VIEW,
     SWAGGER_PAGE_DETAIL_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
+    SWAGGER_TOPIC_DELETE_VIEW,
     SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
 )
@@ -116,6 +117,7 @@ class TopicDetailUpdateDeleteView(CtrlfAuthenticationMixin, BaseContentView):
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
+    @swagger_auto_schema(**SWAGGER_TOPIC_DELETE_VIEW)
     def delete(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
         topic = Topic.objects.get(id=kwargs["topic_id"])
