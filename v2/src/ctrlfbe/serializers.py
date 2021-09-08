@@ -54,6 +54,10 @@ class NoteCreateRequestBodySerializer(serializers.Serializer):
     content = serializers.CharField()
 
 
+class TopicUpdateRequestBodySerializer(serializers.Serializer):
+    title = serializers.CharField()
+
+
 class NoteListQuerySerializer(serializers.Serializer):
     cursor = serializers.IntegerField()
 
@@ -63,6 +67,11 @@ class TopicSerializer(serializers.ModelSerializer):
         model = Topic
         fields = "__all__"
         read_only_fields = ["id", "created_at"]
+
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get("title", instance.title)
+        instance.save()
+        return instance
 
 
 class PageSerializer(serializers.ModelSerializer):
