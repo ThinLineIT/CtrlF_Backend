@@ -108,7 +108,7 @@ class TopicListView(BaseContentView):
         return super().get(request, *args, **kwargs)
 
 
-class TopicDetailUpdateDeleteView(BaseContentView):
+class TopicDetailUpdateDeleteView(CtrlfAuthenticationMixin, BaseContentView):
     parent_model = Topic
     serializer = TopicSerializer
 
@@ -117,9 +117,14 @@ class TopicDetailUpdateDeleteView(BaseContentView):
         return super().get(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
         topic = Topic.objects.get(id=kwargs["topic_id"])
-        topic.delete()
-        return Response(data={"message": "삭제 되었습니다."}, status=status.HTTP_204_NO_CONTENT)
+
+        if topic.owners.filter(id=ctrlf_user.id).exists() or topic.note.owners.filter(id=ctrlf_user.id).exists():
+            topic.delete()
+            return Response(data={"message": "삭제 되었습니다."}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(data={"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class PageListView(BaseContentView):

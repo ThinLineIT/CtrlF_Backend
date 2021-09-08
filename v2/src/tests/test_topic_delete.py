@@ -52,3 +52,19 @@ class TestTopicDelete(TestCase):
         self.assertEqual(Topic.objects.count(), 0)
         # And: message로 "삭제 되었습니다."를 리턴한다.
         self.assertEqual(response.data["message"], "삭제 되었습니다.")
+
+    def test_should_return_401_when_another_user_approve_delete(self):
+        # Given: Topic을 생성한다.
+        self._create_topic(self.topic_owner)
+        # And: Topic을 생성한 계정이 아닌 다른 계정으로 로그인하여 토큰을 발급받는다.
+        another_user_token = self._login(self.another_user_data)
+
+        # When: delete topic api를 호출한다.
+        response = self._call_api(another_user_token)
+
+        # Then: status code 204을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        # And: Topic count는 1이다.
+        self.assertEqual(Topic.objects.count(), 1)
+        # And: message로 "권한이 없습니다."를 리턴한다.
+        self.assertEqual(response.data["message"], "권한이 없습니다.")
