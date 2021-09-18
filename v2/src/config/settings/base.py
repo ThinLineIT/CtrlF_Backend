@@ -87,12 +87,12 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",  # noqa: F405
-        "NAME": env.str("RDS_DB_NAME", default=""),  # noqa: F405
-        "USER": env.str("RDS_USERNAME", default=""),  # noqa: F405
-        "PASSWORD": env.str("RDS_PASSWORD", default=""),  # noqa: F405
-        "HOST": env.str("RDS_HOSTNAME", default="localhost"),  # noqa: F405
-        "PORT": env.str("RDS_PORT", default="5432"),  # noqa: F405
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env.str("RDS_DB_NAME", default=""),
+        "USER": env.str("RDS_USERNAME", default=""),
+        "PASSWORD": env.str("RDS_PASSWORD", default=""),
+        "HOST": env.str("RDS_HOSTNAME", default="localhost"),
+        "PORT": env.str("RDS_PORT", default="5432"),
     }
 }
 
