@@ -7,6 +7,13 @@ ENV DOCK_WSGI=$DOCK_ROOT/uwsgi
 ENV DEBIAN_FRONTEND noninteractive
 ENV PROJECT_ENV production
 
+ENV RDS_DB_NAME=$RDS_DB_NAME
+ENV RDS_USERNAME=$RDS_USERNAME
+ENV RDS_PASSWORD=$RDS_PASSWORD
+ENV RDS_HOSTNAME=$RDS_HOSTNAME
+ENV RDS_PORT=$RDS_PORT
+
+
 RUN apt-get clean && apt-get -qq update && apt-get -y -qq --no-install-recommends upgrade
 
 # 필수 라이브러리 설치
