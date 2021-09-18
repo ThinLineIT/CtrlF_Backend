@@ -7,13 +7,6 @@ ENV DOCK_WSGI=$DOCK_ROOT/uwsgi
 ENV DEBIAN_FRONTEND noninteractive
 ENV PROJECT_ENV production
 
-ENV RDS_DB_NAME=$RDS_DB_NAME
-ENV RDS_USERNAME=$RDS_USERNAME
-ENV RDS_PASSWORD=$RDS_PASSWORD
-ENV RDS_HOSTNAME=$RDS_HOSTNAME
-ENV RDS_PORT=$RDS_PORT
-
-
 RUN apt-get clean && apt-get -qq update && apt-get -y -qq --no-install-recommends upgrade
 
 # 필수 라이브러리 설치
@@ -49,7 +42,8 @@ RUN cd $DOCK_SRC && pip3 install -r requirements.txt
 
 # 필요한 파일들 옮기기
 COPY v2/src $DOCK_SRC/src
-RUN cd $DOCK_SRC/src && python3 manage.py migrate
+RUN cd $DOCK_SRC/src
+#RUN cd $DOCK_SRC/src && python3 manage.py migrate
 
 # 웹 서버 설정
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf && \
