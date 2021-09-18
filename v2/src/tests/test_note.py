@@ -117,12 +117,10 @@ class TestNoteCreate(TestCase):
         note = Note.objects.all()[0]
         self.assertEqual(Note.objects.count(), 1)
         self.assertEqual(note.title, "test note title")
-        self.assertEqual(note.owners.first().id, 1)
         # And: Issue가 정상적으로 생성된다.
         issue = Issue.objects.all()[0]
         self.assertEqual(Issue.objects.count(), 1)
         self.assertEqual(issue.content, "test issue content")
-        self.assertEqual(issue.owner_id, 1)
 
     def test_create_note_should_return_401_when_not_login(self):
         # Given: note title과 issue 내용이 주어진다, 로그인은 하지 않는다.
