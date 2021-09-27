@@ -50,7 +50,7 @@ class Topic(CommonTimestamp):
     is_approved = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.title
+        return f"{self.note.title}-{self.title}"
 
 
 class Page(CommonTimestamp):
@@ -61,7 +61,7 @@ class Page(CommonTimestamp):
     is_approved = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.title
+        return f"{self.topic.note.title}-{self.topic.title}-{self.title}"
 
 
 class PageComment(CommonTimestamp):
