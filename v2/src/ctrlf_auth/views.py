@@ -4,6 +4,7 @@ from ctrlf_auth.helpers import generate_auth_code, generate_signing_token
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import (
     CheckEmailDuplicateSerializer,
+    CheckVerificationCodeResponse,
     CheckVerificationCodeSerializer,
     LoginSerializer,
     NicknameDuplicateSerializer,
@@ -21,6 +22,7 @@ from ctrlf_auth.swagger import (
     SWAGGER_TEMP_DELETE_EMAIL_VIEW,
 )
 from ctrlf_auth.tasks import send_email
+from django.core import signing
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
@@ -131,7 +133,15 @@ class CheckVerificationCodeView(APIView):
         serializer = CheckVerificationCodeSerializer(data=request.data)
 
         if serializer.is_valid():
-            return Response({"message": "유효한 인증코드 입니다."}, status=status.HTTP_200_OK)
+            signing_token = generate_signing_token(
+                data={
+                    "email": signing.loads(serializer.validated_data["signing_token"])["email"],
+                    "code": serializer.validated_data["code"],
+                }
+            )
+            return Response(
+                status=status.HTTP_200_OK, data=CheckVerificationCodeResponse({"signing_token": signing_token}).data
+            )
         else:
             for _, message in serializer.errors.items():
                 err = message[0]

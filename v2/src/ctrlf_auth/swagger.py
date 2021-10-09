@@ -1,5 +1,6 @@
 from ctrlf_auth.serializers import (
     CheckEmailDuplicateSerializer,
+    CheckVerificationCodeResponse,
     CheckVerificationCodeSerializer,
     LoginRequestBody,
     NicknameDuplicateSerializer,
@@ -12,6 +13,7 @@ SWAGGER_CHECK_VERIFICATION_CODE_VIEW = {
     "request_body": CheckVerificationCodeSerializer,
     "operation_summary": "인증코드 확인 API",
     "operation_description": "전달받은 인증코드가 유효한지 체크 합니다",
+    "responses": {"200": CheckVerificationCodeResponse},
     "tags": ["회원가입"],
 }
 

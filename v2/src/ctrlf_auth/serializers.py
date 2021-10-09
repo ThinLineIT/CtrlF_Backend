@@ -127,3 +127,7 @@ class CheckVerificationCodeSerializer(serializers.Serializer):
         except ValueError:
             raise ValidationError(MSG_EXPIRED_VERIFICATION_CODE)
         return data
+
+
+class CheckVerificationCodeResponse(serializers.Serializer):
+    signing_token = serializers.CharField()
