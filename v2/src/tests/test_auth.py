@@ -1,10 +1,12 @@
 import json
+from http import HTTPStatus
 from unittest.mock import patch
 
 from ctrlf_auth.authentication import CtrlfAuthentication
 from ctrlf_auth.helpers import generate_auth_code
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import LoginSerializer
+from django.core import signing
 from django.test import Client, TestCase
 from django.urls import reverse
 from drf_yasg.utils import swagger_auto_schema
@@ -104,11 +106,22 @@ class TestSendingAuthEmail(TestCase):
     @patch("ctrlf_auth.views.generate_auth_code")
     @patch("ctrlf_auth.views.send_email.delay")
     def test_sending_auth_email_should_return_200_on_success(self, mock_send_email_delay, mock_generate_auth_code):
-        mock_generate_auth_code.return_value = "1q2w3e4r"
+        # Given: request body로 email이 정상적으로 같이 주어 지고,
         request_body = {"email": "test1234@test.com"}
-        self._call_api(request_body)
+        # And: auth_code는 "1q2w3e4r" 가 리턴되도록 하고,
+        mock_generate_auth_code.return_value = "1q2w3e4r"
+
+        # When: 인증 이메일 보내기 API를 호출하면,
+        response = self._call_api(request_body)
+
+        # Then: "1q2w3e4r" 로 email auth code는 존재해야하고,
         self.assertTrue(EmailAuthCode.objects.filter(code="1q2w3e4r").exists())
+        # And: email은 보내져야 하고,
         mock_send_email_delay.assert_called_once_with(code="1q2w3e4r", to="test1234@test.com")
+        # And: 상태코드는 200 이면서, 응답으로 받은 값을 복호화 하면, 사용자가 입력한 이메일이 나와야 한다
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        signing_token = response.json()["signing_token"]
+        self.assertEqual(signing.loads(signing_token)["email"], "test1234@test.com")
 
     def test_sending_auth_email_should_return_400_on_email_from_request_body_is_invalid_format(self):
         request_body = {"email": "test1234test.com"}  # invalid email format

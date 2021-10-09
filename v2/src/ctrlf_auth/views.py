@@ -1,12 +1,13 @@
 from typing import List
 
-from ctrlf_auth.helpers import generate_auth_code
+from ctrlf_auth.helpers import generate_auth_code, generate_signing_token
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import (
     CheckEmailDuplicateSerializer,
     CheckVerificationCodeSerializer,
     LoginSerializer,
     NicknameDuplicateSerializer,
+    SendingAuthEmailResponse,
     SendingAuthEmailSerializer,
     SignUpSerializer,
 )
@@ -68,7 +69,10 @@ class SendingAuthEmailView(APIView):
         if serializer.is_valid():
             email_auth_code = EmailAuthCode.objects.create(code=generate_auth_code())
             send_email.delay(code=email_auth_code.code, to=serializer.data["email"])
-            return Response(status=status.HTTP_200_OK)
+            signing_token = generate_signing_token(data=serializer.data)
+            return Response(
+                status=status.HTTP_200_OK, data=SendingAuthEmailResponse({"signing_token": signing_token}).data
+            )
         else:
             for _, message in serializer.errors.items():
                 message = message[0]

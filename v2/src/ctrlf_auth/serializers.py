@@ -82,6 +82,10 @@ class SendingAuthEmailSerializer(serializers.Serializer):
         return email
 
 
+class SendingAuthEmailResponse(serializers.Serializer):
+    signing_token = serializers.CharField()
+
+
 class NicknameDuplicateSerializer(serializers.Serializer):
     _INVALID_ERR_MESSAGE = "전달 된 값이 올바르지 않습니다.\n영어,숫자,한글2~10자\n특수문자x\n공백x"
     _VALID_REGEX = "^[a-zA-Z0-9가-힣]{2,10}$"

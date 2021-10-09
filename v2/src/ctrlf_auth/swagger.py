@@ -3,6 +3,7 @@ from ctrlf_auth.serializers import (
     CheckVerificationCodeSerializer,
     LoginRequestBody,
     NicknameDuplicateSerializer,
+    SendingAuthEmailResponse,
     SendingAuthEmailSerializer,
     SignUpSerializer,
 )
@@ -32,6 +33,7 @@ SWAGGER_SENDING_AUTH_EMAIL_VIEW = {
     "request_body": SendingAuthEmailSerializer,
     "operation_summary": "인증메일 보내기 API",
     "operation_description": "회원가입을 원하는 사용자에게 인증메일을 전달 합니다",
+    "responses": {"200": SendingAuthEmailResponse},
     "tags": ["회원가입"],
 }
 
