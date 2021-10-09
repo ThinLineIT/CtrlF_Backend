@@ -3,13 +3,14 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 from ctrlf_auth.authentication import CtrlfAuthentication
-from ctrlf_auth.helpers import generate_auth_code
+from ctrlf_auth.helpers import generate_auth_code, generate_signing_token
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import LoginSerializer
 from django.core import signing
 from django.test import Client, TestCase
 from django.urls import reverse
 from drf_yasg.utils import swagger_auto_schema
+from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -268,7 +269,7 @@ class TestCheckVerificationCode(TestCase):
 
     def test_verification_code_should_return_200(self):
         # Given: 일치하는 코드
-        request_body = {"code": self.code}
+        request_body = {"code": self.code, "signing_token": generate_signing_token({"email": "kwon5604@naver.com"})}
         # When : API 실행
         response = self._call_api(request_body)
         # Then : 상태코드 200 리턴.
@@ -276,27 +277,47 @@ class TestCheckVerificationCode(TestCase):
         # And  : 메세지는 "유효한 인증코드 입니다." 이어야 함.
         self.assertEqual(response.data["message"], "유효한 인증코드 입니다.")
 
+    def test_verification_code_should_return_400_by_expired_signing_token(self):
+        # Given: 일치하는 코드
+        with freeze_time("2021-01-01 00:00:00"):
+            request_body = {"code": self.code, "signing_token": generate_signing_token({"email": "kwon5604@naver.com"})}
+
+        # When : API 실행 - 인증코드 타임아웃 시간보다 10초 초과했을 때,
+        with freeze_time("2021-01-01 00:05:10"):
+            response = self._call_api(request_body)
+
+            # Then : 상태코드 400 리턴.
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            # And  : 메세지는 "인증코드가 만료되었습니다." 이어야 함.
+            self.assertEqual(response.data["message"], "인증코드가 만료되었습니다.")
+
     def test_verification_code_should_return_400_by_incorrect_verification_code(self):
         # Given : 불일치하는 코드
         incorrect_code = "incorrect"
-        request_body = {"code": incorrect_code}
+        request_body = {
+            "code": incorrect_code,
+            "signing_token": generate_signing_token({"email": "kwon5604@naver.com"}),
+        }
         # When  : API 실행
         response = self._call_api(request_body)
         # Then  : 상태코드 400 리턴.
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # And   : 메세지는 "인증코드가 올바르지 않습니다." 이어야 함.
-        self.assertEqual(response.data["message"], "인증코드가 올바르지 않습니다.")
+        # And   : 메세지는 "인증코드가 유효하지 않습니다." 이어야 함.
+        self.assertEqual(response.data["message"], "인증코드가 유효하지 않습니다.")
 
     def test_verification_code_should_return_400_by_incorrect_length_code(self):
         # Given : 인증코드 최대길이를 넘어가는 코드
         incorrect_code = "incorrect_length_code"
-        request_body = {"code": incorrect_code}
+        request_body = {
+            "code": incorrect_code,
+            "signing_token": generate_signing_token({"email": "kwon5604@naver.com"}),
+        }
         # When  : API 실행
         response = self._call_api(request_body)
         # Then  : 상태코드 400 리턴.
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # And   : 메세지는 "인증코드가 올바르지 않습니다." 이어야 함.
-        self.assertEqual(response.data["message"], "인증코드가 올바르지 않습니다.")
+        # And   : 메세지는 "인증코드가 유효하지 않습니다." 이어야 함.
+        self.assertEqual(response.data["message"], "인증코드가 유효하지 않습니다.")
 
 
 class MockAuthAPI(APIView):

@@ -1,3 +1,8 @@
+from ctrlf_auth.constants import (
+    MSG_EXPIRED_VERIFICATION_CODE,
+    MSG_NOT_EXIST_VERIFICATION_CODE,
+    VERIFICATION_TIMEOUT_SECONDS,
+)
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -7,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework_jwt.serializers import jwt_payload_handler
 from rest_framework_jwt.utils import jwt_encode_handler
 
-from .helpers import CODE_MAX_LENGTH
+from .helpers import CODE_MAX_LENGTH, decode_signing_token
 
 
 class LoginRequestBody(serializers.Serializer):
@@ -111,11 +116,14 @@ class CheckEmailDuplicateSerializer(serializers.Serializer):
 
 
 class CheckVerificationCodeSerializer(serializers.Serializer):
-    _err_msg = "인증코드가 올바르지 않습니다."
+    code = serializers.CharField(max_length=CODE_MAX_LENGTH, error_messages={"max_length": "인증코드가 유효하지 않습니다."})
+    signing_token = serializers.CharField()
 
-    code = serializers.CharField(max_length=CODE_MAX_LENGTH, error_messages={"max_length": _err_msg})
-
-    def validate_code(self, code):
-        if not EmailAuthCode.objects.filter(code=code).exists():
-            raise ValidationError(self._err_msg)
-        return code
+    def validate(self, data):
+        if not EmailAuthCode.objects.filter(code=data["code"]).exists():
+            raise ValidationError(MSG_NOT_EXIST_VERIFICATION_CODE)
+        try:
+            decode_signing_token(token=data["signing_token"], max_age=VERIFICATION_TIMEOUT_SECONDS)
+        except ValueError:
+            raise ValidationError(MSG_EXPIRED_VERIFICATION_CODE)
+        return data
