@@ -4,10 +4,18 @@ from ctrlf_auth.serializers import (
     CheckVerificationCodeSerializer,
     LoginRequestBody,
     NicknameDuplicateSerializer,
+    ResetPasswordSerializer,
     SendingAuthEmailResponse,
     SendingAuthEmailSerializer,
     SignUpSerializer,
 )
+
+SWAGGER_RESET_PASSWORD_VIEW = {
+    "request_body": ResetPasswordSerializer,
+    "operation_summary": "비밀번호 재설정 API",
+    "operation_description": "'비밀번호'와 '비밀번호 확인'을 받아 비밀번호를 재설정 합니다",
+    "tags": ["비밀번호 찾기"],
+}
 
 SWAGGER_CHECK_VERIFICATION_CODE_VIEW = {
     "request_body": CheckVerificationCodeSerializer,

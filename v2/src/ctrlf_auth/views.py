@@ -18,6 +18,7 @@ from ctrlf_auth.swagger import (
     SWAGGER_CHECK_NICKNAME_DUPLICATE_VIEW,
     SWAGGER_CHECK_VERIFICATION_CODE_VIEW,
     SWAGGER_LOGIN_API_VIEW,
+    SWAGGER_RESET_PASSWORD_VIEW,
     SWAGGER_SENDING_AUTH_EMAIL_VIEW,
     SWAGGER_SIGN_UP_API_VIEW,
     SWAGGER_TEMP_DELETE_EMAIL_VIEW,
@@ -153,6 +154,7 @@ class ResetPasswordView(APIView):
     authentication_classes: List[str] = []
     _SUCCESS_MSG = "비밀번호가 정상적으로 재설정 되었습니다."
 
+    @swagger_auto_schema(**SWAGGER_RESET_PASSWORD_VIEW)
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
 
