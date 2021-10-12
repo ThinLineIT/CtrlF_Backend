@@ -3,6 +3,7 @@ from ctrlf_auth.views import (
     CheckNicknameDuplicateView,
     CheckVerificationCodeView,
     LoginAPIView,
+    ResetPasswordView,
     SendingAuthEmailView,
     SignUpAPIView,
     TempDeleteEmailView,
@@ -21,4 +22,5 @@ urlpatterns = [
     path("signup/email/duplicate", CheckEmailDuplicateView.as_view(), name="check_email_duplicate"),
     path("verification-code/check", CheckVerificationCodeView.as_view(), name="check_verification_code"),
     path("mock_auth_api", MockAuthAPI.as_view(), name="mock_auth_api"),
+    path("reset_password", ResetPasswordView.as_view(), name="reset_password"),
 ]

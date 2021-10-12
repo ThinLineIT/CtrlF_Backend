@@ -146,3 +146,7 @@ class CheckVerificationCodeView(APIView):
             for _, message in serializer.errors.items():
                 err = message[0]
             return Response({"message": err}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResetPasswordView(APIView):
+    authentication_classes: List[str] = []
