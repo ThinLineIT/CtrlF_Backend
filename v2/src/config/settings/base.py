@@ -18,7 +18,6 @@ import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
@@ -31,7 +30,6 @@ SECRET_KEY = env.str("DJANGO_SECRET_KEY", default="django_secret_key")
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-
 
 # Application definition
 
@@ -81,18 +79,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("RDS_DB_NAME", ""),
+        "USER": os.environ.get("RDS_USERNAME", ""),
+        "PASSWORD": os.environ.get("RDS_PASSWORD", ""),
+        "HOST": os.environ.get("RDS_HOSTNAME", ""),
+        "PORT": os.environ.get("RDS_PORT", ""),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -117,7 +117,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
@@ -132,10 +131,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
 AWS_ACCESS_KEY_ID = env.str("AWS_ACCESS_KEY_ID", default="aws_access_key_id")
 AWS_SECRET_ACCESS_KEY = env.str("AWS_SECRET_ACCESS_KEY", default="aws_secret_access_key")
-
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_USE_TLS = True
@@ -145,7 +142,6 @@ EMAIL_HOST_USER = env.str("EMAIL_HOST_USER", default="email_host_user")
 EMAIL_HOST_PASSWORD = env.str("EMAIL_HOST_PASSWORD", default="email_host_password")
 SERVER_EMAIL = env.str("SERVER_EMAIL", default="server_email")
 DEFAULT_FROM_MAIL = env.str("DEFAULT_FROM_MAIL", default="default_from_mail")
-
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
