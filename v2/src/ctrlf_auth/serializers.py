@@ -1,6 +1,7 @@
 from ctrlf_auth.constants import (
     MSG_EXPIRED_VERIFICATION_CODE,
     MSG_NOT_EXIST_VERIFICATION_CODE,
+    MSG_NOT_MATCHED_PASSWORD,
     VERIFICATION_TIMEOUT_SECONDS,
 )
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
@@ -142,6 +143,5 @@ class ResetPasswordSerializer(serializers.Serializer):
         new_password = data["new_password"]
         new_password_confirm = data["new_password_confirm"]
         if new_password != new_password_confirm:
-            raise ValidationError("입력한 비밀번호가 일치하지 않습니다.")
-
+            raise ValidationError(MSG_NOT_MATCHED_PASSWORD)
         return data

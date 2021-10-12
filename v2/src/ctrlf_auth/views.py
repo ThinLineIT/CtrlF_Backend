@@ -1,5 +1,6 @@
 from typing import List
 
+from ctrlf_auth.constants import MSG_SUCCESS_RESET_PASSWORD
 from ctrlf_auth.helpers import generate_auth_code, generate_signing_token
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import (
@@ -152,7 +153,6 @@ class CheckVerificationCodeView(APIView):
 
 class ResetPasswordView(APIView):
     authentication_classes: List[str] = []
-    _SUCCESS_MSG = "비밀번호가 정상적으로 재설정 되었습니다."
 
     @swagger_auto_schema(**SWAGGER_RESET_PASSWORD_VIEW)
     def post(self, request):
@@ -164,7 +164,7 @@ class ResetPasswordView(APIView):
             user.set_password(request.data["new_password"])
             user.save()
 
-            return Response(data={"message": self._SUCCESS_MSG}, status=status.HTTP_200_OK)
+            return Response(data={"message": MSG_SUCCESS_RESET_PASSWORD}, status=status.HTTP_200_OK)
         else:
             for _, message in serializer.errors.items():
                 err_message = message[0]
