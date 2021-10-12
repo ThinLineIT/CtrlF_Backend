@@ -12,6 +12,7 @@ from django.urls import reverse
 from drf_yasg.utils import swagger_auto_schema
 from freezegun import freeze_time
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -378,3 +379,35 @@ class TestJWTAuth(TestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         # And: 인증이 유효하지 않습니다. 메세지를 리턴해야한다
         self.assertEqual(json.loads(response.content)["message"], "인증이 유효하지 않습니다.")
+
+
+class TestResetPassword(TestCase):
+    def setUp(self) -> None:
+        self.c = Client()
+        self.code = generate_auth_code()
+
+    def test_reset_password_should_return_200_ok_on_success(self):
+        # Given: 회원 가입
+        email = "jinho4744@naver.com"
+        CtrlfUser.objects.create_user(email=email, password="q1w2e3r41!")
+        # And: 재설정할 비밀번호와 사이닝 토큰을 request_body로 보낸다
+        request_body = {
+            "new_password": "q1w2e3r42@",
+            "new_password_confirm": "q1w2e3r42@",
+            "signing_token": generate_signing_token({"email": email, "code": self.code}),
+        }
+
+        # When: api 호출
+        response = self.c.post(reverse("auth:reset_password"), request_body)
+
+        # Then: 200을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: "비밀번호가 정상적으로 재설정 되었습니다."라는 메시지를 출력한다.
+        self.assertEqual(response.data["message"], "비밀번호가 정상적으로 재설정 되었습니다.")
+        # And: 기존의 password로 로그인 시도시 실패한다.
+        login_serializer = LoginSerializer()
+        with self.assertRaises(ValidationError):
+            login_serializer.validate(data={"email": email, "password": "q1w2e3r41!"})
+        # And: 변경한 password로 로그인 시도시 성공한다.
+        login = login_serializer.validate(data={"email": email, "password": "q1w2e3r42@"})
+        self.assertEqual(login["user"].email, email)

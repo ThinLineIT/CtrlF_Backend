@@ -8,6 +8,7 @@ from ctrlf_auth.serializers import (
     CheckVerificationCodeSerializer,
     LoginSerializer,
     NicknameDuplicateSerializer,
+    ResetPasswordSerializer,
     SendingAuthEmailResponse,
     SendingAuthEmailSerializer,
     SignUpSerializer,
@@ -150,3 +151,19 @@ class CheckVerificationCodeView(APIView):
 
 class ResetPasswordView(APIView):
     authentication_classes: List[str] = []
+    _SUCCESS_MSG = "비밀번호가 정상적으로 재설정 되었습니다."
+
+    def post(self, request):
+        serializer = ResetPasswordSerializer(data=request.data)
+
+        if serializer.is_valid():
+            email = signing.loads(request.data["signing_token"])["email"]
+            user = CtrlfUser.objects.get(email=email)
+            user.set_password(request.data["new_password"])
+            user.save()
+
+            return Response(data={"message": self._SUCCESS_MSG}, status=status.HTTP_200_OK)
+        else:
+            for _, message in serializer.errors.items():
+                err_message = message[0]
+            return Response(data={"message": err_message}, status=status.HTTP_400_BAD_REQUEST)

@@ -131,3 +131,17 @@ class CheckVerificationCodeSerializer(serializers.Serializer):
 
 class CheckVerificationCodeResponse(serializers.Serializer):
     signing_token = serializers.CharField()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField()
+    new_password_confirm = serializers.CharField()
+    signing_token = serializers.CharField()
+
+    def validate(self, data):
+        new_password = data["new_password"]
+        new_password_confirm = data["new_password_confirm"]
+        if new_password != new_password_confirm:
+            raise ValidationError("패스워드가 일치하지 않습니다.")
+
+        return data
