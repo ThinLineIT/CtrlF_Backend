@@ -16,3 +16,4 @@ MSG_NOT_EXIST_VERIFICATION_CODE = "인증코드가 존재하지 않습니다."
 
 MSG_SUCCESS_RESET_PASSWORD = "비밀번호가 정상적으로 재설정 되었습니다."
 MSG_NOT_MATCHED_PASSWORD = "입력한 비밀번호가 일치하지 않습니다."
+MSG_SUCCESS_SIGN_UP = "환영합니다.\n가입이 완료되었습니다\n\n로그인 후 이용해주세요."

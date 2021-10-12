@@ -1,6 +1,6 @@
 from typing import List
 
-from ctrlf_auth.constants import MSG_SUCCESS_RESET_PASSWORD
+from ctrlf_auth.constants import MSG_SUCCESS_RESET_PASSWORD, MSG_SUCCESS_SIGN_UP
 from ctrlf_auth.helpers import generate_auth_code, generate_signing_token
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import (
@@ -51,14 +51,12 @@ class LoginAPIView(ObtainJSONWebToken):
 class SignUpAPIView(APIView):
     authentication_classes: List[str] = []
 
-    _SIGNUP_MSG = "환영합니다.\n가입이 완료되었습니다\n\n로그인 후 이용해주세요."
-
     @swagger_auto_schema(**SWAGGER_SIGN_UP_API_VIEW)
     def post(self, request, *args, **kwargs):
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(data={"message": self._SIGNUP_MSG}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": MSG_SUCCESS_SIGN_UP}, status=status.HTTP_201_CREATED)
         else:
             for _, message in serializer.errors.items():
                 message = message[0]

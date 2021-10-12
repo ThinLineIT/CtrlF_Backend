@@ -44,9 +44,9 @@ class TestSignUp(TestCase):
         return self.c.post(reverse("auth:signup"), request_body)
 
     def test_signup_should_return_201_on_success(self):
+        signing_token = generate_signing_token(data={"email": "test1234@test.com", "code": "YWJjZGU="})
         valid_request_body = {
-            "email": "test1234@test.com",
-            "code": "YWJjZGU=",
+            "signing_token": signing_token,
             "nickname": "유연한외곬",
             "password": "testpassword%*",
             "password_confirm": "testpassword%*",
@@ -55,9 +55,9 @@ class TestSignUp(TestCase):
         self.assertEqual(response.status_code, 201)
 
     def test_signup_should_return_message_on_success(self):
+        signing_token = generate_signing_token(data={"email": "test1234@test.com", "code": "YWJjZGU="})
         valid_request_body = {
-            "email": "test1234@test.com",
-            "code": "YWJjZGU=",
+            "signing_token": signing_token,
             "nickname": "유연한외곬",
             "password": "testpassword%*",
             "password_confirm": "testpassword%*",
@@ -68,32 +68,35 @@ class TestSignUp(TestCase):
     def test_signup_should_return_400_on_fail_with_duplicated_email(self):
         user_data = {"email": "test1234@test.com", "password": "testpassword%*"}  # email이 이미 중복 됨
         CtrlfUser.objects.create_user(**user_data)
-        user_data.update({"code": "YWJjZGU=", "nickname": "유연한외곬", "password_confirm": "testpassword%*"})
+
+        email = user_data.pop("email")
+        signing_token = signing.dumps({"email": email, "code": "YWJjZGU="})
+        user_data.update({"signing_token": signing_token, "nickname": "유연한외곬", "password_confirm": "testpassword%*"})
         response = self._call_api(user_data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["message"], "중복된 email 입니다.")
 
     def test_signup_should_return_400_on_fail_with_no_same_password(self):
-        user_data = {
-            "email": "test1234@test.com",
-            "code": "YWJjZGU=",
+        signing_token = generate_signing_token(data={"email": "test1234@test.com", "code": "YWJjZGU="})
+        valid_request_body = {
+            "signing_token": signing_token,
             "nickname": "유연한외곬",
-            "password": "no_same_password",
+            "password": "nosamepassword",
             "password_confirm": "testpassword%*",
         }
-        response = self._call_api(user_data)
+        response = self._call_api(valid_request_body)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["message"], "패스워드가 일치하지 않습니다.")
 
     def test_signup_should_return_400_on_fail_with_invalid_code(self):
-        user_data = {
-            "email": "test1234@test.com",
-            "code": "invalid_code",  # invalid code
+        signing_token = generate_signing_token(data={"email": "test1234@test.com", "code": "invalid_token"})
+        valid_request_body = {
+            "signing_token": signing_token,
             "nickname": "유연한외곬",
             "password": "testpassword%*",
             "password_confirm": "testpassword%*",
         }
-        response = self._call_api(user_data)
+        response = self._call_api(valid_request_body)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["message"], "유효하지 않은 코드 입니다.")
 
