@@ -385,20 +385,22 @@ class TestResetPassword(TestCase):
     def setUp(self) -> None:
         self.c = Client()
         self.code = generate_auth_code()
+        self.email = "jinho4744@naver.com"
+        CtrlfUser.objects.create_user(email=self.email, password="q1w2e3r41!")
+
+    def _call_api(self, request_body):
+        return self.c.post(reverse("auth:reset_password"), request_body)
 
     def test_reset_password_should_return_200_ok_on_success(self):
-        # Given: 회원 가입
-        email = "jinho4744@naver.com"
-        CtrlfUser.objects.create_user(email=email, password="q1w2e3r41!")
-        # And: 재설정할 비밀번호와 사이닝 토큰을 request_body로 보낸다
+        # Given: 재설정할 비밀번호와 사이닝 토큰을 request_body로 보낸다
         request_body = {
             "new_password": "q1w2e3r42@",
             "new_password_confirm": "q1w2e3r42@",
-            "signing_token": generate_signing_token({"email": email, "code": self.code}),
+            "signing_token": generate_signing_token({"email": self.email, "code": self.code}),
         }
 
         # When: api 호출
-        response = self.c.post(reverse("auth:reset_password"), request_body)
+        response = self._call_api(request_body)
 
         # Then: 200을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -407,7 +409,30 @@ class TestResetPassword(TestCase):
         # And: 기존의 password로 로그인 시도시 실패한다.
         login_serializer = LoginSerializer()
         with self.assertRaises(ValidationError):
-            login_serializer.validate(data={"email": email, "password": "q1w2e3r41!"})
+            login_serializer.validate(data={"email": self.email, "password": "q1w2e3r41!"})
         # And: 변경한 password로 로그인 시도시 성공한다.
-        login = login_serializer.validate(data={"email": email, "password": "q1w2e3r42@"})
-        self.assertEqual(login["user"].email, email)
+        login = login_serializer.validate(data={"email": self.email, "password": "q1w2e3r42@"})
+        self.assertEqual(login["user"].email, self.email)
+
+    def test_reset_password_should_return_400_and_not_reset_password_when_not_match_password_with_password_confirm(
+        self,
+    ):
+        # Given: '비밀번호'와 '비밀번호 확인'이 서로 일치하지 않게 보낸다.
+        request_body = {
+            "new_password": "q1w2e3r42@",
+            "new_password_confirm": "q1w2e3r43#",
+            "signing_token": generate_signing_token({"email": self.email, "code": self.code}),
+        }
+
+        # When: api 호출
+        response = self._call_api(request_body)
+
+        # Then: 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And: "입력한 비밀번호가 일치하지 않습니다."라는 메시지를 출력한다.
+        self.assertEqual(response.data["message"], "입력한 비밀번호가 일치하지 않습니다.")
+
+        # And: 기존의 password로 로그인 시도시 성공한다.
+        login_serializer = LoginSerializer()
+        login = login_serializer.validate(data={"email": self.email, "password": "q1w2e3r41!"})
+        self.assertEqual(login["user"].email, self.email)

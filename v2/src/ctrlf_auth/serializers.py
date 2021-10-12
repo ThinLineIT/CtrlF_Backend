@@ -142,6 +142,6 @@ class ResetPasswordSerializer(serializers.Serializer):
         new_password = data["new_password"]
         new_password_confirm = data["new_password_confirm"]
         if new_password != new_password_confirm:
-            raise ValidationError("패스워드가 일치하지 않습니다.")
+            raise ValidationError("입력한 비밀번호가 일치하지 않습니다.")
 
         return data
