@@ -135,3 +135,8 @@ class PageDetailUpdateDeleteView(BaseContentView):
     @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class IssueListView(APIView):
+    def get(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_200_OK)

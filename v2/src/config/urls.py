@@ -18,7 +18,6 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-
 urlpatterns = [
     path("", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
     path("admin/", admin.site.urls),
@@ -26,4 +25,5 @@ urlpatterns = [
     path("api/notes/", include("ctrlfbe.note_urls"), name="notes"),
     path("api/topics/", include("ctrlfbe.topic_urls"), name="topics"),
     path("api/pages/", include("ctrlfbe.page_urls"), name="pages"),
+    path("api/issues/", include("ctrlfbe.issue_urls"), name="issues"),
 ]
