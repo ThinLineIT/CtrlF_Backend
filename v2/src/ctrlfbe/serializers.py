@@ -70,3 +70,11 @@ class PageSerializer(serializers.ModelSerializer):
         model = Page
         fields = "__all__"
         read_only_fields = ["id", "created_at"]
+
+
+class IssueSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    owner = serializers.EmailField()
+    title = serializers.CharField()
+    content = serializers.CharField()
+    status = serializers.CharField()

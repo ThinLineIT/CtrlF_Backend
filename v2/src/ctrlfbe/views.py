@@ -17,9 +17,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE_COUNT
-from .models import CtrlfIssueStatus, Note, Page, Topic
+from .models import CtrlfIssueStatus, Issue, Note, Page, Topic
 from .serializers import (
     IssueCreateSerializer,
+    IssueSerializer,
     NoteSerializer,
     PageSerializer,
     TopicSerializer,
@@ -139,4 +140,15 @@ class PageDetailUpdateDeleteView(BaseContentView):
 
 class IssueListView(APIView):
     def get(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_200_OK)
+        current_cursor = int(request.query_params["cursor"])
+        issues = Issue.objects.intersection(
+            Issue.objects.filter(id__gt=current_cursor),
+            Issue.objects.filter(id__lte=current_cursor + MAX_PRINTABLE_NOTE_COUNT),
+        )
+        serializer = IssueSerializer(issues, many=True)
+        serialized_issues = serializer.data
+
+        return Response(
+            data={"next_cursor": current_cursor + len(serialized_issues), "issues": serialized_issues},
+            status=status.HTTP_200_OK,
+        )
