@@ -83,7 +83,7 @@ class NoteListCreateView(CtrlfAuthenticationMixin, APIView):
         issue_serializer = IssueCreateSerializer(data=issue_data)
 
         if note_serializer.is_valid() and issue_serializer.is_valid():
-            issue_serializer.save(note=note_serializer.save())
+            issue_serializer.save(ctrlf_content=note_serializer.save())
 
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -129,6 +129,34 @@ class PageListView(BaseContentView):
     @swagger_auto_schema(**SWAGGER_PAGE_LIST_VIEW)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class PageCreateView(CtrlfAuthenticationMixin, APIView):
+    @swagger_auto_schema(**SWAGGER_NOTE_CREATE_VIEW)
+    def post(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        page_data = {
+            "topic": request.data["topic_id"],
+            "title": request.data["title"],
+            "content": request.data["content"],
+            "summary": request.data["summary"],
+            "owners": [ctrlf_user.id],
+        }
+        issue_data = {
+            "title": request.data["title"],
+            "content": request.data["content"],
+            "owner": ctrlf_user.id,
+            "status": CtrlfIssueStatus.REQUESTED,
+        }
+        page_serializer = PageSerializer(data=page_data)
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+
+        if page_serializer.is_valid() and issue_serializer.is_valid():
+            issue_serializer.save(ctrlf_content=page_serializer.save())
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(status=status.HTTP_201_CREATED)
 
 
 class PageDetailUpdateDeleteView(BaseContentView):
