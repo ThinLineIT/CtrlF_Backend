@@ -36,13 +36,13 @@ class IssueCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         owner = validated_data.pop("owner")
-        note = validated_data.pop("note")
+        ctrlf_content = validated_data.pop("ctrlf_content")
         content_request_data = {
             "user": owner,
-            "sub_id": note.id,
+            "sub_id": ctrlf_content.id,
             "type": CtrlfContentType.NOTE,
             "action": CtrlfActionType.CREATE,
-            "reason": "create note",
+            "reason": f"{CtrlfActionType.CREATE} {str(ctrlf_content._meta).split('.')[1]}",
         }
         content_request = ContentRequest.objects.create(**content_request_data)
         issue = Issue.objects.create(owner=owner, content_request=content_request, **validated_data)
@@ -70,6 +70,19 @@ class PageSerializer(serializers.ModelSerializer):
         model = Page
         fields = "__all__"
         read_only_fields = ["id", "created_at"]
+
+        def create(self, validated_data):
+            owner = validated_data.pop("owners")[0]
+            page = Page.objects.create(**validated_data)
+            page.owners.add(owner)
+            return page
+
+
+class PageCreateRequestBodySerializer(serializers.Serializer):
+    topic_id = serializers.IntegerField()
+    title = serializers.CharField()
+    content = serializers.CharField()
+    summary = serializers.CharField()
 
 
 class IssueSerializer(serializers.Serializer):

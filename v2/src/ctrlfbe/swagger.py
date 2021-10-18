@@ -1,9 +1,9 @@
 from ctrlfbe.serializers import (
     IssueListQuerySerializer,
     IssueSerializer,
-    NoteCreateRequestBodySerializer,
     NoteListQuerySerializer,
     NoteSerializer,
+    PageCreateRequestBodySerializer,
     PageSerializer,
     TopicSerializer,
 )
@@ -37,10 +37,10 @@ SWAGGER_NOTE_LIST_VIEW = {
 }
 
 SWAGGER_NOTE_CREATE_VIEW = {
-    "operation_summary": "Note Create API",
-    "operation_description": "비활성화된 Note와 이슈를 생성 합니다.",
-    "request_body": NoteCreateRequestBodySerializer,
-    "tags": ["메인 화면"],
+    "operation_summary": "Page Create API",
+    "operation_description": "비활성화된 Page와 이슈를 생성 합니다.",
+    "request_body": PageCreateRequestBodySerializer,
+    "tags": ["디테일 화면"],
 }
 
 SWAGGER_TOPIC_DETAIL_VIEW = {
