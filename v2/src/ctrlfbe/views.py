@@ -2,6 +2,8 @@ from typing import Optional
 
 from ctrlfbe.mixins import CtrlfAuthenticationMixin
 from ctrlfbe.swagger import (
+    SWAGGER_ISSUE_DETAIL_VIEW,
+    SWAGGER_ISSUE_LIST_VIEW,
     SWAGGER_NOTE_CREATE_VIEW,
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
@@ -139,6 +141,7 @@ class PageDetailUpdateDeleteView(BaseContentView):
 
 
 class IssueListView(APIView):
+    @swagger_auto_schema(**SWAGGER_ISSUE_LIST_VIEW)
     def get(self, request, *args, **kwargs):
         current_cursor = int(request.query_params["cursor"])
         issues = Issue.objects.all()[current_cursor : current_cursor + MAX_PRINTABLE_NOTE_COUNT]
@@ -152,6 +155,7 @@ class IssueListView(APIView):
 
 
 class IssueDetailView(APIView):
+    @swagger_auto_schema(**SWAGGER_ISSUE_DETAIL_VIEW)
     def get(self, request, issue_id):
         try:
             issues = Issue.objects.get(id=issue_id)

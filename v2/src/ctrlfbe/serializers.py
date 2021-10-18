@@ -78,3 +78,7 @@ class IssueSerializer(serializers.Serializer):
     title = serializers.CharField()
     content = serializers.CharField()
     status = serializers.CharField()
+
+
+class IssueListQuerySerializer(serializers.Serializer):
+    cursor = serializers.IntegerField()
