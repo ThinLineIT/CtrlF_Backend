@@ -53,3 +53,24 @@ class TestPageCreate(TestCase):
         # And: Issue가 정상적으로 생성된다.
         issue = Issue.objects.all()[0]
         self.assertEqual(issue.content, "test issue content")
+
+    def test_create_page_should_return_400_when_invalid_title(self):
+        # Given: invalid한 request body가 주어질 때
+        invalid_topic_id = 10000
+        invalid_request_body = {
+            "title": "test title",
+            "content": "test issue content",
+            "topic_id": invalid_topic_id,
+            "summary": "summary",
+        }
+        # And: 로그인 해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
+        # When: 인증이 필요한 create page api를 호출한다.
+        response = self._call_api(invalid_request_body, token)
+
+        # Then: status code는 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And: Page와 Issue는 생성되지 않는다.
+        self.assertEqual(Page.objects.count(), 0)
+        self.assertEqual(Issue.objects.count(), 0)
