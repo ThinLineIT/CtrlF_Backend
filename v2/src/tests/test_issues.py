@@ -95,8 +95,18 @@ class TestIssueDetail(IssueListTextMixin, TestCase):
             status=CtrlfIssueStatus.REQUESTED,
         )
 
-        # When: issue list api를 호풀한다.
+        # When: issue list api를 호출한다.
         response = self._call_detail_api(issue_id=issue.id)
 
         # Then: status code는 200을 리턴한다
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_issue_detail_should_return_404_not_found_on_issue_does_not_exist(self):
+        # Given: 이슈를 생성하지 않았을 때,
+        invalid_issue_id = 1122334
+
+        # When: issue list api를 호출한다.
+        response = self._call_detail_api(issue_id=invalid_issue_id)
+
+        # Then: status code는 404을 리턴한다
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
