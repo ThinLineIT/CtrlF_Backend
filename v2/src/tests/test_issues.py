@@ -100,6 +100,11 @@ class TestIssueDetail(IssueListTextMixin, TestCase):
 
         # Then: status code는 200을 리턴한다
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: 생성된 이슈와 값이 일치해야한다
+        self.assertEqual(response.data["title"], "test title")
+        self.assertEqual(response.data["content"], "test content")
+        self.assertEqual(response.data["status"], CtrlfIssueStatus.REQUESTED)
+        self.assertEqual(response.data["owner"], self.user.email)
 
     def test_issue_detail_should_return_404_not_found_on_issue_does_not_exist(self):
         # Given: 이슈를 생성하지 않았을 때,
