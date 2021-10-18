@@ -5,7 +5,7 @@ from django.urls import reverse
 from rest_framework import status
 
 
-class TestIssueList(TestCase):
+class IssueListTextMixin:
     def setUp(self) -> None:
         self.client = Client()
         self.user_data = {
@@ -28,6 +28,11 @@ class TestIssueList(TestCase):
                 content=f"test content {1}",
                 status=CtrlfIssueStatus.REQUESTED,
             )
+
+
+class TestIssueList(IssueListTextMixin, TestCase):
+    def setUp(self) -> None:
+        super().setUp()
 
     def test_issue_list_should_return_200(self):
         # Given: 미리 30개의 이슈를 생성하고, 시작 cursor가 주어진다.
