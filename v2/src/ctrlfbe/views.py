@@ -141,10 +141,7 @@ class PageDetailUpdateDeleteView(BaseContentView):
 class IssueListView(APIView):
     def get(self, request, *args, **kwargs):
         current_cursor = int(request.query_params["cursor"])
-        issues = Issue.objects.intersection(
-            Issue.objects.filter(id__gt=current_cursor),
-            Issue.objects.filter(id__lte=current_cursor + MAX_PRINTABLE_NOTE_COUNT),
-        )
+        issues = Issue.objects.all()[current_cursor : current_cursor + MAX_PRINTABLE_NOTE_COUNT]
         serializer = IssueSerializer(issues, many=True)
         serialized_issues = serializer.data
 
