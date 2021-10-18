@@ -20,6 +20,9 @@ class IssueListTextMixin:
             {"cursor": cursor},
         )
 
+    def _call_detail_api(self, issue_id):
+        return self.client.get(reverse("issues:issue_detail", kwargs={"issue_id": issue_id}))
+
     def _make_issues(self, count):
         for i in range(1, count + 1):
             Issue.objects.create(
@@ -77,3 +80,23 @@ class TestIssueList(IssueListTextMixin, TestCase):
         self.assertEqual(response.data["next_cursor"], 0)
         # And: empty list를 리턴한다.
         self.assertEqual(len(response.data["issues"]), 0)
+
+
+class TestIssueDetail(IssueListTextMixin, TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+
+    def test_issue_detail_should_return_issue_on_success(self):
+        # Given: 이슈를 1개 생성 하였을 때,
+        issue = Issue.objects.create(
+            owner=self.user,
+            title="test title",
+            content="test content",
+            status=CtrlfIssueStatus.REQUESTED,
+        )
+
+        # When: issue list api를 호풀한다.
+        response = self._call_detail_api(issue_id=issue.id)
+
+        # Then: status code는 200을 리턴한다
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

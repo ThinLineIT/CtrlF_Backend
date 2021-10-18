@@ -149,3 +149,14 @@ class IssueListView(APIView):
             data={"next_cursor": current_cursor + len(serialized_issues), "issues": serialized_issues},
             status=status.HTTP_200_OK,
         )
+
+
+class IssueDetailView(APIView):
+    def get(self, request, issue_id):
+        try:
+            issues = Issue.objects.get(id=issue_id)
+        except Issue.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            serializer = IssueSerializer(issues)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
