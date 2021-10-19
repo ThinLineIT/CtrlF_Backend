@@ -266,3 +266,48 @@ class TestIssueApprove(IssueListTextMixin, TestCase):
         # And: Issue의 status는 APPROVED이다.
         issue = Issue.objects.get(id=issue_id)
         self.assertEqual(issue.status, CtrlfIssueStatus.APPROVED)
+
+    def test_should_return_404_on_invalid_issue_id(self):
+        # Given: Page와 Issue를 생성한다.
+        page_id, issue_id = self._make_page()
+        # And: request_body로 유효하지 않은 issue id가 주어진다.
+        invalid_issue_id = 2952389
+        request_body = {"issue_id": invalid_issue_id}
+        # And: owner 정보로 로그인하여 토큰을 발급 받은 상황이다.
+        token = self._login(self.owner_data)
+
+        # When: 인증이 필요한 approve issue api를 호출한다.
+        response = self._call_api(request_body, token)
+
+        # Then: status code는 404을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And: "이슈 ID를 찾을 수 없습니다."라는 메세지를 리턴한다.
+        self.assertEqual(response.data["message"], "이슈 ID를 찾을 수 없습니다.")
+        # And: 생성한 Page의 is_approved는 False이다.
+        page = Page.objects.get(id=page_id)
+        self.assertFalse(page.is_approved)
+        # And: 생성한 Issue의 Status는 REQUESTD이다
+        issue = Issue.objects.get(id=issue_id)
+        self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
+
+    def test_should_return_400_on_unauthorized_about_issue(self):
+        # Given: Page와 Issue를 생성한다.
+        page_id, issue_id = self._make_page()
+        # And: request_body로 유효한 issue id가 주어진다.
+        request_body = {"issue_id": issue_id}
+        # And: owner 정보가 아닌 다른 user 정보로 로그인
+        token = self._login(self.user_data)
+
+        # When: 인증이 필요한 approve issue api를 호출한다.
+        response = self._call_api(request_body, token)
+
+        # Then: status code는 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And: "승인 권한이 없습니다."라는 메세지를 리턴한다.
+        self.assertEqual(response.data["message"], "승인 권한이 없습니다.")
+        # And: 생성한 Page의 is_approved는 False이다.
+        page = Page.objects.get(id=page_id)
+        self.assertFalse(page.is_approved)
+        # And: 생성한 Issue의 Status는 REQUESTD이다
+        issue = Issue.objects.get(id=issue_id)
+        self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
