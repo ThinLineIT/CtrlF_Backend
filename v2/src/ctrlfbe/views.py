@@ -192,3 +192,7 @@ class IssueDetailView(APIView):
         else:
             serializer = IssueSerializer(issues)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+class IssueApproveView(CtrlfAuthenticationMixin, APIView):
+    pass
