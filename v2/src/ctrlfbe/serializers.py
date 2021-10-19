@@ -37,10 +37,18 @@ class IssueCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         owner = validated_data.pop("owner")
         ctrlf_content = validated_data.pop("ctrlf_content")
+        content_type = (
+            CtrlfContentType.NOTE
+            if type(ctrlf_content) is Note
+            else CtrlfContentType.TOPIC
+            if type(ctrlf_content) is Topic
+            else CtrlfContentType.PAGE
+        )
+
         content_request_data = {
             "user": owner,
             "sub_id": ctrlf_content.id,
-            "type": CtrlfContentType.NOTE,
+            "type": content_type,
             "action": CtrlfActionType.CREATE,
             "reason": f"{CtrlfActionType.CREATE} {str(ctrlf_content._meta).split('.')[1]}",
         }
