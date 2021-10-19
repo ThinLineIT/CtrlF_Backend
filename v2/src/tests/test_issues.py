@@ -1,5 +1,15 @@
 from ctrlf_auth.models import CtrlfUser
-from ctrlfbe.models import CtrlfIssueStatus, Issue
+from ctrlf_auth.serializers import LoginSerializer
+from ctrlfbe.models import (
+    ContentRequest,
+    CtrlfActionType,
+    CtrlfContentType,
+    CtrlfIssueStatus,
+    Issue,
+    Note,
+    Page,
+    Topic,
+)
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -115,3 +125,144 @@ class TestIssueDetail(IssueListTextMixin, TestCase):
 
         # Then: status code는 404을 리턴한다
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class TestIssueApprove(IssueListTextMixin, TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.owner_data = {
+            "email": "jinho@naver.com",
+            "password": "q1w2e3r4",
+        }
+        self.owner = CtrlfUser.objects.create_user(**self.owner_data)
+        self.note = Note.objects.create(title="basic note")
+        self.note.owners.add(self.owner)
+        topic_data = {"note": self.note, "title": "basic topic"}
+        self.topic = Topic.objects.create(**topic_data)
+        self.topic.owners.add(self.owner)
+
+    def _make_note(self):
+        note = Note.objects.create(title="test note title")
+        note.owners.add(self.owner)
+        content_request_data = {
+            "user": self.owner,
+            "sub_id": note.id,
+            "type": CtrlfContentType.NOTE,
+            "action": CtrlfActionType.CREATE,
+        }
+        content_request = ContentRequest.objects.create(**content_request_data)
+        issue_data = {"owner": self.owner, "content_request": content_request, "status": CtrlfIssueStatus.REQUESTED}
+        issue = Issue.objects.create(**issue_data)
+        return note.id, issue.id
+
+    def _make_topic(self):
+        topic_data = {"note": self.note, "title": "test topic title"}
+        topic = Topic.objects.create(**topic_data)
+        topic.owners.add(self.owner)
+        content_request_data = {
+            "user": self.owner,
+            "sub_id": topic.id,
+            "type": CtrlfContentType.TOPIC,
+            "action": CtrlfActionType.CREATE,
+        }
+        content_request = ContentRequest.objects.create(**content_request_data)
+        issue_data = {"owner": self.owner, "content_request": content_request, "status": CtrlfIssueStatus.REQUESTED}
+        issue = Issue.objects.create(**issue_data)
+        return topic.id, issue.id
+
+    def _make_page(self):
+        page_data = {
+            "topic": self.topic,
+            "title": "test page title",
+            "content": "test page content",
+            "summary": "summary",
+        }
+        page = Page.objects.create(**page_data)
+        page.owners.add(self.owner)
+        content_request_data = {
+            "user": self.owner,
+            "sub_id": page.id,
+            "type": CtrlfContentType.PAGE,
+            "action": CtrlfActionType.CREATE,
+        }
+        content_request = ContentRequest.objects.create(**content_request_data)
+        issue_data = {"owner": self.owner, "content_request": content_request, "status": CtrlfIssueStatus.REQUESTED}
+        issue = Issue.objects.create(**issue_data)
+        return page.id, issue.id
+
+    def _login(self, user_data):
+        serializer = LoginSerializer()
+        return serializer.validate(user_data)["token"]
+
+    def _call_api(self, request_body, token=None):
+        if token:
+            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        else:
+            header = {}
+        return self.client.post(reverse("actions:issue_approve"), request_body, **header)
+
+    def test_issue_approve_should_return_200_on_issue_about_note(self):
+        # Given: Note와 Issue를 생성한다.
+        note_id, issue_id = self._make_note()
+        # And: request_body로 유효한 issue id가 주어진다.
+        request_body = {"issue_id": issue_id}
+        # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다.
+        owner_token = self._login(self.owner_data)
+
+        # When: 인증이 필요한 approve issue api를 호출한다.
+        response = self._call_api(request_body, owner_token)
+
+        # Then: status code는 200을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: "승인 완료"라는 메세지를 리턴한다
+        self.assertEqual(response.data["message"], "승인 완료")
+        # And: Note의 is_apporved는 True이다.
+        note = Note.objects.get(id=note_id)
+        self.assertTrue(note.is_approved)
+        # And: Issue의 status는 APPROVED이다.
+        issue = Issue.objects.get(id=issue_id)
+        self.assertEqual(issue.status, CtrlfIssueStatus.APPROVED)
+
+    def test_issue_approve_should_return_200_on_issue_about_topic(self):
+        # Given: Topic과 Issue를 생성한다.
+        topic_id, issue_id = self._make_topic()
+        # And: request_body로 유효한 issue id가 주어진다.
+        request_body = {"issue_id": issue_id}
+        # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다.
+        owner_token = self._login(self.owner_data)
+
+        # When: 인증이 필요한 approve issue api를 호출한다.
+        response = self._call_api(request_body, owner_token)
+
+        # Then: status code는 200을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: "승인 완료"라는 메세지를 리턴한다
+        self.assertEqual(response.data["message"], "승인 완료")
+        # And: Topic의 is_apporved는 True이다.
+        topic = Topic.objects.get(id=topic_id)
+        self.assertTrue(topic.is_approved)
+        # And: Issue의 status는 APPROVED이다.
+        issue = Issue.objects.get(id=issue_id)
+        self.assertEqual(issue.status, CtrlfIssueStatus.APPROVED)
+
+    def test_issue_approve_should_return_200_on_issue_about_page(self):
+        # Given: Page와 Issue를 생성한다.
+        page_id, issue_id = self._make_page()
+        # And: request_body로 유효한 issue id가 주어진다.
+        request_body = {"issue_id": issue_id}
+        # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다.
+        owner_token = self._login(self.owner_data)
+
+        # When: 인증이 필요한 approve issue api를 호출한다.
+        response = self._call_api(request_body, owner_token)
+
+        # Then: status code는 200을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: "승인 완료"라는 메세지를 리턴한다
+        self.assertEqual(response.data["message"], "승인 완료")
+        # And: Page의 is_apporved는 True이다.
+        page = Page.objects.get(id=page_id)
+        self.assertTrue(page.is_approved)
+        # And: Issue의 status는 APPROVED이다.
+        issue = Issue.objects.get(id=issue_id)
+        self.assertEqual(issue.status, CtrlfIssueStatus.APPROVED)
