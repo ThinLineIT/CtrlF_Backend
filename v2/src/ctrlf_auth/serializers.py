@@ -135,6 +135,11 @@ class CheckVerificationCodeResponse(serializers.Serializer):
     signing_token = serializers.CharField()
 
 
+class LoginResponse(serializers.Serializer):
+    token = serializers.CharField()
+    user_id = serializers.IntegerField()
+
+
 class ResetPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField()
     new_password_confirm = serializers.CharField()

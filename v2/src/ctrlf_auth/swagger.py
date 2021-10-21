@@ -3,6 +3,7 @@ from ctrlf_auth.serializers import (
     CheckVerificationCodeResponse,
     CheckVerificationCodeSerializer,
     LoginRequestBody,
+    LoginResponse,
     NicknameDuplicateSerializer,
     ResetPasswordSerializer,
     SendingAuthEmailResponse,
@@ -58,6 +59,7 @@ SWAGGER_LOGIN_API_VIEW = {
     "request_body": LoginRequestBody,
     "operation_summary": "로그인 API",
     "operation_description": "email과 password를 받아서, Login 합니다",
+    "responses": {"200": LoginResponse},
     "tags": ["로그인"],
 }
 
