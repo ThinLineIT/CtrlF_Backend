@@ -143,9 +143,6 @@ EMAIL_HOST_PASSWORD = env.str("EMAIL_HOST_PASSWORD", default="email_host_passwor
 SERVER_EMAIL = env.str("SERVER_EMAIL", default="server_email")
 DEFAULT_FROM_MAIL = env.str("DEFAULT_FROM_MAIL", default="default_from_mail")
 
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_ALLOW_CREDENTIALS = True
-
 CORS_ALLOW_METHODS = ("DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT")
 
 CORS_ALLOW_HEADERS = (
@@ -159,6 +156,8 @@ CORS_ALLOW_HEADERS = (
     "x-csrftoken",
     "x-requested-with",
 )
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "common.exceptions.custom_exception_handler",
