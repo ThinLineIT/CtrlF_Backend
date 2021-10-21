@@ -7,6 +7,7 @@ from ctrlfbe.swagger import (
     SWAGGER_NOTE_CREATE_VIEW,
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
+    SWAGGER_PAGE_CREATE_VIEW,
     SWAGGER_PAGE_DETAIL_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
     SWAGGER_TOPIC_DETAIL_VIEW,
@@ -132,7 +133,7 @@ class PageListView(BaseContentView):
 
 
 class PageCreateView(CtrlfAuthenticationMixin, APIView):
-    @swagger_auto_schema(**SWAGGER_NOTE_CREATE_VIEW)
+    @swagger_auto_schema(**SWAGGER_PAGE_CREATE_VIEW)
     def post(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
         page_data = {
