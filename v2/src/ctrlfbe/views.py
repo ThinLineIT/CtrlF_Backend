@@ -2,6 +2,7 @@ from typing import Optional
 
 from ctrlfbe.mixins import CtrlfAuthenticationMixin
 from ctrlfbe.swagger import (
+    SWAGGER_ISSUE_APPROVE_VIEW,
     SWAGGER_ISSUE_DETAIL_VIEW,
     SWAGGER_ISSUE_LIST_VIEW,
     SWAGGER_NOTE_CREATE_VIEW,
@@ -20,7 +21,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE_COUNT
-from .models import CtrlfIssueStatus, Issue, Note, Page, Topic
+from .models import CtrlfContentType, CtrlfIssueStatus, Issue, Note, Page, Topic
 from .serializers import (
     IssueCreateSerializer,
     IssueSerializer,
@@ -193,3 +194,50 @@ class IssueDetailView(APIView):
         else:
             serializer = IssueSerializer(issues)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+class IssueApproveView(CtrlfAuthenticationMixin, APIView):
+    @swagger_auto_schema(**SWAGGER_ISSUE_APPROVE_VIEW)
+    def post(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        issue_id = request.data["issue_id"]
+        try:
+            issue = Issue.objects.get(id=issue_id)
+        except Issue.DoesNotExist:
+            return Response(data={"message": "이슈 ID를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            ctrlf_content = self.get_content(issue=issue, ctrlf_user=ctrlf_user)
+        except ValueError:
+            return Response(data={"message": "승인 권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        ctrlf_content.is_approved = True
+        ctrlf_content.save()
+        issue.status = CtrlfIssueStatus.APPROVED
+        issue.save()
+
+        return Response(data={"message": "승인 완료"}, status=status.HTTP_200_OK)
+
+    def get_content(self, issue, ctrlf_user):
+        content_request = issue.content_request
+        content_type = content_request.type
+        content = (
+            Page.objects.get(id=content_request.sub_id)
+            if content_type == CtrlfContentType.PAGE
+            else Note.objects.get(id=content_request.sub_id)
+            if content_type == CtrlfContentType.NOTE
+            else Topic.objects.get(id=content_request.sub_id)
+            if content_type == CtrlfContentType.TOPIC
+            else None
+        )
+        if type(content) is Page:
+            if not content.topic.owners.filter(id=ctrlf_user.id).exists():
+                raise ValueError
+        elif type(content) is Topic:
+            if not content.note.owners.filter(id=ctrlf_user.id).exists():
+                raise ValueError
+        elif type(content) is Note:
+            if not content.owners.filter(id=ctrlf_user.id).exists():
+                raise ValueError
+
+        return content

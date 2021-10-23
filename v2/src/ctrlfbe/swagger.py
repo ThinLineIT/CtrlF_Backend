@@ -1,4 +1,6 @@
 from ctrlfbe.serializers import (
+    IssueApproveRequestBodySerializer,
+    IssueApproveResponseSerializer,
     IssueListQuerySerializer,
     IssueSerializer,
     NoteListQuerySerializer,
@@ -76,4 +78,16 @@ SWAGGER_ISSUE_DETAIL_VIEW = {
     "operation_summary": "Issue Detail API",
     "operation_description": "issue_id에 해당하는 Issue의 상세 내용을 리턴합니다",
     "tags": ["이슈 화면"],
+}
+
+SWAGGER_ISSUE_APPROVE_VIEW = {
+    "responses": {
+        200: IssueApproveResponseSerializer(),
+        400: IssueApproveResponseSerializer(),
+        401: IssueApproveResponseSerializer(),
+    },
+    "request_body": IssueApproveRequestBodySerializer(),
+    "operation_summary": "Issue Approve API",
+    "operation_description": "issue_id에 해당하는 Issue의 content(Note or Topic or Page)를 승인 합니다",
+    "tags": ["이슈 화면", "디테일 화면"],
 }
