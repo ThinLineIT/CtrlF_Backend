@@ -11,6 +11,7 @@ from ctrlfbe.swagger import (
     SWAGGER_PAGE_CREATE_VIEW,
     SWAGGER_PAGE_DETAIL_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
+    SWAGGER_TOPIC_DELETE_VIEW,
     SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
 )
@@ -113,13 +114,24 @@ class TopicListView(BaseContentView):
         return super().get(request, *args, **kwargs)
 
 
-class TopicDetailUpdateDeleteView(BaseContentView):
+class TopicDetailUpdateDeleteView(CtrlfAuthenticationMixin, BaseContentView):
     parent_model = Topic
     serializer = TopicSerializer
 
     @swagger_auto_schema(**SWAGGER_TOPIC_DETAIL_VIEW)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(**SWAGGER_TOPIC_DELETE_VIEW)
+    def delete(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        topic = Topic.objects.get(id=kwargs["topic_id"])
+
+        if topic.owners.filter(id=ctrlf_user.id).exists() or topic.note.owners.filter(id=ctrlf_user.id).exists():
+            topic.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(data={"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class PageListView(BaseContentView):
