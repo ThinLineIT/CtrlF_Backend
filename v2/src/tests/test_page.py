@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework import status
 
 
-class TestPageCreate(TestCase):
+class TesztPageCreate(TestCase):
     def setUp(self) -> None:
         self.client = Client()
         self.data = {
@@ -36,7 +36,7 @@ class TestPageCreate(TestCase):
         request_body = {
             "title": "test page title",
             "content": "test issue content",
-            "topic_id": 1,
+            "topic_id": self.topic.id,
             "summary": "summary",
         }
         # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.

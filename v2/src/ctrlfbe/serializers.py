@@ -103,3 +103,11 @@ class IssueSerializer(serializers.Serializer):
 
 class IssueListQuerySerializer(serializers.Serializer):
     cursor = serializers.IntegerField()
+
+
+class IssueApproveResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
+class IssueApproveRequestBodySerializer(serializers.Serializer):
+    issue_id = serializers.IntegerField()

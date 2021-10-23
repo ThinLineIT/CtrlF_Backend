@@ -2,6 +2,7 @@ from typing import Optional
 
 from ctrlfbe.mixins import CtrlfAuthenticationMixin
 from ctrlfbe.swagger import (
+    SWAGGER_ISSUE_APPROVE_VIEW,
     SWAGGER_ISSUE_DETAIL_VIEW,
     SWAGGER_ISSUE_LIST_VIEW,
     SWAGGER_NOTE_CREATE_VIEW,
@@ -195,6 +196,7 @@ class IssueDetailView(APIView):
 
 
 class IssueApproveView(CtrlfAuthenticationMixin, APIView):
+    @swagger_auto_schema(**SWAGGER_ISSUE_APPROVE_VIEW)
     def post(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
         issue_id = request.data["issue_id"]
