@@ -26,4 +26,5 @@ urlpatterns = [
     path("api/topics/", include("ctrlfbe.topic_urls"), name="topics"),
     path("api/pages/", include("ctrlfbe.page_urls"), name="pages"),
     path("api/issues/", include("ctrlfbe.issue_urls"), name="issues"),
+    path("api/actions/", include("ctrlfbe.action_urls"), name="actions"),
 ]
