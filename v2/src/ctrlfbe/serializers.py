@@ -86,6 +86,17 @@ class PageSerializer(serializers.ModelSerializer):
             return page
 
 
+class PageListSerializer(PageSerializer):
+    issue_id = serializers.SerializerMethodField()
+
+    def get_issue_id(self, obj):
+        content_request = ContentRequest.objects.filter(sub_id=obj.id, type=CtrlfContentType.PAGE).first()
+        if content_request is None:
+            return content_request
+        else:
+            return Issue.objects.get(content_request=content_request).id
+
+
 class PageCreateRequestBodySerializer(serializers.Serializer):
     topic_id = serializers.IntegerField()
     title = serializers.CharField()
