@@ -113,6 +113,10 @@ class TopicListView(BaseContentView):
         return super().get(request, *args, **kwargs)
 
 
+class TopicCreateView(CtrlfAuthenticationMixin, APIView):
+    pass
+
+
 class TopicDetailUpdateDeleteView(BaseContentView):
     parent_model = Topic
     serializer = TopicSerializer
