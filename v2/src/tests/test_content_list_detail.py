@@ -185,6 +185,21 @@ class TestPageList(TestCase):
         # And: page에 해당하는 issue_id 이어야 한다
         self.assertEqual(response.data[0]["issue_id"], 1)
 
+    def test_page_list_should_have_issue_id_but_value_is_none(self):
+        # Given: 유효한 topic_id를 설정하고,
+        valid_topic_id = self.topic.id
+        # And: page를 생성하고,
+        self._add_pages()
+        # And: 해당하는 issue가 없는 상태에서
+
+        # When: API를 실행 했을 때,
+        response = self._call_api(valid_topic_id)
+
+        # Then: issue_id가 응답 값 내에 있어야 하고,
+        self.assertIn("issue_id", response.data[0])
+        # And: page에 해당하는 issue_id는 None 이어야 한다
+        self.assertIsNone(response.data[0]["issue_id"])
+
 
 class TestTopicDetail(TestCase):
     def setUp(self):

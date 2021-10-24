@@ -91,7 +91,9 @@ class PageListSerializer(PageSerializer):
 
     def get_issue_id(self, obj):
         content_request = ContentRequest.objects.filter(sub_id=obj.id, type=CtrlfContentType.PAGE).first()
-        if content_request is not None:
+        if content_request is None:
+            return content_request
+        else:
             return Issue.objects.get(content_request=content_request).id
 
 
