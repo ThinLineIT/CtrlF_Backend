@@ -112,6 +112,30 @@ class IssueSerializer(serializers.Serializer):
     status = serializers.CharField()
 
 
+class IssueDetailSerializer(serializers.Serializer):
+    note_id = serializers.SerializerMethodField()
+    topic_id = serializers.SerializerMethodField()
+    page_id = serializers.SerializerMethodField()
+
+    id = serializers.IntegerField()
+    owner = serializers.EmailField()
+    title = serializers.CharField()
+    content = serializers.CharField()
+    status = serializers.CharField()
+
+    def get_note_id(self, obj):
+        page = Page.objects.get(id=obj.content_request.sub_id)
+        topic = Topic.objects.get(id=page.topic.id)
+        return Note.objects.get(id=topic.note.id).id
+
+    def get_topic_id(self, obj):
+        page = Page.objects.get(id=obj.content_request.sub_id)
+        return Topic.objects.get(id=page.topic.id).id
+
+    def get_page_id(self, obj):
+        return Page.objects.get(id=obj.content_request.sub_id).id
+
+
 class IssueListQuerySerializer(serializers.Serializer):
     cursor = serializers.IntegerField()
 

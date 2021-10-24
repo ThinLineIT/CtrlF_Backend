@@ -24,6 +24,7 @@ from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE
 from .models import CtrlfContentType, CtrlfIssueStatus, Issue, Note, Page, Topic
 from .serializers import (
     IssueCreateSerializer,
+    IssueDetailSerializer,
     IssueSerializer,
     NoteSerializer,
     PageListSerializer,
@@ -193,7 +194,7 @@ class IssueDetailView(APIView):
         except Issue.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
-            serializer = IssueSerializer(issues)
+            serializer = IssueDetailSerializer(issues)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
