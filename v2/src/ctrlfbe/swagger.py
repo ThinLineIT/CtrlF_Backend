@@ -1,6 +1,7 @@
 from ctrlfbe.serializers import (
     IssueApproveRequestBodySerializer,
     IssueApproveResponseSerializer,
+    IssueDetailSerializer,
     IssueListQuerySerializer,
     IssueSerializer,
     NoteListQuerySerializer,
@@ -75,7 +76,7 @@ SWAGGER_ISSUE_LIST_VIEW = {
 }
 
 SWAGGER_ISSUE_DETAIL_VIEW = {
-    "responses": {200: IssueSerializer()},
+    "responses": {200: IssueDetailSerializer()},
     "operation_summary": "Issue Detail API",
     "operation_description": "issue_id에 해당하는 Issue의 상세 내용을 리턴합니다",
     "tags": ["이슈 화면"],

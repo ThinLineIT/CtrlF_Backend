@@ -15,7 +15,7 @@ from django.urls import reverse
 from rest_framework import status
 
 
-class IssueListTextMixin:
+class IssueTextMixin:
     def setUp(self) -> None:
         self.client = Client()
         self.user_data = {
@@ -42,8 +42,18 @@ class IssueListTextMixin:
                 status=CtrlfIssueStatus.REQUESTED,
             )
 
+    def _make_all_contents(self):
+        self.note = Note.objects.create(title="test note")
+        self.note.owners.add(self.user)
+        self.topic = Topic.objects.create(note=self.note, title="test topic")
+        self.topic.owners.add(self.user)
+        page_data = {"topic": self.topic, "title": "test page", "content": "test content"}
+        self.page = Page.objects.create(**page_data)
+        self.page.owners.add(self.user)
+        return self.note, self.topic, self.page
 
-class TestIssueList(IssueListTextMixin, TestCase):
+
+class TestIssue(IssueTextMixin, TestCase):
     def setUp(self) -> None:
         super().setUp()
 
@@ -92,20 +102,27 @@ class TestIssueList(IssueListTextMixin, TestCase):
         self.assertEqual(len(response.data["issues"]), 0)
 
 
-class TestIssueDetail(IssueListTextMixin, TestCase):
+class TestIssueDetail(IssueTextMixin, TestCase):
     def setUp(self) -> None:
         super().setUp()
 
     def test_issue_detail_should_return_issue_on_success(self):
-        # Given: 이슈를 1개 생성 하였을 때,
+        # Given: Issue에 해당하는 컨텐츠들을 생성한다
+        note, topic, page = self._make_all_contents()
+        # And: page 생성에 대한 컨텐트 요청을 생성하고
+        content_request = ContentRequest.objects.create(
+            user=self.user, sub_id=page.id, type=CtrlfContentType.PAGE, action=CtrlfActionType.CREATE
+        )
+        # And: 이슈를 1개 생성 하였을 때,
         issue = Issue.objects.create(
             owner=self.user,
+            content_request=content_request,
             title="test title",
             content="test content",
-            status=CtrlfIssueStatus.REQUESTED,
+            status=CtrlfIssueStatus.APPROVED,
         )
 
-        # When: issue list api를 호출한다.
+        # When: issue detail api를 호출한다.
         response = self._call_detail_api(issue_id=issue.id)
 
         # Then: status code는 200을 리턴한다
@@ -113,8 +130,12 @@ class TestIssueDetail(IssueListTextMixin, TestCase):
         # And: 생성된 이슈와 값이 일치해야한다
         self.assertEqual(response.data["title"], "test title")
         self.assertEqual(response.data["content"], "test content")
-        self.assertEqual(response.data["status"], CtrlfIssueStatus.REQUESTED)
+        self.assertEqual(response.data["status"], CtrlfIssueStatus.APPROVED)
         self.assertEqual(response.data["owner"], self.user.email)
+        # And: note, topic, page에 대한 id를 제공해야한다
+        self.assertEqual(response.data["note_id"], self.note.id)
+        self.assertEqual(response.data["topic_id"], self.topic.id)
+        self.assertEqual(response.data["page_id"], self.page.id)
 
     def test_issue_detail_should_return_404_not_found_on_issue_does_not_exist(self):
         # Given: 이슈를 생성하지 않았을 때,
@@ -127,7 +148,7 @@ class TestIssueDetail(IssueListTextMixin, TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class TestIssueApprove(IssueListTextMixin, TestCase):
+class TestIssueApprove(IssueTextMixin, TestCase):
     def setUp(self) -> None:
         super().setUp()
         self.owner_data = {
