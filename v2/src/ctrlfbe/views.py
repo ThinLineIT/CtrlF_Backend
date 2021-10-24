@@ -26,6 +26,7 @@ from .serializers import (
     IssueCreateSerializer,
     IssueSerializer,
     NoteSerializer,
+    PageListSerializer,
     PageSerializer,
     TopicSerializer,
 )
@@ -125,7 +126,7 @@ class TopicDetailUpdateDeleteView(BaseContentView):
 class PageListView(BaseContentView):
     parent_model = Topic
     child_model = Page
-    serializer = PageSerializer
+    serializer = PageListSerializer
     many = True
 
     @swagger_auto_schema(**SWAGGER_PAGE_LIST_VIEW)

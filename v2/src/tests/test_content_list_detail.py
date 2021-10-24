@@ -1,5 +1,14 @@
 from ctrlf_auth.models import CtrlfUser
-from ctrlfbe.models import Note, Page, Topic
+from ctrlfbe.models import (
+    ContentRequest,
+    CtrlfActionType,
+    CtrlfContentType,
+    CtrlfIssueStatus,
+    Issue,
+    Note,
+    Page,
+    Topic,
+)
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -149,6 +158,32 @@ class TestPageList(TestCase):
         # And  : 메세지는 "토픽을 찾을 수 없습니다." 이어야 함.
         response = response.data
         self.assertEqual(response["message"], "토픽을 찾을 수 없습니다.")
+
+    def test_page_list_should_have_issue_id(self):
+        # Given: 유효한 topic_id를 설정하고,
+        valid_topic_id = self.topic.id
+        # And: page를 생성한다
+        page_list = self._add_pages()
+        # And: content request를 생성하고,
+        content_request = ContentRequest.objects.create(
+            user=self.user, sub_id=page_list[0].id, type=CtrlfContentType.PAGE, action=CtrlfActionType.CREATE
+        )
+        # And: 해당 Page에 대한 Issue를 생성하고,
+        Issue.objects.create(
+            owner=self.user,
+            title="page issue",
+            content="page issue content",
+            status=CtrlfIssueStatus.APPROVED,
+            content_request=content_request,
+        )
+
+        # When: API를 실행 했을 때,
+        response = self._call_api(valid_topic_id)
+
+        # Then: issue_id가 응답 값 내에 있어야 하고,
+        self.assertIn("issue_id", response.data[0])
+        # And: page에 해당하는 issue_id 이어야 한다
+        self.assertEqual(response.data[0]["issue_id"], 1)
 
 
 class TestTopicDetail(TestCase):
