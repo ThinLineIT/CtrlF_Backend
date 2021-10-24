@@ -6,12 +6,13 @@ from ctrlfbe.serializers import (
     NoteListQuerySerializer,
     NoteSerializer,
     PageCreateRequestBodySerializer,
+    PageListSerializer,
     PageSerializer,
     TopicSerializer,
 )
 
 SWAGGER_PAGE_LIST_VIEW = {
-    "responses": {200: PageSerializer(many=True)},
+    "responses": {200: PageListSerializer(many=True)},
     "operation_summary": "Page List API",
     "operation_description": "topic_id에 해당하는 page들의 list를 리턴해줍니다",
     "tags": ["디테일 화면"],
