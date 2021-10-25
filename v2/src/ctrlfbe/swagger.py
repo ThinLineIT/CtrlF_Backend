@@ -9,6 +9,7 @@ from ctrlfbe.serializers import (
     PageCreateRequestBodySerializer,
     PageListSerializer,
     PageSerializer,
+    TopicCreateRequestBodySerializer,
     TopicSerializer,
 )
 
@@ -46,6 +47,14 @@ SWAGGER_NOTE_CREATE_VIEW = {
     "request_body": PageCreateRequestBodySerializer,
     "tags": ["디테일 화면"],
 }
+
+SWAGGER_TOPIC_CREATE_VIEW = {
+    "operation_summary": "Topic Create API",
+    "operation_description": "비활성화된 Topic과 이슈를 생성 합니다.",
+    "request_body": TopicCreateRequestBodySerializer,
+    "tags": ["디테일 화면"],
+}
+
 SWAGGER_PAGE_CREATE_VIEW = {
     "operation_summary": "Page Create API",
     "operation_description": "비활성화된 Page와 이슈를 생성 합니다.",
