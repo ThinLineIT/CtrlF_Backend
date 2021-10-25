@@ -11,6 +11,7 @@ from ctrlfbe.swagger import (
     SWAGGER_PAGE_CREATE_VIEW,
     SWAGGER_PAGE_DETAIL_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
+    SWAGGER_TOPIC_CREATE_VIEW,
     SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
 )
@@ -113,6 +114,30 @@ class TopicListView(BaseContentView):
     @swagger_auto_schema(**SWAGGER_TOPIC_LIST_VIEW)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class TopicCreateView(CtrlfAuthenticationMixin, APIView):
+    @swagger_auto_schema(**SWAGGER_TOPIC_CREATE_VIEW)
+    def post(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        topic_data = {
+            "note": request.data["note_id"],
+            "title": request.data["title"],
+            "owners": [ctrlf_user.id],
+        }
+        issue_data = {
+            "title": request.data["title"],
+            "content": request.data["content"],
+            "owner": ctrlf_user.id,
+            "status": CtrlfIssueStatus.REQUESTED,
+        }
+        topic_serializer = TopicSerializer(data=topic_data)
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        if topic_serializer.is_valid() and issue_serializer.is_valid():
+            issue_serializer.save(ctrlf_content=topic_serializer.save())
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_201_CREATED)
 
 
 class TopicDetailUpdateDeleteView(BaseContentView):

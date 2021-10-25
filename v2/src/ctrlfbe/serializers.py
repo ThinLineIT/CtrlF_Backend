@@ -72,6 +72,18 @@ class TopicSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["id", "created_at"]
 
+        def create(self, validated_data):
+            owner = validated_data.pop("owners")[0]
+            topic = Topic.objects.all(**validated_data)
+            topic.owners.add(owner)
+            return topic
+
+
+class TopicCreateRequestBodySerializer(serializers.Serializer):
+    note_id = serializers.IntegerField()
+    title = serializers.CharField()
+    content = serializers.CharField()
+
 
 class PageSerializer(serializers.ModelSerializer):
     class Meta:
