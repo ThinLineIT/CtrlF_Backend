@@ -5,5 +5,5 @@ from .views import IssueApproveView
 app_name = "actions"
 
 urlpatterns = [
-    path("issue-approve", IssueApproveView.as_view(), name="issue_approve"),
+    path("issue-approve/", IssueApproveView.as_view(), name="issue_approve"),
 ]

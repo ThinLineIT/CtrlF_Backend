@@ -6,5 +6,5 @@ app_name = "pages"
 
 urlpatterns = [
     path("", PageCreateView.as_view(), name="page_create"),
-    path("<int:page_id>", PageDetailUpdateDeleteView.as_view(), name="page_detail"),
+    path("<int:page_id>/", PageDetailUpdateDeleteView.as_view(), name="page_detail"),
 ]
