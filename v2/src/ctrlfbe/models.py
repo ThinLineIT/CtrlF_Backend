@@ -22,6 +22,15 @@ class CtrlfIssueStatus(models.TextChoices):
     CLOSED = "CLOSED", "닫힘"
 
 
+class CtrlfBaseContent(models.Model):
+    owners = models.ManyToManyField(CtrlfUser)
+    title = models.CharField(max_length=100, default="")
+    is_approved = models.BooleanField(default=False)
+
+    class Meta:
+        abstract = True
+
+
 class ContentRequest(CommonTimestamp):
     user = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="수정 혹은 삭제의 주체자")
     sub_id = models.IntegerField(help_text="type에 대한 id")
@@ -34,32 +43,22 @@ class ContentRequest(CommonTimestamp):
         return f"{self.user}-{self.type}-{self.action}"
 
 
-class Note(CommonTimestamp):
-    owners = models.ManyToManyField(CtrlfUser)
-    title = models.CharField(max_length=100)
-    is_approved = models.BooleanField(default=False)
-
+class Note(CommonTimestamp, CtrlfBaseContent):
     def __str__(self):
         return self.title
 
 
-class Topic(CommonTimestamp):
-    owners = models.ManyToManyField(CtrlfUser)
+class Topic(CommonTimestamp, CtrlfBaseContent):
     note = models.ForeignKey("Note", on_delete=models.CASCADE)
-    title = models.CharField(max_length=100)
-    is_approved = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.note.title}-{self.title}"
 
 
-class Page(CommonTimestamp):
-    owners = models.ManyToManyField(CtrlfUser)
+class Page(CommonTimestamp, CtrlfBaseContent):
     topic = models.ForeignKey("Topic", on_delete=models.CASCADE)
-    title = models.CharField(max_length=100)
     content = models.TextField(default="")
-    summary = models.CharField(max_length=300, default="")
-    is_approved = models.BooleanField(default=False)
+    summary = models.CharField(max_length=300, default="", help_text="이슈의 content에 해당하는 내용")
 
     def __str__(self):
         return f"{self.topic.note.title}-{self.topic.title}-{self.title}"
