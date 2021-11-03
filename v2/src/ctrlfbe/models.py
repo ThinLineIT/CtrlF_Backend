@@ -39,9 +39,6 @@ class Note(CommonTimestamp):
     title = models.CharField(max_length=100)
     is_approved = models.BooleanField(default=False)
 
-    def __str__(self):
-        return self.title
-
 
 class Topic(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)
@@ -63,13 +60,6 @@ class Page(CommonTimestamp):
 
     def __str__(self):
         return f"{self.topic.note.title}-{self.topic.title}-{self.title}"
-
-
-class PageComment(CommonTimestamp):
-    user = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="페이지의 코멘트를 생성한 유저")
-    page = models.ForeignKey(Page, on_delete=models.CASCADE)
-    title = models.CharField(max_length=100)
-    content = models.TextField()
 
 
 class Issue(CommonTimestamp):
