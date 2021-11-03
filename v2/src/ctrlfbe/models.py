@@ -31,18 +31,6 @@ class CtrlfBaseContent(models.Model):
         abstract = True
 
 
-class ContentRequest(CommonTimestamp):
-    user = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="수정 혹은 삭제의 주체자")
-    sub_id = models.IntegerField(help_text="type에 대한 id")
-    type = models.CharField(max_length=30, choices=CtrlfContentType.choices, help_text="NOTE, TOPIC, PAGE")
-    action = models.CharField(max_length=30, choices=CtrlfActionType.choices, help_text="CRUD")
-    reason = models.TextField(default="", help_text="수정 혹은 삭제 이유")
-    is_active = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"{self.user}-{self.type}-{self.action}"
-
-
 class Note(CommonTimestamp, CtrlfBaseContent):
     def __str__(self):
         return self.title
@@ -64,11 +52,16 @@ class Page(CommonTimestamp, CtrlfBaseContent):
         return f"{self.topic.note.title}-{self.topic.title}-{self.title}"
 
 
-class PageComment(CommonTimestamp):
-    user = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="페이지의 코멘트를 생성한 유저")
-    page = models.ForeignKey(Page, on_delete=models.CASCADE)
-    title = models.CharField(max_length=100)
-    content = models.TextField()
+class ContentRequest(CommonTimestamp):
+    user = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="수정 혹은 삭제의 주체자")
+    sub_id = models.IntegerField(help_text="type에 대한 id")
+    type = models.CharField(max_length=30, choices=CtrlfContentType.choices, help_text="NOTE, TOPIC, PAGE")
+    action = models.CharField(max_length=30, choices=CtrlfActionType.choices, help_text="CRUD")
+    reason = models.TextField(default="", help_text="수정 혹은 삭제 이유")
+    is_active = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user}-{self.type}-{self.action}"
 
 
 class Issue(CommonTimestamp):
