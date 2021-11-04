@@ -139,7 +139,7 @@ class TestGenerateAuthCode(TestCase):
     def test_generate_auth_code(self):
         code = generate_auth_code()
         self.assertEqual(len(code), 8)
-        self.assertRegexpMatches(code, "[a-zA-Z0-9]")
+        self.assertRegex(code, "[a-zA-Z0-9]")
 
 
 class TestNicknameDuplicate(TestCase):
