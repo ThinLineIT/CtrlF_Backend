@@ -22,22 +22,13 @@ class CtrlfIssueStatus(models.TextChoices):
     CLOSED = "CLOSED", "닫힘"
 
 
-class ContentRequest(CommonTimestamp):
-    user = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="수정 혹은 삭제의 주체자")
-    sub_id = models.IntegerField(help_text="type에 대한 id")
-    type = models.CharField(max_length=30, choices=CtrlfContentType.choices, help_text="NOTE, TOPIC, PAGE")
-    action = models.CharField(max_length=30, choices=CtrlfActionType.choices, help_text="CRUD")
-    reason = models.TextField(default="", help_text="수정 혹은 삭제 이유")
-    is_active = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"{self.user}-{self.type}-{self.action}"
-
-
 class Note(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)
     title = models.CharField(max_length=100)
     is_approved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.title}"
 
 
 class Topic(CommonTimestamp):
@@ -64,12 +55,14 @@ class Page(CommonTimestamp):
 
 class Issue(CommonTimestamp):
     owner = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="이슈를 생성한 사람")
-    content_request = models.ForeignKey(
-        "ContentRequest", on_delete=models.CASCADE, null=True, help_text="content " "생성/수정/삭제 요청"
-    )
     title = models.CharField(max_length=100)
-    content = models.TextField(default="")
+    reason = models.TextField(default="", help_text="NOTE, TOPIC, PAGE CRUD에 대한 설명")
     status = models.CharField(max_length=30, choices=CtrlfIssueStatus.choices, help_text="Issue 상태들")
+    related_model_type = models.CharField(
+        max_length=30, choices=CtrlfContentType.choices, help_text="NOTE, TOPIC, PAGE"
+    )
+    related_model_id = models.IntegerField(default=0, help_text="note_id, topic_id, page_id")
+    action = models.CharField(max_length=30, default="", choices=CtrlfActionType.choices, help_text="CRUD")
 
     def __str__(self):
-        return self.title
+        return f"{self.title}-{self.related_model_type}-{self.related_model_id}"

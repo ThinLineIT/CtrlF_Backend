@@ -1,14 +1,6 @@
 from rest_framework import serializers
 
-from .models import (
-    ContentRequest,
-    CtrlfActionType,
-    CtrlfContentType,
-    Issue,
-    Note,
-    Page,
-    Topic,
-)
+from .models import CtrlfContentType, Issue, Note, Page, Topic
 
 
 class NoteListSerializer(serializers.ListSerializer):
@@ -36,30 +28,14 @@ class IssueCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         owner = validated_data.pop("owner")
-        ctrlf_content = validated_data.pop("ctrlf_content")
-        content_type = (
-            CtrlfContentType.NOTE
-            if type(ctrlf_content) is Note
-            else CtrlfContentType.TOPIC
-            if type(ctrlf_content) is Topic
-            else CtrlfContentType.PAGE
-        )
-
-        content_request_data = {
-            "user": owner,
-            "sub_id": ctrlf_content.id,
-            "type": content_type,
-            "action": CtrlfActionType.CREATE,
-            "reason": f"{CtrlfActionType.CREATE} {str(ctrlf_content._meta).split('.')[1]}",
-        }
-        content_request = ContentRequest.objects.create(**content_request_data)
-        issue = Issue.objects.create(owner=owner, content_request=content_request, **validated_data)
+        related_model_id = validated_data.pop("related_model").id
+        issue = Issue.objects.create(owner=owner, related_model_id=related_model_id, **validated_data)
         return issue
 
 
 class NoteCreateRequestBodySerializer(serializers.Serializer):
     title = serializers.CharField()
-    content = serializers.CharField()
+    reason = serializers.CharField(help_text="이슈의 reason에 대한 내용")
 
 
 class NoteListQuerySerializer(serializers.Serializer):
@@ -82,7 +58,7 @@ class TopicSerializer(serializers.ModelSerializer):
 class TopicCreateRequestBodySerializer(serializers.Serializer):
     note_id = serializers.IntegerField()
     title = serializers.CharField()
-    content = serializers.CharField()
+    reason = serializers.CharField(help_text="이슈의 reason에 대한 내용")
 
 
 class PageSerializer(serializers.ModelSerializer):
@@ -102,50 +78,40 @@ class PageListSerializer(PageSerializer):
     issue_id = serializers.SerializerMethodField()
 
     def get_issue_id(self, obj):
-        content_request = ContentRequest.objects.filter(sub_id=obj.id, type=CtrlfContentType.PAGE).first()
-        if content_request is None:
-            return content_request
+        issue = Issue.objects.filter(related_model_id=obj.id, related_model_type=CtrlfContentType.PAGE).first()
+        if issue is None:
+            return issue
         else:
-            return Issue.objects.get(content_request=content_request).id
+            return issue.id
 
 
 class PageCreateRequestBodySerializer(serializers.Serializer):
     topic_id = serializers.IntegerField()
     title = serializers.CharField()
     content = serializers.CharField()
-    summary = serializers.CharField()
+    reason = serializers.CharField(help_text="이슈의 reason에 대한 내용")
 
 
 class IssueSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     owner = serializers.EmailField()
     title = serializers.CharField()
-    content = serializers.CharField()
+    reason = serializers.CharField()
     status = serializers.CharField()
+    related_model_type = serializers.CharField()
+    related_model_id = serializers.IntegerField()
+    action = serializers.CharField()
 
 
 class IssueDetailSerializer(serializers.Serializer):
-    note_id = serializers.SerializerMethodField()
-    topic_id = serializers.SerializerMethodField()
-    page_id = serializers.SerializerMethodField()
-
     id = serializers.IntegerField()
     owner = serializers.EmailField()
     title = serializers.CharField()
-    content = serializers.CharField()
+    reason = serializers.CharField()
     status = serializers.CharField()
-
-    def get_note_id(self, obj):
-        page = Page.objects.get(id=obj.content_request.sub_id)
-        topic = Topic.objects.get(id=page.topic.id)
-        return Note.objects.get(id=topic.note.id).id
-
-    def get_topic_id(self, obj):
-        page = Page.objects.get(id=obj.content_request.sub_id)
-        return Topic.objects.get(id=page.topic.id).id
-
-    def get_page_id(self, obj):
-        return Page.objects.get(id=obj.content_request.sub_id).id
+    related_model_type = serializers.CharField()
+    related_model_id = serializers.IntegerField()
+    action = serializers.CharField()
 
 
 class IssueListQuerySerializer(serializers.Serializer):

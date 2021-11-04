@@ -33,7 +33,7 @@ class TestTopicCreate(TestCase):
         request_body = {
             "note_id": self.note.id,
             "title": "test topic title",
-            "content": "test issue content on test topic",
+            "reason": "reason for topic create",
         }
         # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황
         token = self._login()
@@ -48,7 +48,7 @@ class TestTopicCreate(TestCase):
         self.assertEqual(topic.title, "test topic title")
         # And: Issue가 정상적으로 생성된다.
         issue = Issue.objects.all()[0]
-        self.assertEqual(issue.content, "test issue content on test topic")
+        self.assertEqual(issue.reason, "reason for topic create")
 
     def test_should_return_400_on_invalid_note_id(self):
         # Given: invalid한 note_id가 주어졌을 때
@@ -56,7 +56,7 @@ class TestTopicCreate(TestCase):
         request_body = {
             "note_id": invalid_note_id,
             "title": "test topic title",
-            "content": "test issue content on test topic",
+            "reason": "reason for topic create",
         }
         # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황
         token = self._login()
@@ -76,7 +76,7 @@ class TestTopicCreate(TestCase):
         request_body = {
             "note_id": self.note.id,
             "title": "test topic title",
-            "content": "test issue content on test topic",
+            "reason": "reason for topic create",
         }
 
         # When: 인증이 필요한 create topic api를 호출한다.

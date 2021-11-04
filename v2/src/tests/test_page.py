@@ -37,7 +37,7 @@ class TesztPageCreate(TestCase):
             "title": "test page title",
             "content": "test issue content",
             "topic_id": self.topic.id,
-            "summary": "summary",
+            "reason": "reason for page create",
         }
         # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
         token = self._login()
@@ -52,7 +52,7 @@ class TesztPageCreate(TestCase):
         self.assertEqual(page.title, "test page title")
         # And: Issue가 정상적으로 생성된다.
         issue = Issue.objects.all()[0]
-        self.assertEqual(issue.content, "test issue content")
+        self.assertEqual(issue.reason, "reason for page create")
 
     def test_create_page_should_return_400_when_invalid_title(self):
         # Given: invalid한 request body가 주어질 때
@@ -61,7 +61,7 @@ class TesztPageCreate(TestCase):
             "title": "test title",
             "content": "test issue content",
             "topic_id": invalid_topic_id,
-            "summary": "summary",
+            "reason": "reason for page create",
         }
         # And: 로그인 해서 토큰을 발급받은 상황이다.
         token = self._login()

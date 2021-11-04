@@ -104,7 +104,7 @@ class TestNoteCreate(TestCase):
 
     def test_create_note_should_return_201(self):
         # Given: note title과 issue 내용이 주어진다
-        request_body = {"title": "test note title", "content": "test issue content"}
+        request_body = {"title": "test note title", "reason": "reason for note create"}
         # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
         token = self._login()
 
@@ -120,11 +120,11 @@ class TestNoteCreate(TestCase):
         # And: Issue가 정상적으로 생성된다.
         issue = Issue.objects.all()[0]
         self.assertEqual(Issue.objects.count(), 1)
-        self.assertEqual(issue.content, "test issue content")
+        self.assertEqual(issue.reason, "reason for note create")
 
     def test_create_note_should_return_401_when_not_login(self):
         # Given: note title과 issue 내용이 주어진다, 로그인은 하지 않는다.
-        request_body = {"title": "test note title", "content": "test issue content"}
+        request_body = {"title": "test note title", "reason": "reason for note create"}
 
         # When: 인증이 필요한 create note api를 호출한다.
         response = self._call_api(request_body)
@@ -136,9 +136,9 @@ class TestNoteCreate(TestCase):
         self.assertEqual(Issue.objects.count(), 0)
 
     def test_create_note_should_return_400_when_invalid_title(self):
-        # Given: invalid title과 content가 주어진다.
+        # Given: invalid title과 valid한 이슈 내용이 주어진다.
         invalid_title = ""
-        request_body = {"title": invalid_title, "content": "test issue content"}
+        request_body = {"title": invalid_title, "reason": "reason for note create"}
         # And: 로그인 해서 토큰을 발급받은 상황이다.
         token = self._login()
 
@@ -152,9 +152,9 @@ class TestNoteCreate(TestCase):
         self.assertEqual(Issue.objects.count(), 0)
 
     def test_create_note_should_return_400_when_invalid_content(self):
-        # Given: title과 invalid content가 주어진다.
-        invalid_content = ""
-        request_body = {"title": "test title", "content": invalid_content}
+        # Given: valid한 title과 invalid한 이슈 내용이 주어진다.
+        invalid_issue_reason = ""
+        request_body = {"title": "test title", "reason": invalid_issue_reason}
         # And: 로그인 해서 토큰을 발급받은 상황이다.
         token = self._login()
 
