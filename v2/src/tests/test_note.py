@@ -104,7 +104,7 @@ class TestNoteCreate(TestCase):
 
     def test_create_note_should_return_201(self):
         # Given: note title과 issue 내용이 주어진다
-        request_body = {"title": "test note title", "content": "test issue content"}
+        request_body = {"title": "test note title", "content": "note create reason"}
         # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
         token = self._login()
 
@@ -120,11 +120,11 @@ class TestNoteCreate(TestCase):
         # And: Issue가 정상적으로 생성된다.
         issue = Issue.objects.all()[0]
         self.assertEqual(Issue.objects.count(), 1)
-        self.assertEqual(issue.content, "test issue content")
+        self.assertEqual(issue.reason, "note create reason")
 
     def test_create_note_should_return_401_when_not_login(self):
         # Given: note title과 issue 내용이 주어진다, 로그인은 하지 않는다.
-        request_body = {"title": "test note title", "content": "test issue content"}
+        request_body = {"title": "test note title", "content": "note create reason"}
 
         # When: 인증이 필요한 create note api를 호출한다.
         response = self._call_api(request_body)

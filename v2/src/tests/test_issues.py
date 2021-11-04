@@ -1,7 +1,6 @@
 from ctrlf_auth.models import CtrlfUser
 from ctrlf_auth.serializers import LoginSerializer
 from ctrlfbe.models import (
-    ContentRequest,
     CtrlfActionType,
     CtrlfContentType,
     CtrlfIssueStatus,
@@ -38,8 +37,11 @@ class IssueTextMixin:
             Issue.objects.create(
                 owner=self.user,
                 title=f"test title {i}",
-                content=f"test content {1}",
+                reason=f"test content {1}",
                 status=CtrlfIssueStatus.REQUESTED,
+                content_type=CtrlfContentType.NOTE,
+                content_id=1,
+                action=CtrlfActionType.CREATE,
             )
 
     def _make_all_contents(self):
@@ -110,16 +112,15 @@ class TestIssueDetail(IssueTextMixin, TestCase):
         # Given: Issue에 해당하는 컨텐츠들을 생성한다
         note, topic, page = self._make_all_contents()
         # And: page 생성에 대한 컨텐트 요청을 생성하고
-        content_request = ContentRequest.objects.create(
-            user=self.user, sub_id=page.id, type=CtrlfContentType.PAGE, action=CtrlfActionType.CREATE
-        )
         # And: 이슈를 1개 생성 하였을 때,
         issue = Issue.objects.create(
             owner=self.user,
-            content_request=content_request,
-            title="test title",
-            content="test content",
-            status=CtrlfIssueStatus.APPROVED,
+            title="test issue title",
+            reason="reason for create page",
+            status=CtrlfIssueStatus.REQUESTED,
+            content_type=CtrlfContentType.PAGE,
+            content_id=page.id,
+            action=CtrlfActionType.CREATE,
         )
 
         # When: issue detail api를 호출한다.
@@ -128,14 +129,12 @@ class TestIssueDetail(IssueTextMixin, TestCase):
         # Then: status code는 200을 리턴한다
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And: 생성된 이슈와 값이 일치해야한다
-        self.assertEqual(response.data["title"], "test title")
-        self.assertEqual(response.data["content"], "test content")
-        self.assertEqual(response.data["status"], CtrlfIssueStatus.APPROVED)
+        self.assertEqual(response.data["title"], "test issue title")
+        self.assertEqual(response.data["reason"], "reason for create page")
+        self.assertEqual(response.data["status"], CtrlfIssueStatus.REQUESTED)
         self.assertEqual(response.data["owner"], self.user.email)
-        # And: note, topic, page에 대한 id를 제공해야한다
-        self.assertEqual(response.data["note_id"], self.note.id)
-        self.assertEqual(response.data["topic_id"], self.topic.id)
-        self.assertEqual(response.data["page_id"], self.page.id)
+        # And: issue에 대한 content의 id를 제공해야한다
+        self.assertEqual(response.data["content_id"], self.page.id)
 
     def test_issue_detail_should_return_404_not_found_on_issue_does_not_exist(self):
         # Given: 이슈를 생성하지 않았을 때,
@@ -165,14 +164,15 @@ class TestIssueApprove(IssueTextMixin, TestCase):
     def _make_note(self):
         note = Note.objects.create(title="test note title")
         note.owners.add(self.owner)
-        content_request_data = {
-            "user": self.owner,
-            "sub_id": note.id,
-            "type": CtrlfContentType.NOTE,
-            "action": CtrlfActionType.CREATE,
+        issue_data = {
+            "owner": self.owner,
+            "title": "test issue title",
+            "reason": "reason for content",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "content_type": CtrlfContentType.NOTE,
+            "content_id": note.id,
+            "action": CtrlfActionType,
         }
-        content_request = ContentRequest.objects.create(**content_request_data)
-        issue_data = {"owner": self.owner, "content_request": content_request, "status": CtrlfIssueStatus.REQUESTED}
         issue = Issue.objects.create(**issue_data)
         return note.id, issue.id
 
@@ -180,14 +180,15 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         topic_data = {"note": self.note, "title": "test topic title"}
         topic = Topic.objects.create(**topic_data)
         topic.owners.add(self.owner)
-        content_request_data = {
-            "user": self.owner,
-            "sub_id": topic.id,
-            "type": CtrlfContentType.TOPIC,
-            "action": CtrlfActionType.CREATE,
+        issue_data = {
+            "owner": self.owner,
+            "title": "test issue title",
+            "reason": "reason for content",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "content_type": CtrlfContentType.TOPIC,
+            "content_id": topic.id,
+            "action": CtrlfActionType,
         }
-        content_request = ContentRequest.objects.create(**content_request_data)
-        issue_data = {"owner": self.owner, "content_request": content_request, "status": CtrlfIssueStatus.REQUESTED}
         issue = Issue.objects.create(**issue_data)
         return topic.id, issue.id
 
@@ -196,18 +197,18 @@ class TestIssueApprove(IssueTextMixin, TestCase):
             "topic": self.topic,
             "title": "test page title",
             "content": "test page content",
-            "summary": "summary",
         }
         page = Page.objects.create(**page_data)
         page.owners.add(self.owner)
-        content_request_data = {
-            "user": self.owner,
-            "sub_id": page.id,
-            "type": CtrlfContentType.PAGE,
-            "action": CtrlfActionType.CREATE,
+        issue_data = {
+            "owner": self.owner,
+            "title": "test issue title",
+            "reason": "reason for content",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "content_type": CtrlfContentType.PAGE,
+            "content_id": page.id,
+            "action": CtrlfActionType,
         }
-        content_request = ContentRequest.objects.create(**content_request_data)
-        issue_data = {"owner": self.owner, "content_request": content_request, "status": CtrlfIssueStatus.REQUESTED}
         issue = Issue.objects.create(**issue_data)
         return page.id, issue.id
 

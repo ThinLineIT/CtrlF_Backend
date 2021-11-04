@@ -46,32 +46,21 @@ class Topic(CommonTimestamp, CtrlfBaseContent):
 class Page(CommonTimestamp, CtrlfBaseContent):
     topic = models.ForeignKey("Topic", on_delete=models.CASCADE)
     content = models.TextField(default="")
-    summary = models.CharField(max_length=300, default="", help_text="이슈의 content에 해당하는 내용")
 
     def __str__(self):
         return f"{self.topic.note.title}-{self.topic.title}-{self.title}"
 
 
-class ContentRequest(CommonTimestamp):
-    user = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="수정 혹은 삭제의 주체자")
-    sub_id = models.IntegerField(help_text="type에 대한 id")
-    type = models.CharField(max_length=30, choices=CtrlfContentType.choices, help_text="NOTE, TOPIC, PAGE")
-    action = models.CharField(max_length=30, choices=CtrlfActionType.choices, help_text="CRUD")
-    reason = models.TextField(default="", help_text="수정 혹은 삭제 이유")
-    is_active = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"{self.user}-{self.type}-{self.action}"
-
-
 class Issue(CommonTimestamp):
     owner = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="이슈를 생성한 사람")
-    content_request = models.ForeignKey(
-        "ContentRequest", on_delete=models.CASCADE, null=True, help_text="content " "생성/수정/삭제 요청"
-    )
     title = models.CharField(max_length=100)
-    content = models.TextField(default="")
+    reason = models.TextField(default="")
     status = models.CharField(max_length=30, choices=CtrlfIssueStatus.choices, help_text="Issue 상태들")
+    content_type = models.CharField(
+        max_length=30, default="", choices=CtrlfContentType.choices, help_text="NOTE, TOPIC, PAGE"
+    )
+    content_id = models.IntegerField(default=0, help_text="note_id, topic_id, page_id")
+    action = models.CharField(max_length=30, default="", choices=CtrlfActionType.choices, help_text="CRUD")
 
     def __str__(self):
         return self.title

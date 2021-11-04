@@ -1,6 +1,5 @@
 from ctrlf_auth.models import CtrlfUser
 from ctrlfbe.models import (
-    ContentRequest,
     CtrlfActionType,
     CtrlfContentType,
     CtrlfIssueStatus,
@@ -163,18 +162,16 @@ class TestPageList(TestCase):
         # Given: 유효한 topic_id를 설정하고,
         valid_topic_id = self.topic.id
         # And: page를 생성한다
-        page_list = self._add_pages()
-        # And: content request를 생성하고,
-        content_request = ContentRequest.objects.create(
-            user=self.user, sub_id=page_list[0].id, type=CtrlfContentType.PAGE, action=CtrlfActionType.CREATE
-        )
+        self._add_pages()
         # And: 해당 Page에 대한 Issue를 생성하고,
         Issue.objects.create(
             owner=self.user,
             title="page issue",
-            content="page issue content",
+            reason="page issue content",
             status=CtrlfIssueStatus.APPROVED,
-            content_request=content_request,
+            content_type=CtrlfContentType.PAGE,
+            content_id=self.topic.id,
+            action=CtrlfActionType.CREATE,
         )
 
         # When: API를 실행 했을 때,

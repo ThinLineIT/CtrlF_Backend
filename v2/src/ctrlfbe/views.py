@@ -22,7 +22,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED, MAX_PRINTABLE_NOTE_COUNT
-from .models import CtrlfContentType, CtrlfIssueStatus, Issue, Note, Page, Topic
+from .models import (
+    CtrlfActionType,
+    CtrlfContentType,
+    CtrlfIssueStatus,
+    Issue,
+    Note,
+    Page,
+    Topic,
+)
 from .serializers import (
     IssueCreateSerializer,
     IssueDetailSerializer,
@@ -79,17 +87,18 @@ class NoteListCreateView(CtrlfAuthenticationMixin, APIView):
             "owners": [ctrlf_user.id],
         }
         issue_data = {
-            "title": request.data["title"],
-            "content": request.data["content"],
             "owner": ctrlf_user.id,
+            "title": request.data["title"],
+            "reason": request.data["content"],
             "status": CtrlfIssueStatus.REQUESTED,
+            "content_type": CtrlfContentType.NOTE,
+            "action": CtrlfActionType.CREATE,
         }
         note_serializer = NoteSerializer(data=note_data)
         issue_serializer = IssueCreateSerializer(data=issue_data)
 
         if note_serializer.is_valid() and issue_serializer.is_valid():
             issue_serializer.save(ctrlf_content=note_serializer.save())
-
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -126,10 +135,12 @@ class TopicCreateView(CtrlfAuthenticationMixin, APIView):
             "owners": [ctrlf_user.id],
         }
         issue_data = {
-            "title": request.data["title"],
-            "content": request.data["content"],
             "owner": ctrlf_user.id,
+            "title": request.data["title"],
+            "reason": request.data["content"],
             "status": CtrlfIssueStatus.REQUESTED,
+            "content_type": CtrlfContentType.TOPIC,
+            "action": CtrlfActionType.CREATE,
         }
         topic_serializer = TopicSerializer(data=topic_data)
         issue_serializer = IssueCreateSerializer(data=issue_data)
@@ -168,14 +179,15 @@ class PageCreateView(CtrlfAuthenticationMixin, APIView):
             "topic": request.data["topic_id"],
             "title": request.data["title"],
             "content": request.data["content"],
-            "summary": request.data["summary"],
             "owners": [ctrlf_user.id],
         }
         issue_data = {
-            "title": request.data["title"],
-            "content": request.data["content"],
             "owner": ctrlf_user.id,
+            "title": request.data["title"],
+            "reason": request.data["summary"],
             "status": CtrlfIssueStatus.REQUESTED,
+            "content_type": CtrlfContentType.PAGE,
+            "action": CtrlfActionType.CREATE,
         }
         page_serializer = PageSerializer(data=page_data)
         issue_serializer = IssueCreateSerializer(data=issue_data)
@@ -246,14 +258,13 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
         return Response(data={"message": "승인 완료"}, status=status.HTTP_200_OK)
 
     def get_content(self, issue, ctrlf_user):
-        content_request = issue.content_request
-        content_type = content_request.type
+        content_type = issue.content_type
         content = (
-            Page.objects.get(id=content_request.sub_id)
+            Page.objects.get(id=issue.content_id)
             if content_type == CtrlfContentType.PAGE
-            else Note.objects.get(id=content_request.sub_id)
+            else Note.objects.get(id=issue.content_id)
             if content_type == CtrlfContentType.NOTE
-            else Topic.objects.get(id=content_request.sub_id)
+            else Topic.objects.get(id=issue.content_id)
             if content_type == CtrlfContentType.TOPIC
             else None
         )

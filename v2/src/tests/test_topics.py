@@ -48,7 +48,7 @@ class TestTopicCreate(TestCase):
         self.assertEqual(topic.title, "test topic title")
         # And: Issue가 정상적으로 생성된다.
         issue = Issue.objects.all()[0]
-        self.assertEqual(issue.content, "test issue content on test topic")
+        self.assertEqual(issue.reason, "test issue content on test topic")
 
     def test_should_return_400_on_invalid_note_id(self):
         # Given: invalid한 note_id가 주어졌을 때
