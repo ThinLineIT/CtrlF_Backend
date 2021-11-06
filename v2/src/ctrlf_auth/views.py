@@ -1,15 +1,31 @@
 from typing import List
 
-from ctrlf_auth.helpers import generate_auth_code
+from ctrlf_auth.constants import MSG_SUCCESS_RESET_PASSWORD, MSG_SUCCESS_SIGN_UP
+from ctrlf_auth.helpers import generate_auth_code, generate_signing_token
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import (
     CheckEmailDuplicateSerializer,
+    CheckVerificationCodeResponse,
     CheckVerificationCodeSerializer,
     LoginSerializer,
     NicknameDuplicateSerializer,
+    ResetPasswordSerializer,
+    SendingAuthEmailResponse,
     SendingAuthEmailSerializer,
     SignUpSerializer,
 )
+from ctrlf_auth.swagger import (
+    SWAGGER_CHECK_EMAIL_DUPLICATE_VIEW,
+    SWAGGER_CHECK_NICKNAME_DUPLICATE_VIEW,
+    SWAGGER_CHECK_VERIFICATION_CODE_VIEW,
+    SWAGGER_LOGIN_API_VIEW,
+    SWAGGER_RESET_PASSWORD_VIEW,
+    SWAGGER_SENDING_AUTH_EMAIL_VIEW,
+    SWAGGER_SIGN_UP_API_VIEW,
+    SWAGGER_TEMP_DELETE_EMAIL_VIEW,
+)
+from ctrlf_auth.tasks import send_email
+from django.core import signing
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
@@ -22,7 +38,7 @@ class LoginAPIView(ObtainJSONWebToken):
 
     serializer_class = LoginSerializer
 
-    @swagger_auto_schema(method="post")
+    @swagger_auto_schema(**SWAGGER_LOGIN_API_VIEW)
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -35,14 +51,12 @@ class LoginAPIView(ObtainJSONWebToken):
 class SignUpAPIView(APIView):
     authentication_classes: List[str] = []
 
-    _SIGNUP_MSG = "환영합니다.\n가입이 완료되었습니다\n\n로그인 후 이용해주세요."
-
-    @swagger_auto_schema(request_body=SignUpSerializer)
+    @swagger_auto_schema(**SWAGGER_SIGN_UP_API_VIEW)
     def post(self, request, *args, **kwargs):
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(data={"message": self._SIGNUP_MSG}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": MSG_SUCCESS_SIGN_UP}, status=status.HTTP_201_CREATED)
         else:
             for _, message in serializer.errors.items():
                 message = message[0]
@@ -52,16 +66,16 @@ class SignUpAPIView(APIView):
 class SendingAuthEmailView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(request_body=SendingAuthEmailSerializer)
+    @swagger_auto_schema(**SWAGGER_SENDING_AUTH_EMAIL_VIEW)
     def post(self, request, *args, **kwargs):
         serializer = SendingAuthEmailSerializer(data=request.data)
         if serializer.is_valid():
             email_auth_code = EmailAuthCode.objects.create(code=generate_auth_code())
-            success = email_auth_code.send_email(to=serializer.data["email"])
-            if not success:
-                # TODO: 메일발송 실패 로그 남기기
-                pass
-            return Response(status=status.HTTP_200_OK)
+            send_email.delay(code=email_auth_code.code, to=serializer.data["email"])
+            signing_token = generate_signing_token(data=serializer.data)
+            return Response(
+                status=status.HTTP_200_OK, data=SendingAuthEmailResponse({"signing_token": signing_token}).data
+            )
         else:
             for _, message in serializer.errors.items():
                 message = message[0]
@@ -71,7 +85,7 @@ class SendingAuthEmailView(APIView):
 class TempDeleteEmailView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(request_body=SendingAuthEmailSerializer)
+    @swagger_auto_schema(**SWAGGER_TEMP_DELETE_EMAIL_VIEW)
     def delete(self, request):
         serializer = SendingAuthEmailSerializer(data=request.data)
         if serializer.is_valid():
@@ -85,7 +99,7 @@ class CheckNicknameDuplicateView(APIView):
 
     _SUCCESS_MSG = "사용 가능한 닉네임입니다."
 
-    @swagger_auto_schema(query_serializer=NicknameDuplicateSerializer)
+    @swagger_auto_schema(**SWAGGER_CHECK_NICKNAME_DUPLICATE_VIEW)
     def get(self, request):
         nickname = request.query_params
         serializer = NicknameDuplicateSerializer(data=nickname)
@@ -100,7 +114,7 @@ class CheckNicknameDuplicateView(APIView):
 class CheckEmailDuplicateView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(query_serializer=CheckEmailDuplicateSerializer)
+    @swagger_auto_schema(**SWAGGER_CHECK_EMAIL_DUPLICATE_VIEW)
     def get(self, request):
         serializer = CheckEmailDuplicateSerializer(data=request.query_params)
 
@@ -115,13 +129,41 @@ class CheckEmailDuplicateView(APIView):
 class CheckVerificationCodeView(APIView):
     authentication_classes: List[str] = []
 
-    @swagger_auto_schema(request_body=CheckVerificationCodeSerializer)
+    @swagger_auto_schema(**SWAGGER_CHECK_VERIFICATION_CODE_VIEW)
     def post(self, request):
         serializer = CheckVerificationCodeSerializer(data=request.data)
 
         if serializer.is_valid():
-            return Response({"message": "유효한 인증코드 입니다."}, status=status.HTTP_200_OK)
+            signing_token = generate_signing_token(
+                data={
+                    "email": signing.loads(serializer.validated_data["signing_token"])["email"],
+                    "code": serializer.validated_data["code"],
+                }
+            )
+            return Response(
+                status=status.HTTP_200_OK, data=CheckVerificationCodeResponse({"signing_token": signing_token}).data
+            )
         else:
             for _, message in serializer.errors.items():
                 err = message[0]
             return Response({"message": err}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResetPasswordView(APIView):
+    authentication_classes: List[str] = []
+
+    @swagger_auto_schema(**SWAGGER_RESET_PASSWORD_VIEW)
+    def post(self, request):
+        serializer = ResetPasswordSerializer(data=request.data)
+
+        if serializer.is_valid():
+            email = signing.loads(request.data["signing_token"])["email"]
+            user = CtrlfUser.objects.get(email=email)
+            user.set_password(request.data["new_password"])
+            user.save()
+
+            return Response(data={"message": MSG_SUCCESS_RESET_PASSWORD}, status=status.HTTP_200_OK)
+        else:
+            for _, message in serializer.errors.items():
+                err_message = message[0]
+            return Response(data={"message": err_message}, status=status.HTTP_400_BAD_REQUEST)

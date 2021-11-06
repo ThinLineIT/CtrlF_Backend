@@ -24,6 +24,10 @@ boto3 = "^1.18.1"
 drf-yasg = "^1.20.0"
 pytest-pythonpath = "^0.7.3"
 djangorestframework-jwt = "^1.11.0"
+celery = {extras = ["redis"], version = "^5.1.2"}
+psycopg2-binary = "^2.9.1"
+freezegun = "^1.1.0"
+types-freezegun = "^1.1.2"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.11.1"

@@ -1,5 +1,12 @@
+from ctrlf_auth.constants import (
+    MSG_EXPIRED_VERIFICATION_CODE,
+    MSG_NOT_EXIST_VERIFICATION_CODE,
+    MSG_NOT_MATCHED_PASSWORD,
+    VERIFICATION_TIMEOUT_SECONDS,
+)
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from django.contrib.auth.hashers import check_password
+from django.core import signing
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from rest_framework import serializers, status
@@ -7,7 +14,12 @@ from rest_framework.exceptions import ValidationError
 from rest_framework_jwt.serializers import jwt_payload_handler
 from rest_framework_jwt.utils import jwt_encode_handler
 
-from .helpers import CODE_MAX_LENGTH
+from .helpers import CODE_MAX_LENGTH, decode_signing_token
+
+
+class LoginRequestBody(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
 
 
 class LoginSerializer(serializers.Serializer):
@@ -39,27 +51,27 @@ class LoginSerializer(serializers.Serializer):
 
 
 class SignUpSerializer(serializers.Serializer):
-    email = serializers.EmailField()
     nickname = serializers.CharField(max_length=30)
     password = serializers.CharField()
-    code = serializers.CharField(max_length=20)
     password_confirm = serializers.CharField()
+    signing_token = serializers.CharField()
 
     def validate(self, request_data):
-        if CtrlfUser.objects.filter(email=request_data["email"]).exists():
-            raise ValidationError("중복된 email 입니다.")
-
         if request_data["password"] != request_data["password_confirm"]:
             raise ValidationError("패스워드가 일치하지 않습니다.")
 
-        if not EmailAuthCode.objects.filter(code=request_data["code"]).exists():
+        signed_values = signing.loads(request_data["signing_token"])
+        if CtrlfUser.objects.filter(email=signed_values["email"]).exists():
+            raise ValidationError("중복된 email 입니다.")
+
+        if not EmailAuthCode.objects.filter(code=signed_values["code"]).exists():
             raise ValidationError("유효하지 않은 코드 입니다.")
         return request_data
 
     def create(self, validated_data):
         validated_data.pop("password_confirm")
-        validated_data.pop("code")
-
+        signed_token = signing.loads(validated_data.pop("signing_token"))
+        validated_data["email"] = signed_token["email"]
         user = CtrlfUser.objects.create(**validated_data)
         user.set_password(validated_data.pop("password"))
         user.save()
@@ -75,6 +87,10 @@ class SendingAuthEmailSerializer(serializers.Serializer):
         except DjangoValidationError:
             raise DjangoValidationError("유효하지 않은 이메일 형식 입니다.")
         return email
+
+
+class SendingAuthEmailResponse(serializers.Serializer):
+    signing_token = serializers.CharField()
 
 
 class NicknameDuplicateSerializer(serializers.Serializer):
@@ -102,11 +118,36 @@ class CheckEmailDuplicateSerializer(serializers.Serializer):
 
 
 class CheckVerificationCodeSerializer(serializers.Serializer):
-    _err_msg = "인증코드가 올바르지 않습니다."
+    code = serializers.CharField(max_length=CODE_MAX_LENGTH, error_messages={"max_length": "인증코드가 유효하지 않습니다."})
+    signing_token = serializers.CharField()
 
-    code = serializers.CharField(max_length=CODE_MAX_LENGTH, error_messages={"max_length": _err_msg})
+    def validate(self, data):
+        if not EmailAuthCode.objects.filter(code=data["code"]).exists():
+            raise ValidationError(MSG_NOT_EXIST_VERIFICATION_CODE)
+        try:
+            decode_signing_token(token=data["signing_token"], max_age=VERIFICATION_TIMEOUT_SECONDS)
+        except ValueError:
+            raise ValidationError(MSG_EXPIRED_VERIFICATION_CODE)
+        return data
 
-    def validate_code(self, code):
-        if not EmailAuthCode.objects.filter(code=code).exists():
-            raise ValidationError(self._err_msg)
-        return code
+
+class CheckVerificationCodeResponse(serializers.Serializer):
+    signing_token = serializers.CharField()
+
+
+class LoginResponse(serializers.Serializer):
+    token = serializers.CharField()
+    user_id = serializers.IntegerField()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField()
+    new_password_confirm = serializers.CharField()
+    signing_token = serializers.CharField()
+
+    def validate(self, data):
+        new_password = data["new_password"]
+        new_password_confirm = data["new_password_confirm"]
+        if new_password != new_password_confirm:
+            raise ValidationError(MSG_NOT_MATCHED_PASSWORD)
+        return data

@@ -1,13 +1,18 @@
 import json
+from http import HTTPStatus
 from unittest.mock import patch
 
 from ctrlf_auth.authentication import CtrlfAuthentication
-from ctrlf_auth.helpers import generate_auth_code
+from ctrlf_auth.helpers import generate_auth_code, generate_signing_token
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
 from ctrlf_auth.serializers import LoginSerializer
+from django.core import signing
 from django.test import Client, TestCase
 from django.urls import reverse
+from drf_yasg.utils import swagger_auto_schema
+from freezegun import freeze_time
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -39,9 +44,9 @@ class TestSignUp(TestCase):
         return self.c.post(reverse("auth:signup"), request_body)
 
     def test_signup_should_return_201_on_success(self):
+        signing_token = generate_signing_token(data={"email": "test1234@test.com", "code": "YWJjZGU="})
         valid_request_body = {
-            "email": "test1234@test.com",
-            "code": "YWJjZGU=",
+            "signing_token": signing_token,
             "nickname": "유연한외곬",
             "password": "testpassword%*",
             "password_confirm": "testpassword%*",
@@ -50,9 +55,9 @@ class TestSignUp(TestCase):
         self.assertEqual(response.status_code, 201)
 
     def test_signup_should_return_message_on_success(self):
+        signing_token = generate_signing_token(data={"email": "test1234@test.com", "code": "YWJjZGU="})
         valid_request_body = {
-            "email": "test1234@test.com",
-            "code": "YWJjZGU=",
+            "signing_token": signing_token,
             "nickname": "유연한외곬",
             "password": "testpassword%*",
             "password_confirm": "testpassword%*",
@@ -63,32 +68,35 @@ class TestSignUp(TestCase):
     def test_signup_should_return_400_on_fail_with_duplicated_email(self):
         user_data = {"email": "test1234@test.com", "password": "testpassword%*"}  # email이 이미 중복 됨
         CtrlfUser.objects.create_user(**user_data)
-        user_data.update({"code": "YWJjZGU=", "nickname": "유연한외곬", "password_confirm": "testpassword%*"})
+
+        email = user_data.pop("email")
+        signing_token = signing.dumps({"email": email, "code": "YWJjZGU="})
+        user_data.update({"signing_token": signing_token, "nickname": "유연한외곬", "password_confirm": "testpassword%*"})
         response = self._call_api(user_data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["message"], "중복된 email 입니다.")
 
     def test_signup_should_return_400_on_fail_with_no_same_password(self):
-        user_data = {
-            "email": "test1234@test.com",
-            "code": "YWJjZGU=",
+        signing_token = generate_signing_token(data={"email": "test1234@test.com", "code": "YWJjZGU="})
+        valid_request_body = {
+            "signing_token": signing_token,
             "nickname": "유연한외곬",
-            "password": "no_same_password",
+            "password": "nosamepassword",
             "password_confirm": "testpassword%*",
         }
-        response = self._call_api(user_data)
+        response = self._call_api(valid_request_body)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["message"], "패스워드가 일치하지 않습니다.")
 
     def test_signup_should_return_400_on_fail_with_invalid_code(self):
-        user_data = {
-            "email": "test1234@test.com",
-            "code": "invalid_code",  # invalid code
+        signing_token = generate_signing_token(data={"email": "test1234@test.com", "code": "invalid_token"})
+        valid_request_body = {
+            "signing_token": signing_token,
             "nickname": "유연한외곬",
             "password": "testpassword%*",
             "password_confirm": "testpassword%*",
         }
-        response = self._call_api(user_data)
+        response = self._call_api(valid_request_body)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["message"], "유효하지 않은 코드 입니다.")
 
@@ -101,14 +109,24 @@ class TestSendingAuthEmail(TestCase):
         return self.c.post(reverse("auth:sending_auth_email"), request_body)
 
     @patch("ctrlf_auth.views.generate_auth_code")
-    @patch("ctrlf_auth.views.EmailAuthCode.send_email")
-    def test_sending_auth_email_should_return_200_on_success(self, mock_send_email, mock_generate_auth_code):
-        mock_generate_auth_code.return_value = "1q2w3e4r"
+    @patch("ctrlf_auth.views.send_email.delay")
+    def test_sending_auth_email_should_return_200_on_success(self, mock_send_email_delay, mock_generate_auth_code):
+        # Given: request body로 email이 정상적으로 같이 주어 지고,
         request_body = {"email": "test1234@test.com"}
+        # And: auth_code는 "1q2w3e4r" 가 리턴되도록 하고,
+        mock_generate_auth_code.return_value = "1q2w3e4r"
+
+        # When: 인증 이메일 보내기 API를 호출하면,
         response = self._call_api(request_body)
-        self.assertEqual(response.status_code, 200)
+
+        # Then: "1q2w3e4r" 로 email auth code는 존재해야하고,
         self.assertTrue(EmailAuthCode.objects.filter(code="1q2w3e4r").exists())
-        mock_send_email.assert_called_once_with(to="test1234@test.com")
+        # And: email은 보내져야 하고,
+        mock_send_email_delay.assert_called_once_with(code="1q2w3e4r", to="test1234@test.com")
+        # And: 상태코드는 200 이면서, 응답으로 받은 값을 복호화 하면, 사용자가 입력한 이메일이 나와야 한다
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        signing_token = response.json()["signing_token"]
+        self.assertEqual(signing.loads(signing_token)["email"], "test1234@test.com")
 
     def test_sending_auth_email_should_return_400_on_email_from_request_body_is_invalid_format(self):
         request_body = {"email": "test1234test.com"}  # invalid email format
@@ -255,40 +273,64 @@ class TestCheckVerificationCode(TestCase):
 
     def test_verification_code_should_return_200(self):
         # Given: 일치하는 코드
-        request_body = {"code": self.code}
+        email = "kwon5604@naver.com"
+        request_body = {"code": self.code, "signing_token": generate_signing_token({"email": email})}
         # When : API 실행
         response = self._call_api(request_body)
         # Then : 상태코드 200 리턴.
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # And  : 메세지는 "유효한 인증코드 입니다." 이어야 함.
-        self.assertEqual(response.data["message"], "유효한 인증코드 입니다.")
+        # And: signing_token을 리턴해야하는데, 이 토큰을 복호화 했을 때, code와 email 주소를 가진다
+        signing_token = signing.loads(response.json()["signing_token"])
+        self.assertEqual(signing_token["email"], email)
+        self.assertEqual(signing_token["code"], self.code)
+
+    def test_verification_code_should_return_400_by_expired_signing_token(self):
+        # Given: 일치하는 코드
+        with freeze_time("2021-01-01 00:00:00"):
+            request_body = {"code": self.code, "signing_token": generate_signing_token({"email": "kwon5604@naver.com"})}
+
+        # When : API 실행 - 인증코드 타임아웃 시간보다 10초 초과했을 때,
+        with freeze_time("2021-01-01 00:05:10"):
+            response = self._call_api(request_body)
+
+            # Then : 상태코드 400 리턴.
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            # And  : 메세지는 "인증코드가 만료되었습니다." 이어야 함.
+            self.assertEqual(response.data["message"], "인증코드가 만료되었습니다.")
 
     def test_verification_code_should_return_400_by_incorrect_verification_code(self):
         # Given : 불일치하는 코드
         incorrect_code = "incorrect"
-        request_body = {"code": incorrect_code}
+        request_body = {
+            "code": incorrect_code,
+            "signing_token": generate_signing_token({"email": "kwon5604@naver.com"}),
+        }
         # When  : API 실행
         response = self._call_api(request_body)
         # Then  : 상태코드 400 리턴.
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # And   : 메세지는 "인증코드가 올바르지 않습니다." 이어야 함.
-        self.assertEqual(response.data["message"], "인증코드가 올바르지 않습니다.")
+        # And   : 메세지는 "인증코드가 유효하지 않습니다." 이어야 함.
+        self.assertEqual(response.data["message"], "인증코드가 유효하지 않습니다.")
 
     def test_verification_code_should_return_400_by_incorrect_length_code(self):
         # Given : 인증코드 최대길이를 넘어가는 코드
         incorrect_code = "incorrect_length_code"
-        request_body = {"code": incorrect_code}
+        request_body = {
+            "code": incorrect_code,
+            "signing_token": generate_signing_token({"email": "kwon5604@naver.com"}),
+        }
         # When  : API 실행
         response = self._call_api(request_body)
         # Then  : 상태코드 400 리턴.
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # And   : 메세지는 "인증코드가 올바르지 않습니다." 이어야 함.
-        self.assertEqual(response.data["message"], "인증코드가 올바르지 않습니다.")
+        # And   : 메세지는 "인증코드가 유효하지 않습니다." 이어야 함.
+        self.assertEqual(response.data["message"], "인증코드가 유효하지 않습니다.")
 
 
 class MockAuthAPI(APIView):
     authentication_classes = [CtrlfAuthentication]
 
+    @swagger_auto_schema(deprecated=True, tags=["기타"])
     def get(self, request):
         return Response(status=status.HTTP_200_OK, data={"email": request.user.email})
 
@@ -340,3 +382,60 @@ class TestJWTAuth(TestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         # And: 인증이 유효하지 않습니다. 메세지를 리턴해야한다
         self.assertEqual(json.loads(response.content)["message"], "인증이 유효하지 않습니다.")
+
+
+class TestResetPassword(TestCase):
+    def setUp(self) -> None:
+        self.c = Client()
+        self.code = generate_auth_code()
+        self.email = "jinho4744@naver.com"
+        CtrlfUser.objects.create_user(email=self.email, password="q1w2e3r41!")
+
+    def _call_api(self, request_body):
+        return self.c.post(reverse("auth:reset_password"), request_body)
+
+    def test_reset_password_should_return_200_ok_on_success(self):
+        # Given: 재설정할 비밀번호와 사이닝 토큰을 request_body로 보낸다
+        request_body = {
+            "new_password": "q1w2e3r42@",
+            "new_password_confirm": "q1w2e3r42@",
+            "signing_token": generate_signing_token({"email": self.email, "code": self.code}),
+        }
+
+        # When: api 호출
+        response = self._call_api(request_body)
+
+        # Then: 200을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: "비밀번호가 정상적으로 재설정 되었습니다."라는 메시지를 출력한다.
+        self.assertEqual(response.data["message"], "비밀번호가 정상적으로 재설정 되었습니다.")
+        # And: 기존의 password로 로그인 시도시 실패한다.
+        login_serializer = LoginSerializer()
+        with self.assertRaises(ValidationError):
+            login_serializer.validate(data={"email": self.email, "password": "q1w2e3r41!"})
+        # And: 변경한 password로 로그인 시도시 성공한다.
+        login = login_serializer.validate(data={"email": self.email, "password": "q1w2e3r42@"})
+        self.assertEqual(login["user"].email, self.email)
+
+    def test_reset_password_should_return_400_and_not_reset_password_when_not_match_password_with_password_confirm(
+        self,
+    ):
+        # Given: '비밀번호'와 '비밀번호 확인'이 서로 일치하지 않게 보낸다.
+        request_body = {
+            "new_password": "q1w2e3r42@",
+            "new_password_confirm": "q1w2e3r43#",
+            "signing_token": generate_signing_token({"email": self.email, "code": self.code}),
+        }
+
+        # When: api 호출
+        response = self._call_api(request_body)
+
+        # Then: 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And: "입력한 비밀번호가 일치하지 않습니다."라는 메시지를 출력한다.
+        self.assertEqual(response.data["message"], "입력한 비밀번호가 일치하지 않습니다.")
+
+        # And: 기존의 password로 로그인 시도시 성공한다.
+        login_serializer = LoginSerializer()
+        login = login_serializer.validate(data={"email": self.email, "password": "q1w2e3r41!"})
+        self.assertEqual(login["user"].email, self.email)
