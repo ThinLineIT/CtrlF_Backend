@@ -2,6 +2,7 @@ from typing import Optional
 
 from ctrlfbe.mixins import CtrlfAuthenticationMixin
 from ctrlfbe.swagger import (
+    SWAGGER_HEALTH_CHECK_VIEW,
     SWAGGER_ISSUE_APPROVE_VIEW,
     SWAGGER_ISSUE_DETAIL_VIEW,
     SWAGGER_ISSUE_LIST_VIEW,
@@ -278,3 +279,9 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
                 raise ValueError
 
         return content
+
+
+class HealthCheckView(APIView):
+    @swagger_auto_schema(**SWAGGER_HEALTH_CHECK_VIEW)
+    def get(self, request):
+        return Response(data={"message": "OK"}, status=status.HTTP_200_OK)
