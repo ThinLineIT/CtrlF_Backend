@@ -1,7 +1,9 @@
 branch-defaults:
   main:
-    environment: testdeploy-dev
+    environment: ctrlf-backend-prod
     group_suffix: null
+  staging:
+    environment: testdeploy-dev
 environment-defaults:
   testdeploy-dev:
     branch: null
