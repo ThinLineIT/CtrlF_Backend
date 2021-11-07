@@ -103,3 +103,9 @@ SWAGGER_ISSUE_APPROVE_VIEW = {
     "operation_description": "issue_id에 해당하는 Issue의 content(Note or Topic or Page)를 승인 합니다",
     "tags": ["이슈 화면", "디테일 화면"],
 }
+
+SWAGGER_HEALTH_CHECK_VIEW = {
+    "operation_summary": "Health Check API",
+    "operation_description": "Health Check API",
+    "tags": ["Health Check"],
+}
