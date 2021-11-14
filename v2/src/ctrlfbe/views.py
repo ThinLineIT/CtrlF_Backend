@@ -1,7 +1,11 @@
+import mimetypes
+import os
 from typing import Optional
 
+import boto3
 from ctrlfbe.mixins import CtrlfAuthenticationMixin
 from ctrlfbe.swagger import (
+    SWAGGER_IMAGE_UPLOAD_VIEW,
     SWAGGER_ISSUE_APPROVE_VIEW,
     SWAGGER_ISSUE_DETAIL_VIEW,
     SWAGGER_ISSUE_LIST_VIEW,
@@ -71,7 +75,7 @@ class NoteListCreateView(CtrlfAuthenticationMixin, APIView):
     @swagger_auto_schema(**SWAGGER_NOTE_LIST_VIEW)
     def get(self, request):
         current_cursor = int(request.query_params["cursor"])
-        notes = Note.objects.all()[current_cursor : current_cursor + MAX_PRINTABLE_NOTE_COUNT]
+        notes = Note.objects.all()[current_cursor: current_cursor + MAX_PRINTABLE_NOTE_COUNT]
         serializer = NoteSerializer(notes, many=True)
         serialized_notes = serializer.data
         return Response(
@@ -213,7 +217,7 @@ class IssueListView(APIView):
     @swagger_auto_schema(**SWAGGER_ISSUE_LIST_VIEW)
     def get(self, request, *args, **kwargs):
         current_cursor = int(request.query_params["cursor"])
-        issues = Issue.objects.all()[current_cursor : current_cursor + MAX_PRINTABLE_NOTE_COUNT]
+        issues = Issue.objects.all()[current_cursor: current_cursor + MAX_PRINTABLE_NOTE_COUNT]
         serializer = IssueSerializer(issues, many=True)
         serialized_issues = serializer.data
 
@@ -278,3 +282,23 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
                 raise ValueError
 
         return content
+
+
+class ImageUploadView(APIView):
+    BUCKET_NAME = "testing-for-jinho"
+    BUCKET_BASE_DIR = "temp"
+    BASE_URL = "https://d2af9nad0zcf09.cloudfront.net"
+
+    @swagger_auto_schema(**SWAGGER_IMAGE_UPLOAD_VIEW)
+    def post(self, request, *args, **kwargs):
+        img_data = request.data["img_data"]
+        base_name = os.path.basename(img_data)
+        bucket_dir = "/".join([self.BUCKET_BASE_DIR, base_name])
+
+        s3 = boto3.client("s3")
+        s3.upload_file(img_data, self.BUCKET_NAME, bucket_dir)
+
+        response_url = "/".join([self.BASE_URL, bucket_dir])
+        print(response_url)
+
+        return Response(data={"img_url": response_url}, status=status.HTTP_200_OK)
