@@ -3,6 +3,9 @@ import os
 from typing import Optional
 
 import boto3
+from django.conf import settings
+
+from common.s3.client import S3Client
 from ctrlfbe.mixins import CtrlfAuthenticationMixin
 from ctrlfbe.swagger import (
     SWAGGER_IMAGE_UPLOAD_VIEW,
@@ -285,20 +288,16 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
 
 
 class ImageUploadView(APIView):
-    BUCKET_NAME = "testing-for-jinho"
-    BUCKET_BASE_DIR = "temp"
-    BASE_URL = "https://d2af9nad0zcf09.cloudfront.net"
+    BUCKET_BASE_DIR = settings.S3_BUCKET_BASE_DIR
+    BASE_URL = settings.S3_BASE_URL
 
     @swagger_auto_schema(**SWAGGER_IMAGE_UPLOAD_VIEW)
     def post(self, request, *args, **kwargs):
         img_data = request.data["img_data"]
-        base_name = os.path.basename(img_data)
-        bucket_dir = "/".join([self.BUCKET_BASE_DIR, base_name])
+        file_name_to_upload = os.path.basename(img_data)
+        bucket_path = f"{self.BUCKET_BASE_DIR}/{file_name_to_upload}"
 
-        s3 = boto3.client("s3")
-        s3.upload_file(img_data, self.BUCKET_NAME, bucket_dir)
+        s3_client = S3Client()
+        s3_client.upload_file(img_data=img_data, bucket_path=bucket_path)
 
-        response_url = "/".join([self.BASE_URL, bucket_dir])
-        print(response_url)
-
-        return Response(data={"img_url": response_url}, status=status.HTTP_200_OK)
+        return Response(data={"image_url": f"{self.BASE_URL}/{bucket_path}"}, status=status.HTTP_200_OK)

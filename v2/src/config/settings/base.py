@@ -171,3 +171,7 @@ JWT_AUTH = {
 }
 
 SWAGGER_SETTINGS = {"SECURITY_DEFINITIONS": {"Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"}}}
+
+S3_BUCKET_NAME = env.str("S3_BUCKET_NAME", default="")
+S3_BUCKET_BASE_DIR = env.str("S3_BUCKET_BASE_DIR", default="")
+S3_BASE_URL = env.str("S3_BASE_URL", default="")
