@@ -113,3 +113,9 @@ SWAGGER_IMAGE_UPLOAD_VIEW = {
     "request_body": ImageUploadRequestBodySerializer(),
     "responses": {200: ImageSerializer()},
 }
+
+SWAGGER_HEALTH_CHECK_VIEW = {
+    "operation_summary": "Health Check API",
+    "operation_description": "Health Check API",
+    "tags": ["Health Check"],
+}

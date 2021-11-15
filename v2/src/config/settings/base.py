@@ -25,6 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
 environ.Env.read_env(env_file=os.path.join(BASE_DIR, ".env"))
 SECRET_KEY = env.str("DJANGO_SECRET_KEY", default="django_secret_key")
+PLATFORM_ENV = env.str("PLATFORM_ENV", default="config.settings.local")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -78,21 +79,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
-
-# Database
-# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("RDS_DB_NAME", ""),
-        "USER": os.environ.get("RDS_USERNAME", ""),
-        "PASSWORD": os.environ.get("RDS_PASSWORD", ""),
-        "HOST": os.environ.get("RDS_HOSTNAME", ""),
-        "PORT": os.environ.get("RDS_PORT", ""),
-    }
-}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators

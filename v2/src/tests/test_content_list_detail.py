@@ -162,7 +162,7 @@ class TestPageList(TestCase):
         # Given: 유효한 topic_id를 설정하고,
         valid_topic_id = self.topic.id
         # And: page를 생성한다
-        self._add_pages()
+        page_list = self._add_pages()
         # And: 해당 Page에 대한 Issue를 생성하고,
         Issue.objects.create(
             owner=self.user,
@@ -170,7 +170,7 @@ class TestPageList(TestCase):
             reason="page issue content",
             status=CtrlfIssueStatus.APPROVED,
             related_model_type=CtrlfContentType.PAGE,
-            related_model_id=self.topic.id,
+            related_model_id=page_list[0].id,
             action=CtrlfActionType.CREATE,
         )
 

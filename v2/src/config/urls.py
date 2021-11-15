@@ -1,3 +1,4 @@
+from ctrlfbe.views import HealthCheckView
 from django.contrib import admin
 from django.urls import include, path
 from drf_yasg import openapi
@@ -27,4 +28,5 @@ urlpatterns = [
     path("api/pages/", include("ctrlfbe.page_urls"), name="pages"),
     path("api/issues/", include("ctrlfbe.issue_urls"), name="issues"),
     path("api/actions/", include("ctrlfbe.action_urls"), name="actions"),
+    path("api/health-check/", HealthCheckView.as_view()),
 ]
