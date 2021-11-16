@@ -3,8 +3,8 @@ from typing import Optional
 from common.s3.client import S3Client
 from ctrlfbe.mixins import CtrlfAuthenticationMixin
 from ctrlfbe.swagger import (
-    SWAGGER_IMAGE_UPLOAD_VIEW,
     SWAGGER_HEALTH_CHECK_VIEW,
+    SWAGGER_IMAGE_UPLOAD_VIEW,
     SWAGGER_ISSUE_APPROVE_VIEW,
     SWAGGER_ISSUE_DETAIL_VIEW,
     SWAGGER_ISSUE_LIST_VIEW,
@@ -300,9 +300,8 @@ class ImageUploadView(APIView):
 
         return Response(data={"image_url": f"{self.BASE_URL}/{bucket_path}"}, status=status.HTTP_200_OK)
 
-      
+
 class HealthCheckView(APIView):
     @swagger_auto_schema(**SWAGGER_HEALTH_CHECK_VIEW)
     def get(self, request):
         return Response(data={"message": "OK"}, status=status.HTTP_200_OK)
-
