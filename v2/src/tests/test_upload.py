@@ -17,7 +17,7 @@ class TestUpload(TestCase):
     def _call_api(self, request_body):
         return self.c.post(reverse("actions:upload_images"), request_body)
 
-    @patch("common.s3.client.S3Client.upload_file_object", Mock())
+    @patch("common.s3.client.S3Client", Mock())
     def test_should_return_url_containing_file_name(self):
         # Given: request body로 업로드 하려는 이미지의 정보가 주어진다.
         image_name = "dog.png"
