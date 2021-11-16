@@ -45,6 +45,8 @@ from .serializers import (
     TopicSerializer,
 )
 
+s3_client = S3Client()
+
 
 class BaseContentView(APIView):
     child_model: Optional[Model] = None
@@ -294,8 +296,6 @@ class ImageUploadView(APIView):
         file_name_to_upload = image_data.name
         file_content_type = image_data.content_type
         bucket_path = f"{self.BUCKET_BASE_DIR}/{file_name_to_upload}"
-
-        s3_client = S3Client()
         s3_client.upload_file_object(image_data=image_data, bucket_path=bucket_path, content_type=file_content_type)
 
         return Response(data={"image_url": f"{self.BASE_URL}/{bucket_path}"}, status=status.HTTP_200_OK)
