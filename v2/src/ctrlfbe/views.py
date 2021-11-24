@@ -19,16 +19,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from .basedata import NoteData, PageData, TopicData
 from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED
-from .models import (
-    CtrlfActionType,
-    CtrlfContentType,
-    CtrlfIssueStatus,
-    Issue,
-    Note,
-    Page,
-    Topic,
-)
+from .models import CtrlfContentType, CtrlfIssueStatus, Issue, Note, Page, Topic
 from .paginations import IssueListPagination, NoteListPagination
 from .serializers import (
     IssueCreateSerializer,
@@ -54,7 +47,7 @@ class NoteViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     @swagger_auto_schema(**SWAGGER_NOTE_CREATE_VIEW)
     def create(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
-        note_data, issue_data = self.build_data(request, ctrlf_user)
+        note_data, issue_data = NoteData().build_data(request, ctrlf_user)
 
         note_serializer = NoteSerializer(data=note_data)
         issue_serializer = IssueCreateSerializer(data=issue_data)
@@ -69,21 +62,6 @@ class NoteViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     @swagger_auto_schema(**SWAGGER_NOTE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(self, request, *args, **kwargs)
-
-    def build_data(self, request, ctrlf_user):
-        note_data = {
-            "title": request.data["title"],
-            "owners": [ctrlf_user.id],
-        }
-        issue_data = {
-            "owner": ctrlf_user.id,
-            "title": request.data["title"],
-            "reason": request.data["reason"],
-            "status": CtrlfIssueStatus.REQUESTED,
-            "related_model_type": CtrlfContentType.NOTE,
-            "action": CtrlfActionType.CREATE,
-        }
-        return note_data, issue_data
 
 
 class TopicViewSet(CtrlfAuthenticationMixin, ModelViewSet):
@@ -106,7 +84,7 @@ class TopicViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     @swagger_auto_schema(**SWAGGER_TOPIC_CREATE_VIEW)
     def create(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
-        topic_data, issue_data = self.build_data(request, ctrlf_user)
+        topic_data, issue_data = TopicData().build_data(request, ctrlf_user)
 
         topic_serializer = TopicSerializer(data=topic_data)
         issue_serializer = IssueCreateSerializer(data=issue_data)
@@ -120,18 +98,6 @@ class TopicViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     @swagger_auto_schema(**SWAGGER_TOPIC_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(self, request, *args, **kwargs)
-
-    def build_data(self, request, ctrlf_user):
-        topic_data = {"title": request.data["title"], "owners": [ctrlf_user.id], "note": request.data["note_id"]}
-        issue_data = {
-            "owner": ctrlf_user.id,
-            "title": request.data["title"],
-            "reason": request.data["reason"],
-            "status": CtrlfIssueStatus.REQUESTED,
-            "related_model_type": CtrlfContentType.TOPIC,
-            "action": CtrlfActionType.CREATE,
-        }
-        return topic_data, issue_data
 
 
 class PageViewSet(CtrlfAuthenticationMixin, ModelViewSet):
@@ -154,7 +120,7 @@ class PageViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     @swagger_auto_schema(**SWAGGER_PAGE_CREATE_VIEW)
     def create(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
-        page_data, issue_data = self.build_data(request, ctrlf_user)
+        page_data, issue_data = PageData().build_data(request, ctrlf_user)
 
         page_serializer = PageSerializer(data=page_data)
         issue_serializer = IssueCreateSerializer(data=issue_data)
@@ -169,23 +135,6 @@ class PageViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(self, request, *args, **kwargs)
-
-    def build_data(self, request, ctrlf_user):
-        page_data = {
-            "title": request.data["title"],
-            "owners": [ctrlf_user.id],
-            "topic": request.data["topic_id"],
-            "content": request.data["content"],
-        }
-        issue_data = {
-            "owner": ctrlf_user.id,
-            "title": request.data["title"],
-            "reason": request.data["reason"],
-            "status": CtrlfIssueStatus.REQUESTED,
-            "related_model_type": CtrlfContentType.PAGE,
-            "action": CtrlfActionType.CREATE,
-        }
-        return page_data, issue_data
 
 
 class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
