@@ -38,10 +38,6 @@ class NoteCreateRequestBodySerializer(serializers.Serializer):
     reason = serializers.CharField(help_text="이슈의 reason에 대한 내용")
 
 
-class NoteListQuerySerializer(serializers.Serializer):
-    cursor = serializers.IntegerField()
-
-
 class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
@@ -140,10 +136,6 @@ class IssueDetailSerializer(serializers.Serializer):
             page = Page.objects.get(id=issue.related_model_id)
             topic = Topic.objects.get(id=page.topic.id)
         return Note.objects.get(id=topic.note.id).id
-
-
-class IssueListQuerySerializer(serializers.Serializer):
-    cursor = serializers.IntegerField()
 
 
 class IssueApproveResponseSerializer(serializers.Serializer):

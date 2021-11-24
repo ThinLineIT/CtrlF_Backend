@@ -1,10 +1,26 @@
 from django.urls import path
 
-from .views import PageCreateView, PageDetailUpdateDeleteView
+from .views import PageViewSet
 
 app_name = "pages"
 
 urlpatterns = [
-    path("", PageCreateView.as_view(), name="page_create"),
-    path("<int:page_id>/", PageDetailUpdateDeleteView.as_view(), name="page_detail"),
+    path(
+        "",
+        PageViewSet.as_view(
+            {
+                "post": "create",
+            }
+        ),
+        name="page_create",
+    ),
+    path(
+        "<int:page_id>/",
+        PageViewSet.as_view(
+            {
+                "get": "retrieve",
+            }
+        ),
+        name="page_detail",
+    ),
 ]
