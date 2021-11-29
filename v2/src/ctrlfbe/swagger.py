@@ -14,6 +14,8 @@ from ctrlfbe.serializers import (
     PageSerializer,
     TopicCreateRequestBodySerializer,
     TopicSerializer,
+    TopicUpdateRequestBodySerializer,
+    TopicUpdateResponseSerializer,
 )
 
 SWAGGER_PAGE_LIST_VIEW = {
@@ -69,6 +71,14 @@ SWAGGER_TOPIC_DETAIL_VIEW = {
     "responses": {200: TopicSerializer()},
     "operation_summary": "Topic Detail API",
     "operation_description": "topic_id에 해당하는 Topic의 상세 내용을 리턴합니다",
+    "tags": ["디테일 화면"],
+}
+
+SWAGGER_TOPIC_UPDATE_VIEW = {
+    "responses": {200: TopicUpdateResponseSerializer()},
+    "request_body": TopicUpdateRequestBodySerializer(),
+    "operation_summary": "Topic Update Request API",
+    "operation_description": "Topic 업데이트를 위한 Issue를 생성합니다.",
     "tags": ["디테일 화면"],
 }
 

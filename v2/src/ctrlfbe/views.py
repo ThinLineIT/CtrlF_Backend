@@ -17,6 +17,7 @@ from ctrlfbe.swagger import (
     SWAGGER_TOPIC_CREATE_VIEW,
     SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
+    SWAGGER_TOPIC_UPDATE_VIEW,
 )
 from django.conf import settings
 from django.db.models import Model
@@ -43,6 +44,7 @@ from .serializers import (
     PageListSerializer,
     PageSerializer,
     TopicSerializer,
+    TopicUpdateRequestBodySerializer,
 )
 
 s3_client = S3Client()
@@ -157,13 +159,39 @@ class TopicCreateView(CtrlfAuthenticationMixin, APIView):
         return Response(status=status.HTTP_201_CREATED)
 
 
-class TopicDetailUpdateDeleteView(BaseContentView):
+class TopicDetailUpdateDeleteView(CtrlfAuthenticationMixin, BaseContentView):
     parent_model = Topic
     serializer = TopicSerializer
 
     @swagger_auto_schema(**SWAGGER_TOPIC_DETAIL_VIEW)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(**SWAGGER_TOPIC_UPDATE_VIEW)
+    def put(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        topic = Topic.objects.filter(id=kwargs["topic_id"]).first()
+        if topic is None:
+            return Response(data={"message": "Topic이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        topic_serializer = TopicUpdateRequestBodySerializer(data=request.data)
+        if not topic_serializer.is_valid():
+            return Response(data={"message": "요청이 유효하지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        issue_data = {
+            "owner": ctrlf_user.id,
+            "title": request.data["new_title"],
+            "reason": request.data["reason"],
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.TOPIC,
+            "action": CtrlfActionType.UPDATE,
+            "etc": topic.title,
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=topic)
+
+        return Response(data={"message": "Topic 수정 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
 
 
 class PageListView(BaseContentView):
@@ -244,7 +272,7 @@ class IssueDetailView(APIView):
 class IssueApproveView(CtrlfAuthenticationMixin, APIView):
     @swagger_auto_schema(**SWAGGER_ISSUE_APPROVE_VIEW)
     def post(self, request, *args, **kwargs):
-        ctrlf_user = self._ctrlf_authentication(request)
+        issue_approve_request_user = self._ctrlf_authentication(request)
         issue_id = request.data["issue_id"]
         try:
             issue = Issue.objects.get(id=issue_id)
@@ -252,9 +280,15 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             return Response(data={"message": "이슈 ID를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            ctrlf_content = self.get_content(issue=issue, ctrlf_user=ctrlf_user)
+            ctrlf_content = self.get_content(issue=issue, ctrlf_user=issue_approve_request_user)
         except ValueError:
             return Response(data={"message": "승인 권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if issue.action == CtrlfActionType.UPDATE:
+            if not ctrlf_content.owners.filter(email=issue_approve_request_user.email).exists():
+                return Response(status=status.HTTP_403_FORBIDDEN)
+            if isinstance(ctrlf_content, Topic):
+                ctrlf_content.title = issue.title
 
         ctrlf_content.is_approved = True
         ctrlf_content.save()
@@ -273,15 +307,16 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             if issue.related_model_type == CtrlfContentType.TOPIC
             else None
         )
-        if type(content) is Page:
-            if not content.topic.owners.filter(id=ctrlf_user.id).exists():
-                raise ValueError
-        elif type(content) is Topic:
-            if not content.note.owners.filter(id=ctrlf_user.id).exists():
-                raise ValueError
-        elif type(content) is Note:
-            if not content.owners.filter(id=ctrlf_user.id).exists():
-                raise ValueError
+        if issue.action == CtrlfActionType.CREATE:
+            if type(content) is Page:
+                if not content.topic.owners.filter(id=ctrlf_user.id).exists():
+                    raise ValueError
+            elif type(content) is Topic:
+                if not content.note.owners.filter(id=ctrlf_user.id).exists():
+                    raise ValueError
+            elif type(content) is Note:
+                if not content.owners.filter(id=ctrlf_user.id).exists():
+                    raise ValueError
 
         return content
 
