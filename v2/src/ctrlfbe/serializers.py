@@ -112,6 +112,10 @@ class IssueDetailSerializer(serializers.Serializer):
     related_model_type = serializers.CharField()
     related_model_id = serializers.IntegerField()
     action = serializers.CharField()
+    legacy_title = serializers.SerializerMethodField()
+
+    def get_legacy_title(self, issue):
+        return issue.etc or ""
 
     def get_page_id(self, issue):
         if issue.related_model_type == CtrlfContentType.PAGE:
