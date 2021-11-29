@@ -4,7 +4,7 @@ DEBUG = False
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "django.db.backends.mysql",
         "NAME": os.environ.get("RDS_DB_NAME", ""),  # noqa: F405
         "USER": os.environ.get("RDS_USERNAME", ""),  # noqa: F405
         "PASSWORD": os.environ.get("RDS_PASSWORD", ""),  # noqa: F405

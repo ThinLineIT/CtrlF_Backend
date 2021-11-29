@@ -63,6 +63,7 @@ class Issue(CommonTimestamp):
     )
     related_model_id = models.IntegerField(default=0, help_text="note_id, topic_id, page_id")
     action = models.CharField(max_length=30, default="", choices=CtrlfActionType.choices, help_text="CRUD")
+    etc = models.CharField(max_length=300, null=True, help_text="legacy title을 저장하는 용도 및 다양하게 사용")
 
     def __str__(self):
         return f"{self.title}-{self.related_model_type}-{self.related_model_id}"
