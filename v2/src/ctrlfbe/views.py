@@ -15,6 +15,7 @@ from ctrlfbe.swagger import (
     SWAGGER_TOPIC_CREATE_VIEW,
     SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
+    SWAGGER_TOPIC_UPDATE_VIEW,
 )
 from django.db.models import Model
 from drf_yasg.utils import swagger_auto_schema
@@ -40,6 +41,7 @@ from .serializers import (
     PageListSerializer,
     PageSerializer,
     TopicSerializer,
+    TopicUpdateRequestBodySerializer,
 )
 
 
@@ -152,13 +154,35 @@ class TopicCreateView(CtrlfAuthenticationMixin, APIView):
         return Response(status=status.HTTP_201_CREATED)
 
 
-class TopicDetailUpdateDeleteView(BaseContentView):
+class TopicDetailUpdateDeleteView(CtrlfAuthenticationMixin, BaseContentView):
     parent_model = Topic
     serializer = TopicSerializer
 
     @swagger_auto_schema(**SWAGGER_TOPIC_DETAIL_VIEW)
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(**SWAGGER_TOPIC_UPDATE_VIEW)
+    def post(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        topic = Topic.objects.filter(id=kwargs["topic_id"]).first()
+        topic_serializer = TopicUpdateRequestBodySerializer(data=request.data)
+        issue_data = {
+            "owner": ctrlf_user.id,
+            "title": request.data["new_title"],
+            "reason": request.data["reason"],
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.TOPIC,
+            "action": CtrlfActionType.UPDATE,
+            "etc": topic.title,
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+
+        if topic_serializer.is_valid() and issue_serializer.is_valid():
+            issue_serializer.save(related_model=topic)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_200_OK)
 
 
 class PageListView(BaseContentView):
