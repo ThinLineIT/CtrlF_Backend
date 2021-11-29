@@ -167,9 +167,12 @@ class TopicDetailUpdateDeleteView(CtrlfAuthenticationMixin, BaseContentView):
         ctrlf_user = self._ctrlf_authentication(request)
         topic = Topic.objects.filter(id=kwargs["topic_id"]).first()
         if topic is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"message": "Topic이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
 
         topic_serializer = TopicUpdateRequestBodySerializer(data=request.data)
+        if not topic_serializer.is_valid():
+            return Response(data={"message": "요청이 유효하지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
         issue_data = {
             "owner": ctrlf_user.id,
             "title": request.data["new_title"],
@@ -180,12 +183,10 @@ class TopicDetailUpdateDeleteView(CtrlfAuthenticationMixin, BaseContentView):
             "etc": topic.title,
         }
         issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=topic)
 
-        if topic_serializer.is_valid() and issue_serializer.is_valid():
-            issue_serializer.save(related_model=topic)
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_200_OK)
+        return Response(data={"message": "Topic 수정 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
 
 
 class PageListView(BaseContentView):

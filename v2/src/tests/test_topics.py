@@ -150,3 +150,19 @@ class TestTopicUpdate(TestCase):
 
         # Then: status code는 404을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_topic_should_return_400_BAD_REQUEST_on_invalid_request_data(self):
+        # Given: 새로운 topic title과 reason이 주어질 때,
+        request_body = {
+            "legacy_title": "new topic title",
+            "reason": "reason for topic update",
+            "useless_field": "useless field",
+        }
+        # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황
+        token = self._login()
+
+        # When: Topic update request api를 호출하면,
+        response = self._call_api(request_body, self.topic.id, token)
+
+        # Then: status code는 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
