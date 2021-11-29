@@ -163,7 +163,7 @@ class TopicDetailUpdateDeleteView(CtrlfAuthenticationMixin, BaseContentView):
         return super().get(request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_TOPIC_UPDATE_VIEW)
-    def post(self, request, *args, **kwargs):
+    def put(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
         topic = Topic.objects.filter(id=kwargs["topic_id"]).first()
         if topic is None:

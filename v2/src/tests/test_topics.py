@@ -1,3 +1,5 @@
+import json
+
 from ctrlf_auth.models import CtrlfUser
 from ctrlf_auth.serializers import LoginSerializer
 from ctrlfbe.models import Issue, Note, Topic
@@ -113,7 +115,12 @@ class TestTopicUpdate(TestCase):
             header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
         else:
             header = {}
-        return self.client.post(reverse("topics:topic_detail", kwargs={"topic_id": topic_id}), request_body, **header)
+        return self.client.put(
+            reverse("topics:topic_detail", kwargs={"topic_id": topic_id}),
+            json.dumps(request_body),
+            content_type="application/json",
+            **header,
+        )
 
     def test_update_topic_should_return_200(self):
         # Given: 새로운 topic title과 reason이 주어질 때,
@@ -126,7 +133,6 @@ class TestTopicUpdate(TestCase):
 
         # When: Topic update request api를 호출하면,
         response = self._call_api(request_body, self.topic.id, token)
-
         # Then: status code는 200을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And: etc 값을 가지는 Issue가 생성되어야 한다
