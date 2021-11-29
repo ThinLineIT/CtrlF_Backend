@@ -124,6 +124,7 @@ class TestIssueDetail(IssueTextMixin, TestCase):
             related_model_type=CtrlfContentType.PAGE,
             related_model_id=page.id,
             action=CtrlfActionType.CREATE,
+            etc="legacy title",
         )
 
         # When: issue detail api를 호출한다.
@@ -138,6 +139,7 @@ class TestIssueDetail(IssueTextMixin, TestCase):
         self.assertEqual(response.data["owner"], self.user.email)
         # And: issue에 대한 content의 id를 제공해야한다
         self.assertEqual(response.data["related_model_id"], self.page.id)
+        self.assertEqual(response.data["legacy_title"], "legacy title")
 
     def test_issue_detail_should_return_404_not_found_on_issue_does_not_exist(self):
         # Given: 이슈를 생성하지 않았을 때,
