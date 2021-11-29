@@ -280,6 +280,8 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             return Response(data={"message": "승인 권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
         if issue.action == CtrlfActionType.UPDATE:
+            if not ctrlf_content.owners.filter(email=issue_approve_request_user.email).exists():
+                return Response(status=status.HTTP_403_FORBIDDEN)
             if isinstance(ctrlf_content, Topic):
                 ctrlf_content.title = issue.title
 
@@ -300,15 +302,16 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             if issue.related_model_type == CtrlfContentType.TOPIC
             else None
         )
-        if type(content) is Page:
-            if not content.topic.owners.filter(id=ctrlf_user.id).exists():
-                raise ValueError
-        elif type(content) is Topic:
-            if not content.note.owners.filter(id=ctrlf_user.id).exists():
-                raise ValueError
-        elif type(content) is Note:
-            if not content.owners.filter(id=ctrlf_user.id).exists():
-                raise ValueError
+        if issue.action == CtrlfActionType.CREATE:
+            if type(content) is Page:
+                if not content.topic.owners.filter(id=ctrlf_user.id).exists():
+                    raise ValueError
+            elif type(content) is Topic:
+                if not content.note.owners.filter(id=ctrlf_user.id).exists():
+                    raise ValueError
+            elif type(content) is Note:
+                if not content.owners.filter(id=ctrlf_user.id).exists():
+                    raise ValueError
 
         return content
 
