@@ -55,6 +55,15 @@ class TopicSerializer(serializers.ModelSerializer):
             return topic
 
 
+class TopicUpdateRequestBodySerializer(serializers.Serializer):
+    new_title = serializers.CharField()
+    reason = serializers.CharField()
+
+
+class TopicUpdateResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
 class TopicCreateRequestBodySerializer(serializers.Serializer):
     note_id = serializers.IntegerField()
     title = serializers.CharField()

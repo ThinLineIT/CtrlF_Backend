@@ -1,3 +1,5 @@
+import json
+
 from ctrlf_auth.models import CtrlfUser
 from ctrlf_auth.serializers import LoginSerializer
 from ctrlfbe.models import Issue, Note, Topic
@@ -88,3 +90,85 @@ class TestTopicCreate(TestCase):
         self.assertEqual(Topic.objects.count(), 0)
         # And: Issue도 생성되지 않는다.
         self.assertEqual(Issue.objects.count(), 0)
+
+
+class TestTopicUpdate(TestCase):
+    def setUp(self) -> None:
+        self.client = Client()
+        self.data = {
+            "email": "test@test.com",
+            "password": "12345",
+        }
+        self.user = CtrlfUser.objects.create_user(**self.data)
+        self.note = Note.objects.create(title="basic note")
+        self.note.owners.add(self.user)
+        topic_data = {"note": self.note, "title": "test topic"}
+        self.topic = Topic.objects.create(**topic_data)
+        self.topic.owners.add(self.user)
+
+    def _login(self):
+        serializer = LoginSerializer()
+        return serializer.validate(self.data)["token"]
+
+    def _call_api(self, request_body, topic_id, token=None):
+        if token:
+            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        else:
+            header = {}
+        return self.client.put(
+            reverse("topics:topic_detail", kwargs={"topic_id": topic_id}),
+            json.dumps(request_body),
+            content_type="application/json",
+            **header,
+        )
+
+    def test_update_topic_should_return_200(self):
+        # Given: 새로운 topic title과 reason이 주어질 때,
+        request_body = {
+            "new_title": "new topic title",
+            "reason": "reason for topic update",
+        }
+        # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황
+        token = self._login()
+
+        # When: Topic update request api를 호출하면,
+        response = self._call_api(request_body, self.topic.id, token)
+        # Then: status code는 200을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: etc 값을 가지는 Issue가 생성되어야 한다
+        issue = Issue.objects.all()[0]
+        self.assertEqual(issue.title, "new topic title")
+        self.assertEqual(issue.etc, self.topic.title)
+
+    def test_update_topic_should_return_404_NOT_FOUND_on_topic_not_exist(self):
+        # Given: 새로운 topic title과 reason이 주어질 때,
+        request_body = {
+            "new_title": "new topic title",
+            "reason": "reason for topic update",
+        }
+        # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황
+        token = self._login()
+        # And: 존재하지 않는 토픽 id
+        not_exist_topic_id = 1122334
+
+        # When: 존재하지 않는 토픽id로 Topic update request api를 호출하면,
+        response = self._call_api(request_body, not_exist_topic_id, token)
+
+        # Then: status code는 404을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_topic_should_return_400_BAD_REQUEST_on_invalid_request_data(self):
+        # Given: 새로운 topic title과 reason이 주어질 때,
+        request_body = {
+            "legacy_title": "new topic title",
+            "reason": "reason for topic update",
+            "useless_field": "useless field",
+        }
+        # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황
+        token = self._login()
+
+        # When: Topic update request api를 호출하면,
+        response = self._call_api(request_body, self.topic.id, token)
+
+        # Then: status code는 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

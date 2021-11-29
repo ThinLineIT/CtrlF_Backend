@@ -338,3 +338,73 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         # And: 생성한 Issue의 Status는 REQUESTD이다
         issue = Issue.objects.get(id=issue_id)
         self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
+
+    def test_issue_approve_should_update_topic_title_on_update_issue_approval(self):
+        # Given: Topic과 Issue를 생성한다.
+        topic_data = {"note": self.note, "title": "test topic title"}
+        topic = Topic.objects.create(**topic_data)
+        topic.owners.add(self.owner)
+
+        user_info = {
+            "email": "test@naver.com",
+            "password": "q1w2e3r4",
+        }
+        issue_request_user = CtrlfUser.objects.create_user(**user_info)
+        issue_data = {
+            "owner": issue_request_user,
+            "title": "new topic title",
+            "reason": "reason for topic create",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.TOPIC,
+            "related_model_id": topic.id,
+            "action": CtrlfActionType.UPDATE,
+        }
+        issue = Issue.objects.create(**issue_data)
+        # And: request_body로 유효한 issue id가 주어진다.
+        request_body = {"issue_id": issue.id}
+        # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다.
+        owner_token = self._login(self.owner_data)
+
+        # When: topic owner가 approve issue api를 호출한다.
+        response = self._call_api(request_body, owner_token)
+
+        # Then: status code는 200을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: Topic의 title은 변경되어야 한다
+        updated_topic = Topic.objects.get(id=topic.id)
+        self.assertEqual(updated_topic.title, "new topic title")
+
+    def test_issue_approve_should_not_update_topic_title_on_approval_user_is_not_topic_owner(self):
+        # Given: Topic과 Issue를 생성한다.
+        topic_data = {"note": self.note, "title": "test topic title"}
+        topic = Topic.objects.create(**topic_data)
+        topic.owners.add(self.owner)
+
+        user_info = {
+            "email": "test@naver.com",
+            "password": "q1w2e3r4",
+        }
+        issue_request_user = CtrlfUser.objects.create_user(**user_info)
+        issue_data = {
+            "owner": issue_request_user,
+            "title": "new topic title",
+            "reason": "reason for topic create",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.TOPIC,
+            "related_model_id": topic.id,
+            "action": CtrlfActionType.UPDATE,
+        }
+        issue = Issue.objects.create(**issue_data)
+        # And: request_body로 유효한 issue id가 주어진다.
+        request_body = {"issue_id": issue.id}
+        # And: Issue를 생성한 사람의 token을 만든다
+        issue_request_user_token = self._login(user_info)
+
+        # When: topic owner가 아닌, issue를 생성한 유저의 token으로 approve issue api를 호출한다.
+        response = self._call_api(request_body, issue_request_user_token)
+
+        # Then: status code는 403을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # And: Topic의 title은 변경되지 않아야 한다.
+        updated_topic = Topic.objects.get(id=topic.id)
+        self.assertNotEqual(updated_topic.title, "new topic title")
