@@ -166,6 +166,9 @@ class TopicDetailUpdateDeleteView(CtrlfAuthenticationMixin, BaseContentView):
     def post(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
         topic = Topic.objects.filter(id=kwargs["topic_id"]).first()
+        if topic is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         topic_serializer = TopicUpdateRequestBodySerializer(data=request.data)
         issue_data = {
             "owner": ctrlf_user.id,
