@@ -267,7 +267,7 @@ class IssueDetailView(APIView):
 class IssueApproveView(CtrlfAuthenticationMixin, APIView):
     @swagger_auto_schema(**SWAGGER_ISSUE_APPROVE_VIEW)
     def post(self, request, *args, **kwargs):
-        ctrlf_user = self._ctrlf_authentication(request)
+        issue_approve_request_user = self._ctrlf_authentication(request)
         issue_id = request.data["issue_id"]
         try:
             issue = Issue.objects.get(id=issue_id)
@@ -275,9 +275,13 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             return Response(data={"message": "이슈 ID를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            ctrlf_content = self.get_content(issue=issue, ctrlf_user=ctrlf_user)
+            ctrlf_content = self.get_content(issue=issue, ctrlf_user=issue_approve_request_user)
         except ValueError:
             return Response(data={"message": "승인 권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if issue.action == CtrlfActionType.UPDATE:
+            if isinstance(ctrlf_content, Topic):
+                ctrlf_content.title = issue.title
 
         ctrlf_content.is_approved = True
         ctrlf_content.save()
