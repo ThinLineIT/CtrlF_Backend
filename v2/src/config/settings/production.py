@@ -1,13 +1,14 @@
 from .base import *  # noqa: F403, F401
 
-AWS_STORAGE_BUCKET_NAME = "ctrl-be"
-AWS_PRELOAD_METADATA = True
-AWS_QUERYSTRING_AUTH = False
-AWS_S3_REGION_NAME = "ap-northeast-2"
-AWS_S3_SIGNATURE_VERSION = "s3v4"
-AWS_S3_CUSTOM_DOMAIN = "%s.s3.amazonaws.com" % AWS_STORAGE_BUCKET_NAME
-AWS_S3_OBJECT_PARAMETERS = {
-    "CacheControl": "max-age=86400",
+DEBUG = False
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": os.environ.get("RDS_DB_NAME", ""),  # noqa: F405
+        "USER": os.environ.get("RDS_USERNAME", ""),  # noqa: F405
+        "PASSWORD": os.environ.get("RDS_PASSWORD", ""),  # noqa: F405
+        "HOST": os.environ.get("RDS_HOSTNAME", ""),  # noqa: F405
+        "PORT": os.environ.get("RDS_PORT", ""),  # noqa: F405
+    }
 }
-AWS_STATIC_LOCATION = "static"
-AWS_MEDIA_LOCATION = "media"

@@ -7,7 +7,7 @@ ENV DOCK_WSGI=$DOCK_ROOT/uwsgi
 ENV DEBIAN_FRONTEND noninteractive
 ENV PROJECT_ENV production
 
-RUN apt-get clean && apt-get -qq update && apt-get -y -qq --no-install-recommends upgrade
+RUN apt-get clean && apt-get update && apt-get -y -qq --no-install-recommends upgrade
 
 # 필수 라이브러리 설치
 RUN apt-get install -qq -y --no-install-recommends apt-utils \
@@ -19,6 +19,7 @@ RUN apt-get install -qq -y --no-install-recommends apt-utils \
     nginx \
     supervisor \
     redis-server \
+    libmysqlclient-dev \
     python3 \
     python3-pip \
     python3-dev \
