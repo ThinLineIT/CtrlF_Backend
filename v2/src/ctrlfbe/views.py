@@ -77,6 +77,9 @@ class NoteViewSet(CtrlfAuthenticationMixin, ModelViewSet):
         ctrlf_user = self._ctrlf_authentication(request)
         note_id = kwargs["note_id"]
         note = Note.objects.filter(id=note_id).first()
+        if note is None:
+            return Response(data={"message": "Note를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
         note_serializer = NoteUpdateRequestBodySerializer(data=request.data)
         issue_data = {
             "owner": ctrlf_user.id,

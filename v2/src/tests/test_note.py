@@ -215,3 +215,20 @@ class TestNoteUpdate(TestCase):
         issue = Issue.objects.first()
         self.assertEqual(issue.etc, self.note.title)
         self.assertEqual(issue.title, "test new note title")
+
+    def test_update_note_should_return_404_on_invalid_note_id(self):
+        # Given: 바꿀 note title과 reason이 주어진다.
+        request_body = {
+            "new_title": "test new note title",
+            "reason": "reason for update note title",
+        }
+        # And: 유효하지 않은 note id가 주어진다.
+        invalid_note_id = 2342395
+        # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
+        # When: 인증이 필요한 update note api를 호출한다.
+        response = self._call_api(request_body, invalid_note_id, token)
+
+        # Then: status code는 404을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
