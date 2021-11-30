@@ -232,3 +232,18 @@ class TestNoteUpdate(TestCase):
 
         # Then: status code는 404을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_should_return_400_on_invalid_request_key(self):
+        # Given: request body에 invalid data가 주어진다.
+        request_body = {
+            "invalid_key": "invalid",
+            "reason": "reason for update note title",
+        }
+        # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
+        # When: 인증이 필요한 update note api를 호출한다.
+        response = self._call_api(request_body, self.note.id, token)
+
+        # Then: status code는 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

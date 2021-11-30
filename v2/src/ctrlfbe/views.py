@@ -81,6 +81,8 @@ class NoteViewSet(CtrlfAuthenticationMixin, ModelViewSet):
             return Response(data={"message": "Note를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
         note_serializer = NoteUpdateRequestBodySerializer(data=request.data)
+        if not note_serializer.is_valid():
+            return Response(data={"message": "요청이 올바르지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
         issue_data = {
             "owner": ctrlf_user.id,
             "title": request.data["new_title"],
@@ -91,11 +93,8 @@ class NoteViewSet(CtrlfAuthenticationMixin, ModelViewSet):
             "etc": note.title,
         }
         issue_serializer = IssueCreateSerializer(data=issue_data)
-
-        if note_serializer.is_valid() and issue_serializer.is_valid():
-            issue_serializer.save(related_model=note)
-        else:
-            return Response(data={"message": "요청이 올바르지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=note)
 
         return Response(data={"message": "Note 수정 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
 
