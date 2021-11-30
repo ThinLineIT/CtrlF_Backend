@@ -26,7 +26,7 @@ class TestTopicCreate(TestCase):
             header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
         else:
             header = {}
-        return self.client.post(reverse("topics:topic_crete"), request_body, **header)
+        return self.client.post(reverse("topics:topic_create"), request_body, **header)
 
     def test_create_topic_should_return_201(self):
         # Given: topic title과 issue 내용이 주어진다
