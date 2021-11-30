@@ -22,13 +22,22 @@ from rest_framework.viewsets import ModelViewSet
 
 from .basedata import NoteData, PageData, TopicData
 from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED
-from .models import CtrlfContentType, CtrlfIssueStatus, Issue, Note, Page, Topic
+from .models import (
+    CtrlfActionType,
+    CtrlfContentType,
+    CtrlfIssueStatus,
+    Issue,
+    Note,
+    Page,
+    Topic,
+)
 from .paginations import IssueListPagination, NoteListPagination
 from .serializers import (
     IssueCreateSerializer,
     IssueDetailSerializer,
     IssueSerializer,
     NoteSerializer,
+    NoteUpdateRequestBodySerializer,
     PageListSerializer,
     PageSerializer,
     TopicSerializer,
@@ -63,6 +72,29 @@ class NoteViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     @swagger_auto_schema(**SWAGGER_NOTE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(self, request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        note_id = kwargs["note_id"]
+        note = Note.objects.filter(id=note_id).first()
+        note_serializer = NoteUpdateRequestBodySerializer(data=request.data)
+        issue_data = {
+            "owner": ctrlf_user.id,
+            "title": request.data["new_title"],
+            "reason": request.data["reason"],
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.NOTE,
+            "action": CtrlfActionType.UPDATE,
+            "etc": note.title,
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+
+        if note_serializer.is_valid() and issue_serializer.is_valid():
+            issue_serializer.save(related_model=note)
+        else:
+            return Response(data={"message": "요청이 올바르지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(data={"message": "Note 수정 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
 
 
 class TopicViewSet(CtrlfAuthenticationMixin, ModelViewSet):

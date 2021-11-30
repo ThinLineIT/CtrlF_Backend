@@ -7,6 +7,11 @@ class NoteListSerializer(serializers.ListSerializer):
     pass
 
 
+class NoteUpdateRequestBodySerializer(serializers.Serializer):
+    new_title = serializers.CharField()
+    reason = serializers.CharField()
+
+
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
