@@ -201,7 +201,11 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
         try:
             ctrlf_content = self.get_content(issue=issue, ctrlf_user=ctrlf_user)
         except ValueError:
-            return Response(data={"message": "승인 권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={"message": "승인 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        if issue.action == CtrlfActionType.UPDATE:
+            if isinstance(ctrlf_content, Note):
+                ctrlf_content.title = issue.title
 
         ctrlf_content.is_approved = True
         ctrlf_content.save()
