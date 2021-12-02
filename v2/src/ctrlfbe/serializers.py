@@ -38,10 +38,6 @@ class NoteCreateRequestBodySerializer(serializers.Serializer):
     reason = serializers.CharField(help_text="이슈의 reason에 대한 내용")
 
 
-class NoteListQuerySerializer(serializers.Serializer):
-    cursor = serializers.IntegerField()
-
-
 class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
@@ -104,6 +100,10 @@ class IssueSerializer(serializers.Serializer):
 
 
 class IssueDetailSerializer(serializers.Serializer):
+    note_id = serializers.SerializerMethodField()
+    topic_id = serializers.SerializerMethodField()
+    page_id = serializers.SerializerMethodField()
+
     id = serializers.IntegerField()
     owner = serializers.EmailField()
     title = serializers.CharField()
@@ -113,9 +113,29 @@ class IssueDetailSerializer(serializers.Serializer):
     related_model_id = serializers.IntegerField()
     action = serializers.CharField()
 
+    def get_page_id(self, issue):
+        if issue.related_model_type == CtrlfContentType.PAGE:
+            return issue.related_model_id
+        return None
 
-class IssueListQuerySerializer(serializers.Serializer):
-    cursor = serializers.IntegerField()
+    def get_topic_id(self, issue):
+        if issue.related_model_type == CtrlfContentType.TOPIC:
+            return issue.related_model_id
+        elif issue.related_model_type == CtrlfContentType.PAGE:
+            page = Page.objects.get(id=issue.related_model_id)
+            return Topic.objects.get(id=page.topic.id).id
+        else:
+            return None
+
+    def get_note_id(self, issue):
+        if issue.related_model_type == CtrlfContentType.NOTE:
+            return issue.related_model_id
+        elif issue.related_model_type == CtrlfContentType.TOPIC:
+            topic = Topic.objects.get(id=issue.related_model_id)
+        else:
+            page = Page.objects.get(id=issue.related_model_id)
+            topic = Topic.objects.get(id=page.topic.id)
+        return Note.objects.get(id=topic.note.id).id
 
 
 class IssueApproveResponseSerializer(serializers.Serializer):

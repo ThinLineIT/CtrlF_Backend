@@ -23,7 +23,7 @@ class TestNoteList(TestCase):
         return self.client.get(reverse("notes:note_list_create"), {"cursor": cursor}, **header)
 
     def _make_notes(self, count):
-        for i in range(0, count):
+        for i in range(1, count + 1):
             note = Note.objects.create(title=f"test title {i}")
             note.owners.add(self.user)
 
