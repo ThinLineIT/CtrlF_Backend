@@ -144,3 +144,11 @@ class IssueApproveResponseSerializer(serializers.Serializer):
 
 class IssueApproveRequestBodySerializer(serializers.Serializer):
     issue_id = serializers.IntegerField()
+
+
+class ImageUploadRequestBodySerializer(serializers.Serializer):
+    img_data = serializers.ImageField()
+
+
+class ImageSerializer(serializers.Serializer):
+    img_url = serializers.CharField()

@@ -1,6 +1,8 @@
+from common.s3.client import S3Client
 from ctrlfbe.mixins import CtrlfAuthenticationMixin
 from ctrlfbe.swagger import (
     SWAGGER_HEALTH_CHECK_VIEW,
+    SWAGGER_IMAGE_UPLOAD_VIEW,
     SWAGGER_ISSUE_APPROVE_VIEW,
     SWAGGER_ISSUE_DETAIL_VIEW,
     SWAGGER_ISSUE_LIST_VIEW,
@@ -14,6 +16,7 @@ from ctrlfbe.swagger import (
     SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
 )
+from django.conf import settings
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
@@ -33,6 +36,8 @@ from .serializers import (
     PageSerializer,
     TopicSerializer,
 )
+
+s3_client = S3Client()
 
 
 class NoteViewSet(CtrlfAuthenticationMixin, ModelViewSet):
@@ -197,6 +202,21 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
                 raise ValueError
 
         return content
+
+
+class ImageUploadView(APIView):
+    BUCKET_BASE_DIR = settings.S3_BUCKET_BASE_DIR
+    BASE_URL = settings.S3_BASE_URL
+
+    @swagger_auto_schema(**SWAGGER_IMAGE_UPLOAD_VIEW)
+    def post(self, request, *args, **kwargs):
+        image_data = request.FILES["image"]
+        file_name_to_upload = image_data.name
+        file_content_type = image_data.content_type
+        bucket_path = f"{self.BUCKET_BASE_DIR}/{file_name_to_upload}"
+        s3_client.upload_file_object(image_data=image_data, bucket_path=bucket_path, content_type=file_content_type)
+
+        return Response(data={"image_url": f"{self.BASE_URL}/{bucket_path}"}, status=status.HTTP_200_OK)
 
 
 class HealthCheckView(APIView):

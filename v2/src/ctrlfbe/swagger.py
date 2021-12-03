@@ -1,4 +1,6 @@
 from ctrlfbe.serializers import (
+    ImageSerializer,
+    ImageUploadRequestBodySerializer,
     IssueApproveRequestBodySerializer,
     IssueApproveResponseSerializer,
     IssueDetailSerializer,
@@ -100,6 +102,16 @@ SWAGGER_ISSUE_APPROVE_VIEW = {
     "operation_description": "issue_id에 해당하는 Issue의 content(Note or Topic or Page)를 승인 합니다",
     "tags": ["이슈 화면", "디테일 화면"],
 }
+
+
+SWAGGER_IMAGE_UPLOAD_VIEW = {
+    "operation_summary": "Image Upload API",
+    "operation_description": "Page content의 이미지를 aws s3에 업로드합니다.",
+    "tags": ["디테일 화면"],
+    "request_body": ImageUploadRequestBodySerializer(),
+    "responses": {200: ImageSerializer()},
+}
+
 
 SWAGGER_HEALTH_CHECK_VIEW = {
     "operation_summary": "Health Check API",
