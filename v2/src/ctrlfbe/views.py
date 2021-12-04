@@ -86,6 +86,8 @@ class TopicViewSet(CtrlfAuthenticationMixin, ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        self.queryset = Topic.objects.filter(note=note)
+
         return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_TOPIC_CREATE_VIEW)
@@ -122,6 +124,8 @@ class PageViewSet(CtrlfAuthenticationMixin, ModelViewSet):
                 data={"message": ERR_NOT_FOUND_MSG_MAP.get("topic", ERR_UNEXPECTED)},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+        self.queryset = Page.objects.filter(topic=topic)
         return super().list(self, request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_PAGE_CREATE_VIEW)
