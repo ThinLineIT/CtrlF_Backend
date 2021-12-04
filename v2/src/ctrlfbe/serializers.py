@@ -12,6 +12,10 @@ class NoteUpdateRequestBodySerializer(serializers.Serializer):
     reason = serializers.CharField()
 
 
+class NoteUpdateResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
