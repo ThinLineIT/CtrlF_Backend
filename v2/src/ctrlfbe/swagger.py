@@ -4,10 +4,8 @@ from ctrlfbe.serializers import (
     IssueApproveRequestBodySerializer,
     IssueApproveResponseSerializer,
     IssueDetailSerializer,
-    IssueListQuerySerializer,
     IssueSerializer,
     NoteCreateRequestBodySerializer,
-    NoteListQuerySerializer,
     NoteSerializer,
     PageCreateRequestBodySerializer,
     PageListSerializer,
@@ -40,7 +38,7 @@ SWAGGER_NOTE_DETAIL_VIEW = {
 }
 
 SWAGGER_NOTE_LIST_VIEW = {
-    "query_serializer": NoteListQuerySerializer,
+    "responses": {200: NoteSerializer(many=True)},
     "operation_summary": "Note List API",
     "operation_description": "Cursor based pagination 처리된 Note List를 리턴 합니다",
     "tags": ["메인 화면"],
@@ -90,7 +88,6 @@ SWAGGER_PAGE_DETAIL_VIEW = {
 }
 
 SWAGGER_ISSUE_LIST_VIEW = {
-    "query_serializer": IssueListQuerySerializer,
     "responses": {200: IssueSerializer(many=True)},
     "operation_summary": "Issue List API",
     "operation_description": "Cursor based pagination 처리된 Issue List를 리턴 합니다",

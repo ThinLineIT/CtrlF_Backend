@@ -1,11 +1,28 @@
 from django.urls import path
 
-from .views import NoteDetailUpdateDeleteView, NoteListCreateView, TopicListView
+from .views import NoteViewSet, TopicViewSet
 
 app_name = "notes"
 
 urlpatterns = [
-    path("", NoteListCreateView.as_view(), name="note_list_create"),
-    path("<int:note_id>/", NoteDetailUpdateDeleteView.as_view(), name="note_detail_update_delete"),
-    path("<int:note_id>/topics/", TopicListView.as_view(), name="topic_list"),
+    path(
+        "",
+        NoteViewSet.as_view(
+            {
+                "get": "list",
+                "post": "create",
+            }
+        ),
+        name="note_list_create",
+    ),
+    path(
+        "<int:note_id>/topics/",
+        TopicViewSet.as_view(
+            {
+                "get": "list",
+            }
+        ),
+        name="topic_list",
+    ),
+    path("<int:note_id>/", NoteViewSet.as_view({"get": "retrieve", "put": "update"}), name="note_detail_update_delete"),
 ]
