@@ -1,3 +1,5 @@
+import json
+
 from ctrlf_auth.models import CtrlfUser
 from ctrlf_auth.serializers import LoginSerializer
 from ctrlfbe.models import Issue, Note
@@ -166,3 +168,82 @@ class TestNoteCreate(TestCase):
         # And: Note와 Issue는 생성되지 않는다.
         self.assertEqual(Note.objects.count(), 0)
         self.assertEqual(Issue.objects.count(), 0)
+
+
+class TestNoteUpdate(TestCase):
+    def setUp(self) -> None:
+        self.client = Client()
+        self.data = {
+            "email": "test@test.com",
+            "password": "12345",
+        }
+        self.user = CtrlfUser.objects.create_user(**self.data)
+        self.note = Note.objects.create(title="test note title before update")
+        self.note.owners.add(self.user)
+
+    def _login(self):
+        serializer = LoginSerializer()
+        return serializer.validate(self.data)["token"]
+
+    def _call_api(self, request_body, note_id, token=None):
+        if token:
+            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        else:
+            header = {}
+        return self.client.put(
+            reverse("notes:note_detail_update_delete", kwargs={"note_id": note_id}),
+            data=json.dumps(request_body),
+            content_type="application/json",
+            **header,
+        )
+
+    def test_update_note_should_return_200_and_create_issue_about_note_update(self):
+        # Given: 바꿀 note title과 reason이 주어진다.
+        request_body = {
+            "new_title": "test new note title",
+            "reason": "reason for update note title",
+        }
+        # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
+        # When: 인증이 필요한 update note api를 호출한다.
+        response = self._call_api(request_body, self.note.id, token)
+
+        # Then: status code는 200을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: Issue가 생성되고, Issue의 etc는 Note의 title과 같고, Issue의 title은 new_title과 같다.
+        issue = Issue.objects.first()
+        self.assertEqual(issue.etc, self.note.title)
+        self.assertEqual(issue.title, "test new note title")
+
+    def test_update_note_should_return_404_on_invalid_note_id(self):
+        # Given: 바꿀 note title과 reason이 주어진다.
+        request_body = {
+            "new_title": "test new note title",
+            "reason": "reason for update note title",
+        }
+        # And: 유효하지 않은 note id가 주어진다.
+        invalid_note_id = 2342395
+        # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
+        # When: 인증이 필요한 update note api를 호출한다.
+        response = self._call_api(request_body, invalid_note_id, token)
+
+        # Then: status code는 404을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_should_return_400_on_invalid_request_key(self):
+        # Given: request body에 invalid data가 주어진다.
+        request_body = {
+            "invalid_key": "invalid",
+            "reason": "reason for update note title",
+        }
+        # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
+        token = self._login()
+
+        # When: 인증이 필요한 update note api를 호출한다.
+        response = self._call_api(request_body, self.note.id, token)
+
+        # Then: status code는 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

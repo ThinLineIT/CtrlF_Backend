@@ -137,10 +137,12 @@ class TestIssueDetail(IssueTextMixin, TestCase):
         self.assertEqual(response.data["reason"], "reason for create page")
         self.assertEqual(response.data["status"], CtrlfIssueStatus.REQUESTED)
         self.assertEqual(response.data["owner"], self.user.email)
+
         # And: issue에 대한 note, topic, page의 id를 제공해야한다
         self.assertEqual(response.data["note_id"], self.note.id)
         self.assertEqual(response.data["topic_id"], self.topic.id)
         self.assertEqual(response.data["page_id"], self.page.id)
+
         # And: issue에 대한 content의 id를 제공해야한다
         self.assertEqual(response.data["related_model_id"], self.page.id)
         self.assertEqual(response.data["legacy_title"], "legacy title")
@@ -321,7 +323,7 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         issue = Issue.objects.get(id=issue_id)
         self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
 
-    def test_should_return_400_on_unauthorized_about_issue(self):
+    def test_should_return_403_on_unauthorized_about_issue(self):
         # Given: Page와 Issue를 생성한다.
         page_id, issue_id = self._make_page()
         # And: request_body로 유효한 issue id가 주어진다.
@@ -333,7 +335,7 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         response = self._call_api(request_body, token)
 
         # Then: status code는 400을 리턴한다.
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         # And: "승인 권한이 없습니다."라는 메세지를 리턴한다.
         self.assertEqual(response.data["message"], "승인 권한이 없습니다.")
         # And: 생성한 Page의 is_approved는 False이다.
@@ -342,6 +344,76 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         # And: 생성한 Issue의 Status는 REQUESTD이다
         issue = Issue.objects.get(id=issue_id)
         self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
+
+    def test_should_update_note_title_on_approving_note_update_issue(self):
+        # Given: Note를 생성
+        note = Note.objects.create(title="test note title")
+        note.owners.add(self.owner)
+        # And: issue requester user 생성
+        issue_requester_data = {
+            "email": "issueRequester@test.com",
+            "password": "12345",
+        }
+        issue_requester = CtrlfUser.objects.create_user(**issue_requester_data)
+        # And: issue requester가 note update issue 생성
+        issue_data_about_update_note = {
+            "owner": issue_requester,
+            "title": "new note title",
+            "reason": "reason for update note",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.NOTE,
+            "related_model_id": note.id,
+            "action": CtrlfActionType.UPDATE,
+        }
+        issue = Issue.objects.create(**issue_data_about_update_note)
+        # And: request body로 issue id가 주어진다.
+        request_body = {"issue_id": issue.id}
+        # And: note owner 로그인하여 token 발급
+        owner_token = self._login(self.owner_data)
+
+        # When: note owner가 issue approve api호출
+        response = self._call_api(request_body, owner_token)
+
+        # Then: status code는 200을 리턴
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: 기존 Note의 title이 변경된다.
+        updated_note = Note.objects.get(id=note.id)
+        self.assertEqual(updated_note.title, "new note title")
+
+    def test_should_not_update_note_title_on_issue_approval_user_is_not_note_owner(self):
+        # Given: owner가 "owner"뿐인 Note를 생성
+        note = Note.objects.create(title="test note title")
+        note.owners.add(self.owner)
+        # And: issue requester 생성
+        issue_requester_data = {
+            "email": "issueRequester@test.com",
+            "password": "12345",
+        }
+        issue_requester = CtrlfUser.objects.create_user(**issue_requester_data)
+        # And: issue requester가 note update issue 생성
+        issue_data_about_update_note = {
+            "owner": issue_requester,
+            "title": "new note title",
+            "reason": "reason for update note",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.NOTE,
+            "related_model_id": note.id,
+            "action": CtrlfActionType.UPDATE,
+        }
+        issue = Issue.objects.create(**issue_data_about_update_note)
+        # And: request body로 issue id가 주어진다.
+        request_body = {"issue_id": issue.id}
+        # And: issue requester 로그인하여 token 발급
+        issue_requester_token = self._login(issue_requester_data)
+
+        # When: issue requester가 issue approve api호출
+        response = self._call_api(request_body, issue_requester_token)
+
+        # Then: status code는 403을 리턴
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # And: 기존 Note의 title은 그대로이다.
+        updated_note = Note.objects.get(id=note.id)
+        self.assertEqual(updated_note.title, note.title)
 
     def test_issue_approve_should_update_topic_title_on_update_issue_approval(self):
         # Given: Topic과 Issue를 생성한다.

@@ -41,6 +41,7 @@ from .serializers import (
     IssueDetailSerializer,
     IssueSerializer,
     NoteSerializer,
+    NoteUpdateRequestBodySerializer,
     PageListSerializer,
     PageSerializer,
     TopicSerializer,
@@ -78,6 +79,31 @@ class NoteViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     @swagger_auto_schema(**SWAGGER_NOTE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(self, request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        note_id = kwargs["note_id"]
+        note = Note.objects.filter(id=note_id).first()
+        if note is None:
+            return Response(data={"message": "Note를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        note_serializer = NoteUpdateRequestBodySerializer(data=request.data)
+        if not note_serializer.is_valid():
+            return Response(data={"message": "요청이 올바르지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
+        issue_data = {
+            "owner": ctrlf_user.id,
+            "title": request.data["new_title"],
+            "reason": request.data["reason"],
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.NOTE,
+            "action": CtrlfActionType.UPDATE,
+            "etc": note.title,
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=note)
+
+        return Response(data={"message": "Note 수정 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
 
 
 class TopicViewSet(CtrlfAuthenticationMixin, ModelViewSet):
@@ -208,7 +234,11 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
         try:
             ctrlf_content = self.get_content(issue=issue, ctrlf_user=issue_approve_request_user)
         except ValueError:
-            return Response(data={"message": "승인 권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={"message": "승인 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        if issue.action == CtrlfActionType.UPDATE:
+            if isinstance(ctrlf_content, Note):
+                ctrlf_content.title = issue.title
 
         if issue.action == CtrlfActionType.UPDATE:
             if not ctrlf_content.owners.filter(email=issue_approve_request_user.email).exists():
