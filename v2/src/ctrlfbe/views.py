@@ -19,6 +19,7 @@ from ctrlfbe.swagger import (
 from django.conf import settings
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
@@ -207,6 +208,7 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
 class ImageUploadView(APIView):
     BUCKET_BASE_DIR = settings.S3_BUCKET_BASE_DIR
     BASE_URL = settings.S3_BASE_URL
+    parser_classes = (MultiPartParser,)
 
     @swagger_auto_schema(**SWAGGER_IMAGE_UPLOAD_VIEW)
     def post(self, request, *args, **kwargs):

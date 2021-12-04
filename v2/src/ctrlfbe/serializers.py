@@ -147,7 +147,7 @@ class IssueApproveRequestBodySerializer(serializers.Serializer):
 
 
 class ImageUploadRequestBodySerializer(serializers.Serializer):
-    img_data = serializers.ImageField()
+    image = serializers.ImageField()
 
 
 class ImageSerializer(serializers.Serializer):
