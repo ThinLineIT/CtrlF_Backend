@@ -211,7 +211,7 @@ class TestTopicDetail(TestCase):
         # Given : 유효한 topic id, 이미 저장된 topic
         topic_id = self.topic.id
         # When  : API 실행
-        response = self.c.get(reverse("topics:topic_detail", kwargs={"topic_id": topic_id}))
+        response = self.c.get(reverse("topics:topic_detail_update", kwargs={"topic_id": topic_id}))
         # Then  : 상태코드 200
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And   : 불러온 정보가 저장된 정보와 일치해야 한다.
@@ -223,7 +223,7 @@ class TestTopicDetail(TestCase):
         # Given : 유효하지 않은 topic id, 이미 저장된 topic
         invalid_topic_id = 1234
         # When  : API 실행
-        response = self.c.get(reverse("topics:topic_detail", kwargs={"topic_id": invalid_topic_id}))
+        response = self.c.get(reverse("topics:topic_detail_update", kwargs={"topic_id": invalid_topic_id}))
         # Then  : 상태코드 404
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         # And   : 메세지는 "토픽을 찾을 수 없습니다." 이어야 한다.

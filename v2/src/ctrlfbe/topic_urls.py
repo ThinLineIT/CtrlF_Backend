@@ -28,8 +28,9 @@ urlpatterns = [
         TopicViewSet.as_view(
             {
                 "get": "retrieve",
+                "put": "update",
             }
         ),
-        name="topic_detail",
+        name="topic_detail_update",
     ),
 ]

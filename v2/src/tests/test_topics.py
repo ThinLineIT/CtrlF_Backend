@@ -116,7 +116,7 @@ class TestTopicUpdate(TestCase):
         else:
             header = {}
         return self.client.put(
-            reverse("topics:topic_detail", kwargs={"topic_id": topic_id}),
+            reverse("topics:topic_detail_update", kwargs={"topic_id": topic_id}),
             json.dumps(request_body),
             content_type="application/json",
             **header,

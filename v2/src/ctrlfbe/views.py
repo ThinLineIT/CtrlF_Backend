@@ -145,7 +145,7 @@ class TopicViewSet(CtrlfAuthenticationMixin, ModelViewSet):
         return super().retrieve(self, request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_TOPIC_UPDATE_VIEW)
-    def put(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
         topic = Topic.objects.filter(id=kwargs["topic_id"]).first()
         if topic is None:
