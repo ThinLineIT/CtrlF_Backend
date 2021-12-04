@@ -56,6 +56,15 @@ class TopicSerializer(serializers.ModelSerializer):
             return topic
 
 
+class TopicUpdateRequestBodySerializer(serializers.Serializer):
+    new_title = serializers.CharField()
+    reason = serializers.CharField()
+
+
+class TopicUpdateResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
 class TopicCreateRequestBodySerializer(serializers.Serializer):
     note_id = serializers.IntegerField()
     title = serializers.CharField()
@@ -153,3 +162,11 @@ class IssueApproveResponseSerializer(serializers.Serializer):
 
 class IssueApproveRequestBodySerializer(serializers.Serializer):
     issue_id = serializers.IntegerField()
+
+
+class ImageUploadRequestBodySerializer(serializers.Serializer):
+    img_data = serializers.ImageField()
+
+
+class ImageSerializer(serializers.Serializer):
+    img_url = serializers.CharField()

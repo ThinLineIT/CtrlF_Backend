@@ -1,4 +1,6 @@
 from ctrlfbe.serializers import (
+    ImageSerializer,
+    ImageUploadRequestBodySerializer,
     IssueApproveRequestBodySerializer,
     IssueApproveResponseSerializer,
     IssueDetailSerializer,
@@ -10,6 +12,8 @@ from ctrlfbe.serializers import (
     PageSerializer,
     TopicCreateRequestBodySerializer,
     TopicSerializer,
+    TopicUpdateRequestBodySerializer,
+    TopicUpdateResponseSerializer,
 )
 
 SWAGGER_PAGE_LIST_VIEW = {
@@ -68,6 +72,14 @@ SWAGGER_TOPIC_DETAIL_VIEW = {
     "tags": ["디테일 화면"],
 }
 
+SWAGGER_TOPIC_UPDATE_VIEW = {
+    "responses": {200: TopicUpdateResponseSerializer()},
+    "request_body": TopicUpdateRequestBodySerializer(),
+    "operation_summary": "Topic Update Request API",
+    "operation_description": "Topic 업데이트를 위한 Issue를 생성합니다.",
+    "tags": ["디테일 화면"],
+}
+
 SWAGGER_PAGE_DETAIL_VIEW = {
     "responses": {200: PageSerializer()},
     "operation_summary": "Page Detail API",
@@ -99,6 +111,14 @@ SWAGGER_ISSUE_APPROVE_VIEW = {
     "operation_summary": "Issue Approve API",
     "operation_description": "issue_id에 해당하는 Issue의 content(Note or Topic or Page)를 승인 합니다",
     "tags": ["이슈 화면", "디테일 화면"],
+}
+
+SWAGGER_IMAGE_UPLOAD_VIEW = {
+    "operation_summary": "Image Upload API",
+    "operation_description": "Page content의 이미지를 aws s3에 업로드합니다.",
+    "tags": ["디테일 화면"],
+    "request_body": ImageUploadRequestBodySerializer(),
+    "responses": {200: ImageSerializer()},
 }
 
 SWAGGER_HEALTH_CHECK_VIEW = {
