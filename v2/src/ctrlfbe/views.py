@@ -9,6 +9,7 @@ from ctrlfbe.swagger import (
     SWAGGER_NOTE_CREATE_VIEW,
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
+    SWAGGER_NOTE_UPDATE_VIEW,
     SWAGGER_PAGE_CREATE_VIEW,
     SWAGGER_PAGE_DETAIL_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
@@ -80,6 +81,7 @@ class NoteViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(self, request, *args, **kwargs)
 
+    @swagger_auto_schema(**SWAGGER_NOTE_UPDATE_VIEW)
     def update(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
         note_id = kwargs["note_id"]
