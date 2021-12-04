@@ -345,7 +345,6 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         issue = Issue.objects.get(id=issue_id)
         self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
 
-
     def test_should_update_note_title_on_approving_note_update_issue(self):
         # Given: Note를 생성
         note = Note.objects.create(title="test note title")
@@ -485,4 +484,3 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         # And: Topic의 title은 변경되지 않아야 한다.
         updated_topic = Topic.objects.get(id=topic.id)
         self.assertNotEqual(updated_topic.title, "new topic title")
-
