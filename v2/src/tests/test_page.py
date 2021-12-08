@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework import status
 
 
-class TesztPageCreate(TestCase):
+class TestPageCreate(TestCase):
     def setUp(self) -> None:
         self.client = Client()
         self.data = {

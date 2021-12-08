@@ -71,10 +71,9 @@ class BaseContentViewSet(CtrlfAuthenticationMixin, ModelViewSet):
         related_model_serializer = self.get_serializer(data=kwargs["model_data"])
         issue_serializer = IssueCreateSerializer(data=kwargs["issue_data"])
 
-        if related_model_serializer.is_valid() and issue_serializer.is_valid():
-            issue_serializer.save(related_model=related_model_serializer.save())
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        related_model_serializer.is_valid(raise_exception=True)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=related_model_serializer.save())
 
         return Response(status=status.HTTP_201_CREATED)
 
