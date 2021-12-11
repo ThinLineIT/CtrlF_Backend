@@ -14,17 +14,21 @@ from django.urls import reverse
 from rest_framework import status
 
 
-class TestPageList(TestCase):
+class TestPageBase(TestCase):
     def setUp(self):
         self.c = Client()
-        self.user = CtrlfUser.objects.create_user(email="test@test.com", password="12345")
+        self.user_data = {"email": "test@test.com", "password": "12345"}
+        self.user = CtrlfUser.objects.create_user(**self.user_data)
         self.note = Note.objects.create(title="test note")
         self.note.owners.add(self.user)
-        topic_data = {"note": self.note, "title": "test topic"}
-        self.topic = Topic.objects.create(**topic_data)
+        self.topic = Topic.objects.create(note=self.note, title="test topic")
         self.topic.owners.add(self.user)
 
-    def _add_pages_to_topic(self, topic, count):
+    def _login(self):
+        serializer = LoginSerializer()
+        return serializer.validate(self.user_data)["token"]
+
+    def _make_pages_in_topic(self, topic, count):
         page_list = []
         for i in range(count):
             page_data = {"topic": topic, "title": f"test topic{i + 1}", "content": f"test content{i + 1}"}
@@ -33,13 +37,15 @@ class TestPageList(TestCase):
             page_list.append(page)
         return page_list
 
+
+class TestPageList(TestPageBase):
     def _call_api(self, topic_id):
-        return self.c.get(reverse("topics:page_list", kwargs={"topic_id": topic_id}))
+        return self.client.get(reverse("topics:page_list", kwargs={"topic_id": topic_id}))
 
     def test_page_list_should_return_200(self):
         # Given: 이미 저장된 page들, 유효한 topic id
         topic_id = self.topic.id
-        page_list = self._add_pages_to_topic(topic=self.topic, count=10)
+        page_list = self._make_pages_in_topic(topic=self.topic, count=10)
         # When : API 실행
         response = self._call_api(topic_id)
         # Then : 상태코드 200
@@ -63,8 +69,8 @@ class TestPageList(TestCase):
         topic_A = Topic.objects.create(note=self.note, title="topic A")
         topic_B = Topic.objects.create(note=self.note, title="topic B")
         # And: topic A에 3개, topic B에 5개의 topic을 생성한다.
-        self._add_pages_to_topic(topic=topic_A, count=3)
-        self._add_pages_to_topic(topic=topic_B, count=5)
+        self._make_pages_in_topic(topic=topic_A, count=3)
+        self._make_pages_in_topic(topic=topic_B, count=5)
 
         # When: topic A의 id로 page list API 호출한다.
         response = self._call_api(topic_A.id)
@@ -77,7 +83,7 @@ class TestPageList(TestCase):
     def test_page_list_should_return_404_by_invalid_topic_id(self):
         # Given: 이미 저장된 page들, 유효하지 않은 topic id
         invalid_topic_id = 9999
-        self._add_pages_to_topic(topic=self.topic, count=10)
+        self._make_pages_in_topic(topic=self.topic, count=10)
         # When : API 실행
         response = self._call_api(invalid_topic_id)
         # Then : 상태코드 404
@@ -90,7 +96,7 @@ class TestPageList(TestCase):
         # Given: 유효한 topic_id를 설정하고,
         valid_topic_id = self.topic.id
         # And: page를 생성한다
-        page_list = self._add_pages_to_topic(topic=self.topic, count=10)
+        page_list = self._make_pages_in_topic(topic=self.topic, count=10)
         # And: 해당 Page에 대한 Issue를 생성하고,
         Issue.objects.create(
             owner=self.user,
@@ -114,7 +120,7 @@ class TestPageList(TestCase):
         # Given: 유효한 topic_id를 설정하고,
         valid_topic_id = self.topic.id
         # And: page를 생성하고,
-        self._add_pages_to_topic(topic=self.topic, count=10)
+        self._make_pages_in_topic(topic=self.topic, count=10)
         # And: 해당하는 issue가 없는 상태에서
 
         # When: API를 실행 했을 때,
@@ -126,24 +132,7 @@ class TestPageList(TestCase):
         self.assertIsNone(response.data[0]["issue_id"])
 
 
-class TestPageCreate(TestCase):
-    def setUp(self) -> None:
-        self.client = Client()
-        self.data = {
-            "email": "test@test.com",
-            "password": "12345",
-        }
-        self.user = CtrlfUser.objects.create_user(**self.data)
-        self.note = Note.objects.create(title="test note")
-        self.note.owners.add(self.user)
-        topic_data = {"note": self.note, "title": "test topic"}
-        self.topic = Topic.objects.create(**topic_data)
-        self.topic.owners.add(self.user)
-
-    def _login(self):
-        serializer = LoginSerializer()
-        return serializer.validate(self.data)["token"]
-
+class TestPageCreate(TestPageBase):
     def _call_api(self, request_body, token=None):
         if token:
             header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
@@ -196,36 +185,32 @@ class TestPageCreate(TestCase):
         self.assertEqual(Issue.objects.count(), 0)
 
 
-class TestPageDetail(TestCase):
+class TestPageDetail(TestPageBase):
     def setUp(self):
-        self.c = Client()
-        self.user = CtrlfUser.objects.create_user(email="test@test.com", password="12345")
-        self.note = Note.objects.create(title="test note")
-        self.note.owners.add(self.user)
-        self.topic = Topic.objects.create(note=self.note, title="test topic")
-        self.topic.owners.add(self.user)
-        page_data = {"topic": self.topic, "title": "test page", "content": "test content"}
-        self.page = Page.objects.create(**page_data)
-        self.page.owners.add(self.user)
+        super().setUp()
+        self.page = self._make_pages_in_topic(topic=self.topic, count=1)[0]
+
+    def _call_api(self, page_id):
+        return self.client.get(reverse("pages:page_detail", kwargs={"page_id": page_id}))
 
     def test_page_detail_should_return_200(self):
         # Given : 유효한 page id, 이미 저장된 page
         page_id = self.page.id
         # When  : API 실행
-        response = self.c.get(reverse("pages:page_detail", kwargs={"page_id": page_id}))
+        response = self._call_api(page_id)
         # Then  : 상태코드 200
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And   : 불러온 정보가 저장된 정보와 일치해야 한다.
         response = response.data
-        self.assertEqual(response["title"], "test page")
-        self.assertEqual(response["content"], "test content")
+        self.assertEqual(response["title"], self.page.title)
+        self.assertEqual(response["content"], self.page.content)
         self.assertEqual(response["topic"], self.topic.id)
 
     def test_page_detail_should_return_404_by_invalid_page_id(self):
         # Given : 유효하지 않은 page id, 이미 저장된 page
         invalid_page_id = 1234
         # When  : API 실행
-        response = self.c.get(reverse("pages:page_detail", kwargs={"page_id": invalid_page_id}))
+        response = self._call_api(invalid_page_id)
         # Then  : 상태코드 404
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         # And   : 메세지는 "페이지를 찾을 수 없습니다." 이어야 한다.
