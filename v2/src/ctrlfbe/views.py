@@ -1,5 +1,3 @@
-from typing import Optional
-
 from common.s3.client import S3Client
 from ctrlfbe.mixins import CtrlfAuthenticationMixin
 from ctrlfbe.swagger import (
@@ -21,16 +19,15 @@ from ctrlfbe.swagger import (
     SWAGGER_TOPIC_UPDATE_VIEW,
 )
 from django.conf import settings
-from django.db.models import Model
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
+from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from .basedata import NoteData, PageData, TopicData
-from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED
 from .models import (
     CtrlfActionType,
     CtrlfContentType,
@@ -57,11 +54,21 @@ s3_client = S3Client()
 
 
 class BaseContentViewSet(CtrlfAuthenticationMixin, ModelViewSet):
-    parent_model: Optional[Model] = None
-    child_model: Optional[Model] = None
+    def paginated_list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
-        return super().list(request)
+        parent_model_kwargs = self.get_parent_kwargs(list(kwargs.values())[0])
+        self.queryset = self.child_model.objects.filter(**parent_model_kwargs)
+
+        return super().list(request, *args, **kwargs)
+
+    def get_parent_kwargs(self, parent_id):
+        parent_name = str(self.parent_model._meta).split(".")[1]
+        parent_queryset = self.parent_model.objects.filter(id=parent_id)
+        parent = get_object_or_404(parent_queryset)
+
+        return {parent_name: parent}
 
     def create(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
@@ -86,7 +93,7 @@ class NoteViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_NOTE_LIST_VIEW)
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        return super().paginated_list(request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_NOTE_CREATE_VIEW)
     def create(self, request, *args, **kwargs):
@@ -95,7 +102,7 @@ class NoteViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_NOTE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(self, request, *args, **kwargs)
+        return super().retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_NOTE_UPDATE_VIEW)
     def update(self, request, *args, **kwargs):
@@ -133,16 +140,6 @@ class TopicViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_TOPIC_LIST_VIEW)
     def list(self, request, *args, **kwargs):
-        note_id = list(kwargs.values())[0]
-        note = Note.objects.filter(id=note_id).first()
-        if note is None:
-            return Response(
-                data={"message": ERR_NOT_FOUND_MSG_MAP.get("note", ERR_UNEXPECTED)},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        self.queryset = Topic.objects.filter(note=note)
-
         return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_TOPIC_CREATE_VIEW)
@@ -152,7 +149,7 @@ class TopicViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_TOPIC_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(self, request, *args, **kwargs)
+        return super().retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_TOPIC_UPDATE_VIEW)
     def update(self, request, *args, **kwargs):
@@ -191,16 +188,7 @@ class PageViewSet(BaseContentViewSet):
     @swagger_auto_schema(**SWAGGER_PAGE_LIST_VIEW)
     def list(self, request, *args, **kwargs):
         self.serializer_class = PageListSerializer
-        topic_id = list(kwargs.values())[0]
-        topic = Topic.objects.filter(id=topic_id).first()
-        if topic is None:
-            return Response(
-                data={"message": ERR_NOT_FOUND_MSG_MAP.get("topic", ERR_UNEXPECTED)},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        self.queryset = Page.objects.filter(topic=topic)
-        return super().list(self, request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_PAGE_CREATE_VIEW)
     def create(self, request, *args, **kwargs):
@@ -209,7 +197,7 @@ class PageViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(self, request, *args, **kwargs)
+        return super().retrieve(request, *args, **kwargs)
 
 
 class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
@@ -225,7 +213,7 @@ class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     @swagger_auto_schema(**SWAGGER_ISSUE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = IssueDetailSerializer
-        return super().retrieve(self, request, *args, **kwargs)
+        return super().retrieve(request, *args, **kwargs)
 
 
 class IssueApproveView(CtrlfAuthenticationMixin, APIView):

@@ -55,10 +55,10 @@ class TestTopicList(TestCase):
         self.note = Note.objects.create(title="test note")
         self.note.owners.add(self.user)
 
-    def _add_topics(self):
+    def _add_topics_to_note(self, note, count):
         topic_list = []
-        for i in range(10):
-            topic_data = {"note": self.note, "title": f"test topic{i + 1}"}
+        for i in range(count):
+            topic_data = {"note": note, "title": f"test topic{i + 1} to {note.title}"}
             topic = Topic.objects.create(**topic_data)
             topic.owners.add(self.user)
             topic_list.append(topic)
@@ -70,7 +70,7 @@ class TestTopicList(TestCase):
     def test_topic_list_should_return_200(self):
         # Given: 이미 저장된 topic들, 유효한 note id
         note_id = self.note.id
-        topic_list = self._add_topics()
+        topic_list = self._add_topics_to_note(note=self.note, count=10)
         # When : API 실행
         response = self._call_api(note_id)
         # Then : 상태코드 200
@@ -78,6 +78,22 @@ class TestTopicList(TestCase):
         # And  : 이미 저장된 topic 개수와 같아야 함.
         response = response.data
         self.assertEqual(len(response), len(topic_list))
+
+    def test_topic_list_should_return_topic_list_only_dependent_on_note_id(self):
+        # Given: note A, B를 생성한다.
+        note_A = Note.objects.create(title="note A")
+        note_B = Note.objects.create(title="note B")
+        # And: note A에 3개, note B에 5개의 topic을 생성한다.
+        self._add_topics_to_note(note=note_A, count=3)
+        self._add_topics_to_note(note=note_B, count=5)
+
+        # When: note_A의 id로 topic list API 호출한다.
+        response = self._call_api(note_A.id)
+
+        # Then: status code는 200이다,
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: topic 개수는 3개이다.
+        self.assertEqual(len(response.data), 3)
 
     def test_topic_list_should_return_200_by_empty_topic_list(self):
         # Given: 유효한 note id
@@ -92,7 +108,7 @@ class TestTopicList(TestCase):
     def test_topic_list_should_return_404_by_invalid_note_id(self):
         # Given: 이미 저장된 topic들, 유효하지 않은 note id
         invalid_not_id = 9999
-        self._add_topics()
+        self._add_topics_to_note(note=self.note, count=10)
         # When : API 실행
         response = self._call_api(invalid_not_id)
         # Then : 상태코드 404
@@ -112,10 +128,10 @@ class TestPageList(TestCase):
         self.topic = Topic.objects.create(**topic_data)
         self.topic.owners.add(self.user)
 
-    def _add_pages(self):
+    def _add_pages_to_topic(self, topic, count):
         page_list = []
-        for i in range(10):
-            page_data = {"topic": self.topic, "title": f"test topic{i + 1}", "content": f"test content{i + 1}"}
+        for i in range(count):
+            page_data = {"topic": topic, "title": f"test topic{i + 1}", "content": f"test content{i + 1}"}
             page = Page.objects.create(**page_data)
             page.owners.add(self.user)
             page_list.append(page)
@@ -127,7 +143,7 @@ class TestPageList(TestCase):
     def test_page_list_should_return_200(self):
         # Given: 이미 저장된 page들, 유효한 topic id
         topic_id = self.topic.id
-        page_list = self._add_pages()
+        page_list = self._add_pages_to_topic(topic=self.topic, count=10)
         # When : API 실행
         response = self._call_api(topic_id)
         # Then : 상태코드 200
@@ -146,10 +162,26 @@ class TestPageList(TestCase):
         # And  : 빈 배열을 return 해야함.
         self.assertEqual(response.data, [])
 
+    def test_page_list_should_return_only_page_list_dependent_on_topic(self):
+        # Given: topic A, B를 생성한다.
+        topic_A = Topic.objects.create(note=self.note, title="topic A")
+        topic_B = Topic.objects.create(note=self.note, title="topic B")
+        # And: topic A에 3개, topic B에 5개의 topic을 생성한다.
+        self._add_pages_to_topic(topic=topic_A, count=3)
+        self._add_pages_to_topic(topic=topic_B, count=5)
+
+        # When: topic A의 id로 page list API 호출한다.
+        response = self._call_api(topic_A.id)
+
+        # Then: status code는 200이다,
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: page 개수는 3개이다.
+        self.assertEqual(len(response.data), 3)
+
     def test_page_list_should_return_404_by_invalid_topic_id(self):
         # Given: 이미 저장된 page들, 유효하지 않은 topic id
         invalid_topic_id = 9999
-        self._add_pages()
+        self._add_pages_to_topic(topic=self.topic, count=10)
         # When : API 실행
         response = self._call_api(invalid_topic_id)
         # Then : 상태코드 404
@@ -162,7 +194,7 @@ class TestPageList(TestCase):
         # Given: 유효한 topic_id를 설정하고,
         valid_topic_id = self.topic.id
         # And: page를 생성한다
-        page_list = self._add_pages()
+        page_list = self._add_pages_to_topic(topic=self.topic, count=10)
         # And: 해당 Page에 대한 Issue를 생성하고,
         Issue.objects.create(
             owner=self.user,
@@ -186,7 +218,7 @@ class TestPageList(TestCase):
         # Given: 유효한 topic_id를 설정하고,
         valid_topic_id = self.topic.id
         # And: page를 생성하고,
-        self._add_pages()
+        self._add_pages_to_topic(topic=self.topic, count=10)
         # And: 해당하는 issue가 없는 상태에서
 
         # When: API를 실행 했을 때,
