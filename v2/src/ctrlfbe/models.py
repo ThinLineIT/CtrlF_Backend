@@ -46,7 +46,6 @@ class Page(CommonTimestamp):
     topic = models.ForeignKey("Topic", on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     content = models.TextField(default="")
-    summary = models.CharField(max_length=300, default="")
     is_approved = models.BooleanField(default=False)
 
     def __str__(self):
