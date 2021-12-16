@@ -22,7 +22,7 @@ class CtrlfIssueStatus(models.TextChoices):
     CLOSED = "CLOSED", "닫힘"
 
 
-class CtrlfModelVersion(models.TextChoices):
+class PageVersionType(models.TextChoices):
     LATEST = "LATEST", "최신"
     UPDATE = "UPDATE", "수정요청"
     PAST = "PAST", "과거"
@@ -64,7 +64,7 @@ class PageHistory(CommonTimestamp):
     title = models.CharField(max_length=100)
     content = models.TextField()
     is_approved = models.BooleanField(default=False)
-    version_type = models.CharField(max_length=30, choices=CtrlfModelVersion.choices)
+    version_type = models.CharField(max_length=30, choices=PageVersionType.choices)
 
 
 class Issue(CommonTimestamp):

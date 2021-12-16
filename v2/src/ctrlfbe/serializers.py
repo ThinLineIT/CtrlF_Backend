@@ -1,6 +1,14 @@
 from rest_framework import serializers
 
-from .models import CtrlfContentType, Issue, Note, Page, Topic
+from .models import (
+    CtrlfContentType,
+    Issue,
+    Note,
+    Page,
+    PageHistory,
+    PageVersionType,
+    Topic,
+)
 
 
 class NoteListSerializer(serializers.ListSerializer):
@@ -81,11 +89,18 @@ class PageSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["id", "created_at"]
 
-        def create(self, validated_data):
-            owner = validated_data.pop("owners")[0]
-            page = Page.objects.create(**validated_data)
-            page.owners.add(owner)
-            return page
+    def create(self, validated_data):
+        owner = validated_data["owners"][0]
+        page = super().create(validated_data)
+        page_history_data = {
+            "owner": owner,
+            "title": validated_data["title"],
+            "content": validated_data["content"],
+            "page": page,
+            "version_type": PageVersionType.LATEST,
+        }
+        PageHistory.objects.create(**page_history_data)
+        return page
 
 
 class PageListSerializer(PageSerializer):
