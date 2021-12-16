@@ -37,6 +37,28 @@ class TestPageBase(TestCase):
             page_list.append(page)
         return page_list
 
+    def status_code_test(self, response):
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def page_field_test(self, request_body):
+        self.page = Page.objects.all()[0]
+        owner = self.page.owners.all()[0]
+        self.assertEqual(owner.id, self.user.id)
+        self.assertEqual(self.page.topic.id, request_body["topic_id"])
+        self.assertEqual(self.page.title, request_body["title"])
+        self.assertEqual(self.page.content, request_body["content"])
+        self.assertFalse(self.page.is_approved)
+
+    def issue_field_test(self, request_body):
+        issue = Issue.objects.all()[0]
+        self.assertEqual(issue.owner, self.user)
+        self.assertEqual(issue.title, request_body["title"])
+        self.assertEqual(issue.reason, request_body["reason"])
+        self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
+        self.assertEqual(issue.related_model_type, CtrlfContentType.PAGE)
+        self.assertEqual(issue.related_model_id, self.page.id)
+        self.assertEqual(issue.action, CtrlfActionType.CREATE)
+
 
 class TestPageList(TestPageBase):
     def _call_api(self, topic_id):
@@ -155,13 +177,11 @@ class TestPageCreate(TestPageBase):
         response = self._call_api(request_body, token)
 
         # Then: status code는 201을 리턴한다.
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.status_code_test(response)
         # And: Page가 정상적으로 생성된다.
-        page = Page.objects.all()[0]
-        self.assertEqual(page.title, "test page title")
+        self.page_field_test(request_body)
         # And: Issue가 정상적으로 생성된다.
-        issue = Issue.objects.all()[0]
-        self.assertEqual(issue.reason, "reason for page create")
+        self.issue_field_test(request_body)
 
     def test_create_page_should_return_400_when_invalid_title(self):
         # Given: invalid한 request body가 주어질 때
