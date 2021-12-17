@@ -23,9 +23,9 @@ class CtrlfIssueStatus(models.TextChoices):
 
 
 class PageVersionType(models.TextChoices):
-    LATEST = "LATEST", "최신"
+    CURRENT = "CURRENT", "최신"
     UPDATE = "UPDATE", "수정요청"
-    PAST = "PAST", "과거"
+    PREVIOUS = "PREVIOUS", "과거"
 
 
 class Note(CommonTimestamp):

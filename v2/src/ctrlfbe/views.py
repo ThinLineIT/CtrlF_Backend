@@ -35,6 +35,7 @@ from .models import (
     Issue,
     Note,
     Page,
+    PageHistory,
     Topic,
 )
 from .paginations import IssueListPagination, NoteListPagination
@@ -197,7 +198,23 @@ class PageViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+        version_no = int(request.query_params["version_no"])
+        page_id = list(kwargs.values())[0]
+
+        page_history = PageHistory.objects.filter(version_no=version_no).first()
+        if page_history is None:
+            return Response(data={"message": "버전 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        page = Page.objects.filter(id=page_id).first()
+        if page is None:
+            return Response(data={"message": "페이지를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        page_serializer = self.get_serializer_class()
+        data = page_serializer(page).data
+
+        data["title"] = page_history.title
+        data["content"] = page_history.content
+        data["version_type"] = page_history.version_type
+
+        return Response(data=data, status=status.HTTP_200_OK)
 
 
 class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):

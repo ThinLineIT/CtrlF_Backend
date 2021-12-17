@@ -97,7 +97,7 @@ class PageSerializer(serializers.ModelSerializer):
             "title": validated_data["title"],
             "content": validated_data["content"],
             "page": page,
-            "version_type": PageVersionType.LATEST,
+            "version_type": PageVersionType.CURRENT,
         }
         PageHistory.objects.create(**page_history_data)
         return page

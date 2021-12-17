@@ -40,9 +40,9 @@ class TestPageBase(TestCase):
             page_history_data = {
                 "page": page,
                 "owner": self.user,
-                "title": f"test topic{i + 1}",
+                "title": f"test page{i + 1}",
                 "content": f"test content{i + 1}",
-                "version_type": PageVersionType.LATEST,
+                "version_type": PageVersionType.CURRENT,
             }
             PageHistory.objects.create(**page_history_data)
         return page_list
@@ -62,7 +62,7 @@ class TestPageBase(TestCase):
         self.assertEqual(page_history.page, self.page)
         self.assertEqual(page_history.title, request_body["title"])
         self.assertEqual(page_history.content, request_body["content"])
-        self.assertEqual(page_history.version_type, "LATEST")
+        self.assertEqual(page_history.version_type, "CURRENT")
         self.assertFalse(page_history.is_approved)
 
     def issue_field_test(self, request_body):
@@ -228,14 +228,17 @@ class TestPageDetail(TestPageBase):
         super().setUp()
         self.page = self._make_pages_in_topic(topic=self.topic, count=1)[0]
 
-    def _call_api(self, page_id):
-        return self.client.get(reverse("pages:page_detail", kwargs={"page_id": page_id}))
+    def _call_api(self, page_id, version_no):
+        return self.client.get(
+            reverse("pages:page_detail", kwargs={"page_id": page_id}), data={"version_no": version_no}
+        )
 
     def test_page_detail_should_return_200(self):
         # Given : 유효한 page id, 이미 저장된 page
         page_id = self.page.id
+        version_no = 1
         # When  : API 실행
-        response = self._call_api(page_id)
+        response = self._call_api(page_id, version_no)
         # Then  : 상태코드 200
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And   : 불러온 정보가 저장된 정보와 일치해야 한다.
@@ -247,8 +250,9 @@ class TestPageDetail(TestPageBase):
     def test_page_detail_should_return_404_by_invalid_page_id(self):
         # Given : 유효하지 않은 page id, 이미 저장된 page
         invalid_page_id = 1234
+        version_no = 1
         # When  : API 실행
-        response = self._call_api(invalid_page_id)
+        response = self._call_api(invalid_page_id, version_no)
         # Then  : 상태코드 404
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         # And   : 메세지는 "페이지를 찾을 수 없습니다." 이어야 한다.
