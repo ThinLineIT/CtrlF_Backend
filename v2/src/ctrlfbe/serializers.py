@@ -84,6 +84,8 @@ class TopicCreateRequestBodySerializer(serializers.Serializer):
 
 
 class PageSerializer(serializers.ModelSerializer):
+    issue_id = serializers.SerializerMethodField(method_name="get_issue_id")
+
     class Meta:
         model = Page
         fields = "__all__"
@@ -101,6 +103,12 @@ class PageSerializer(serializers.ModelSerializer):
         }
         PageHistory.objects.create(**page_history_data)
         return page
+
+    def get_issue_id(self, page):
+        issue = Issue.objects.filter(related_model_id=page.id, related_model_type=CtrlfContentType.PAGE).first()
+        if issue is None:
+            return None
+        return issue.id
 
 
 class PageListSerializer(serializers.ModelSerializer):
@@ -124,6 +132,10 @@ class PageCreateRequestBodySerializer(serializers.Serializer):
     title = serializers.CharField()
     content = serializers.CharField()
     reason = serializers.CharField(help_text="이슈의 reason에 대한 내용")
+
+
+class PageDetailQuerySerializer(serializers.Serializer):
+    version_no = serializers.IntegerField()
 
 
 class IssueSerializer(serializers.Serializer):
