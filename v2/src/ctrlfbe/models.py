@@ -64,6 +64,7 @@ class PageHistory(CommonTimestamp):
     title = models.CharField(max_length=100)
     content = models.TextField()
     is_approved = models.BooleanField(default=False)
+    version_no = models.IntegerField(default=1)
     version_type = models.CharField(max_length=30, choices=PageVersionType.choices)
 
 
