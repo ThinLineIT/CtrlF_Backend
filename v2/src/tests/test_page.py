@@ -85,6 +85,17 @@ class TestPageBase(TestCase):
             self.assertEqual(data["topic"], self.topic.id)
             self.assertEqual(data["owners"], [self.user.id])
 
+    def page_detail_data_test(self, data):
+        page = self.page
+        self.assertEqual(data["id"], page.id)
+        self.assertEqual(data["version_no"], 1)
+        self.assertEqual(data["issue_id"], None)
+        self.assertEqual(data["title"], page.title)
+        self.assertEqual(data["content"], page.content)
+        self.assertFalse(data["is_approved"], False)
+        self.assertEqual(data["topic"], self.topic.id)
+        self.assertEqual(data["owners"], [self.user.id])
+
 
 class TestPageList(TestPageBase):
     def _call_api(self, topic_id):
@@ -234,27 +245,46 @@ class TestPageDetail(TestPageBase):
         )
 
     def test_page_detail_should_return_200(self):
-        # Given : 유효한 page id, 이미 저장된 page
-        page_id = self.page.id
-        version_no = 1
+        # Given : 유효한 page id와 version number가 주어진다.
+        valid_page_id = self.page.id
+        valid_version_no = 1
         # When  : API 실행
-        response = self._call_api(page_id, version_no)
+        response = self._call_api(valid_page_id, valid_version_no)
         # Then  : 상태코드 200
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # And   : 불러온 정보가 저장된 정보와 일치해야 한다.
-        response = response.data
-        self.assertEqual(response["title"], self.page.title)
-        self.assertEqual(response["content"], self.page.content)
-        self.assertEqual(response["topic"], self.topic.id)
+
+    def test_page_detail_should_have_necessary_data(self):
+        # Given: 유효한 page id와 version number가 주어진다.
+        valid_page_id = self.page.id
+        valid_version_no = 1
+
+        # When: page detail api 호출
+        response = self._call_api(valid_page_id, valid_version_no)
+
+        # Then: 응답 데이터에 id, issue_id, topic, owners, version_no, version_type, title, content, is_approved가 포함되어야한다.
+        self.page_detail_data_test(response.data)
 
     def test_page_detail_should_return_404_by_invalid_page_id(self):
-        # Given : 유효하지 않은 page id, 이미 저장된 page
+        # Given : 유효한 version number와 유효하지 않은 page id가 주어진다.
         invalid_page_id = 1234
-        version_no = 1
+        valid_version_no = 1
         # When  : API 실행
-        response = self._call_api(invalid_page_id, version_no)
+        response = self._call_api(invalid_page_id, valid_version_no)
         # Then  : 상태코드 404
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         # And   : 메세지는 "페이지를 찾을 수 없습니다." 이어야 한다.
         response = response.data
         self.assertEqual(response["message"], "페이지를 찾을 수 없습니다.")
+
+    def test_page_detail_should_return_404_by_invalid_version_no(self):
+        # Given: 유효한 page id와 유효하지 않은 version number가 주어진다.
+        valid_page_id = self.page.id
+        invalid_version_no = 3255
+
+        # When: page detail api 호출
+        response = self._call_api(valid_page_id, invalid_version_no)
+
+        # Then: status code는 404를 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And: "버전 정보를 찾을 수 없습니다."라는 메시지를 출력한다.
+        self.assertEqual(response.data["message"], "버전 정보를 찾을 수 없습니다.")

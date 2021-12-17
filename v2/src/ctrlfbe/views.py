@@ -215,6 +215,7 @@ class PageViewSet(BaseContentViewSet):
         data["title"] = page_history.title
         data["content"] = page_history.content
         data["version_type"] = page_history.version_type
+        data["version_no"] = version_no
 
         return Response(data=data, status=status.HTTP_200_OK)
 
