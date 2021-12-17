@@ -8,21 +8,84 @@ from django.urls import reverse
 from rest_framework import status
 
 
-class TestTopicCreate(TestCase):
+class TestTopicBase(TestCase):
     def setUp(self) -> None:
         self.client = Client()
-        self.data = {
-            "email": "test@test.com",
-            "password": "12345",
-        }
-        self.user = CtrlfUser.objects.create_user(**self.data)
-        self.note = Note.objects.create(title="basic note")
+        self.user_data = {"email": "test@test", "password": "12345"}
+        self.user = CtrlfUser.objects.create_user(**self.user_data)
+        self.note = Note.objects.create(title="test note")
         self.note.owners.add(self.user)
 
     def _login(self):
         serializer = LoginSerializer()
-        return serializer.validate(self.data)["token"]
+        return serializer.validate(self.user_data)["token"]
 
+    def _make_topics_in_note(self, note, count):
+        topic_list = []
+        for i in range(count):
+            topic_data = {"note": note, "title": f"test topic{i + 1} to {note.title}"}
+            topic = Topic.objects.create(**topic_data)
+            topic.owners.add(self.user)
+            topic_list.append(topic)
+        return topic_list
+
+
+class TestTopicList(TestTopicBase):
+    def _call_api(self, note_id):
+        return self.client.get(reverse("notes:topic_list", kwargs={"note_id": note_id}))
+
+    def test_topic_list_should_return_200(self):
+        # Given: 이미 저장된 topic들, 유효한 note id
+        note_id = self.note.id
+        topic_list = self._make_topics_in_note(note=self.note, count=10)
+        # When : API 실행
+        response = self._call_api(note_id)
+        # Then : 상태코드 200
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And  : 이미 저장된 topic 개수와 같아야 함.
+        response = response.data
+        self.assertEqual(len(response), len(topic_list))
+
+    def test_topic_list_should_return_topic_list_only_dependent_on_note_id(self):
+        # Given: note A, B를 생성한다.
+        note_A = Note.objects.create(title="note A")
+        note_B = Note.objects.create(title="note B")
+        # And: note A에 3개, note B에 5개의 topic을 생성한다.
+        self._make_topics_in_note(note=note_A, count=3)
+        self._make_topics_in_note(note=note_B, count=5)
+
+        # When: note_A의 id로 topic list API 호출한다.
+        response = self._call_api(note_A.id)
+
+        # Then: status code는 200이다,
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: topic 개수는 3개이다.
+        self.assertEqual(len(response.data), 3)
+
+    def test_topic_list_should_return_200_by_empty_topic_list(self):
+        # Given: 유효한 note id
+        note_id = self.note.id
+        # When : API 실행
+        response = self._call_api(note_id)
+        # Then : 상태코드 200
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And  : 빈 배열을 return 해야함.
+        self.assertEqual(response.data, [])
+
+    def test_topic_list_should_return_404_by_invalid_note_id(self):
+        # Given: 이미 저장된 topic들, 유효하지 않은 note id
+        invalid_not_id = 9999
+        self._make_topics_in_note(note=self.note, count=10)
+        # When : API 실행
+        response = self._call_api(invalid_not_id)
+        # Then : 상태코드 404
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And  : 메세지는 "노트를 찾을 수 없습니다." 이어야 함.
+        response = response.data
+        self.assertEqual(response["message"], "노트를 찾을 수 없습니다.")
+
+
+class TestTopicCreate(TestTopicBase):
     def _call_api(self, request_body, token=None):
         if token:
             header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
@@ -92,23 +155,42 @@ class TestTopicCreate(TestCase):
         self.assertEqual(Issue.objects.count(), 0)
 
 
-class TestTopicUpdate(TestCase):
-    def setUp(self) -> None:
-        self.client = Client()
-        self.data = {
-            "email": "test@test.com",
-            "password": "12345",
-        }
-        self.user = CtrlfUser.objects.create_user(**self.data)
-        self.note = Note.objects.create(title="basic note")
-        self.note.owners.add(self.user)
-        topic_data = {"note": self.note, "title": "test topic"}
-        self.topic = Topic.objects.create(**topic_data)
-        self.topic.owners.add(self.user)
+class TestTopicDetail(TestTopicBase):
+    def setUp(self):
+        super().setUp()
+        self.topic = self._make_topics_in_note(note=self.note, count=1)[0]
 
-    def _login(self):
-        serializer = LoginSerializer()
-        return serializer.validate(self.data)["token"]
+    def _call_api(self, topic_id):
+        return self.client.get(reverse("topics:topic_detail_update", kwargs={"topic_id": topic_id}))
+
+    def test_topic_detail_should_return_200(self):
+        # Given : 유효한 topic id, 이미 저장된 topic
+        topic_id = self.topic.id
+        # When  : API 실행
+        response = self._call_api(topic_id)
+        # Then  : 상태코드 200
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And   : 불러온 정보가 저장된 정보와 일치해야 한다.
+        response = response.data
+        self.assertEqual(response["title"], self.topic.title)
+        self.assertEqual(response["note"], self.note.id)
+
+    def test_topic_detail_should_return_404_by_invalid_topic_id(self):
+        # Given : 유효하지 않은 topic id, 이미 저장된 topic
+        invalid_topic_id = 1234
+        # When  : API 실행
+        response = self._call_api(invalid_topic_id)
+        # Then  : 상태코드 404
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And   : 메세지는 "토픽을 찾을 수 없습니다." 이어야 한다.
+        response = response.data
+        self.assertEqual(response["message"], "토픽을 찾을 수 없습니다.")
+
+
+class TestTopicUpdate(TestTopicBase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.topic = self._make_topics_in_note(note=self.note, count=1)[0]
 
     def _call_api(self, request_body, topic_id, token=None):
         if token:
@@ -116,7 +198,7 @@ class TestTopicUpdate(TestCase):
         else:
             header = {}
         return self.client.put(
-            reverse("topics:topic_detail", kwargs={"topic_id": topic_id}),
+            reverse("topics:topic_detail_update", kwargs={"topic_id": topic_id}),
             json.dumps(request_body),
             content_type="application/json",
             **header,

@@ -7,7 +7,10 @@ from ctrlfbe.serializers import (
     IssueSerializer,
     NoteCreateRequestBodySerializer,
     NoteSerializer,
+    NoteUpdateRequestBodySerializer,
+    NoteUpdateResponseSerializer,
     PageCreateRequestBodySerializer,
+    PageDetailQuerySerializer,
     PageListSerializer,
     PageSerializer,
     TopicCreateRequestBodySerializer,
@@ -51,6 +54,14 @@ SWAGGER_NOTE_CREATE_VIEW = {
     "tags": ["디테일 화면"],
 }
 
+SWAGGER_NOTE_UPDATE_VIEW = {
+    "responses": {200: NoteUpdateResponseSerializer()},
+    "request_body": NoteUpdateRequestBodySerializer(),
+    "operation_summary": "Note Update Request API",
+    "operation_description": "Note 업데이트를 위한 Issue를 생성합니다.",
+    "tags": ["디테일 화면"],
+}
+
 SWAGGER_TOPIC_CREATE_VIEW = {
     "operation_summary": "Topic Create API",
     "operation_description": "비활성화된 Topic과 이슈를 생성 합니다.",
@@ -84,6 +95,7 @@ SWAGGER_PAGE_DETAIL_VIEW = {
     "responses": {200: PageSerializer()},
     "operation_summary": "Page Detail API",
     "operation_description": "page_id에 해당하는 Page의 상세 내용을 리턴합니다",
+    "query_serializer": PageDetailQuerySerializer,
     "tags": ["디테일 화면"],
 }
 
