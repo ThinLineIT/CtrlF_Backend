@@ -103,15 +103,20 @@ class PageSerializer(serializers.ModelSerializer):
         return page
 
 
-class PageListSerializer(PageSerializer):
-    issue_id = serializers.SerializerMethodField()
+class PageListSerializer(serializers.ModelSerializer):
+    version_no = serializers.SerializerMethodField()
 
-    def get_issue_id(self, obj):
-        issue = Issue.objects.filter(related_model_id=obj.id, related_model_type=CtrlfContentType.PAGE).first()
-        if issue is None:
-            return issue
-        else:
-            return issue.id
+    class Meta:
+        model = Page
+        fields = ["id", "owners", "topic", "title", "is_approved", "version_no"]
+
+    def get_version_no(self, page):
+        page_history = page.pagehistory_set.filter(version_type="LATEST")
+
+        if len(page_history) == 0:
+            return 1
+
+        return page_history[0].version_no
 
 
 class PageCreateRequestBodySerializer(serializers.Serializer):

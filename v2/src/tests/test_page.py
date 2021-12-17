@@ -8,6 +8,7 @@ from ctrlfbe.models import (
     Note,
     Page,
     PageHistory,
+    PageVersionType,
     Topic,
 )
 from django.test import Client, TestCase
@@ -32,10 +33,18 @@ class TestPageBase(TestCase):
     def _make_pages_in_topic(self, topic, count):
         page_list = []
         for i in range(count):
-            page_data = {"topic": topic, "title": f"test topic{i + 1}", "content": f"test content{i + 1}"}
+            page_data = {"topic": topic, "title": f"test page{i + 1}", "content": f"test content{i + 1}"}
             page = Page.objects.create(**page_data)
             page.owners.add(self.user)
             page_list.append(page)
+            page_history_data = {
+                "page": page,
+                "owner": self.user,
+                "title": f"test topic{i + 1}",
+                "content": f"test content{i + 1}",
+                "version_type": PageVersionType.LATEST,
+            }
+            PageHistory.objects.create(**page_history_data)
         return page_list
 
     def page_field_test(self, request_body):
@@ -65,6 +74,16 @@ class TestPageBase(TestCase):
         self.assertEqual(issue.related_model_type, CtrlfContentType.PAGE)
         self.assertEqual(issue.related_model_id, self.page.id)
         self.assertEqual(issue.action, CtrlfActionType.CREATE)
+
+    def page_list_data_test(self, page_list):
+        for i in range(len(page_list)):
+            data = page_list[i]
+            self.assertEqual(data["id"], i + 1)
+            self.assertEqual(data["title"], f"test page{i + 1}")
+            self.assertEqual(data["is_approved"], False)
+            self.assertEqual(data["version_no"], 1)
+            self.assertEqual(data["topic"], self.topic.id)
+            self.assertEqual(data["owners"], [self.user.id])
 
 
 class TestPageList(TestPageBase):
@@ -121,44 +140,15 @@ class TestPageList(TestPageBase):
         response = response.data
         self.assertEqual(response["message"], "토픽을 찾을 수 없습니다.")
 
-    def test_page_list_should_have_issue_id(self):
-        # Given: 유효한 topic_id를 설정하고,
-        valid_topic_id = self.topic.id
-        # And: page를 생성한다
-        page_list = self._make_pages_in_topic(topic=self.topic, count=10)
-        # And: 해당 Page에 대한 Issue를 생성하고,
-        Issue.objects.create(
-            owner=self.user,
-            title="page issue",
-            reason="page issue content",
-            status=CtrlfIssueStatus.APPROVED,
-            related_model_type=CtrlfContentType.PAGE,
-            related_model_id=page_list[0].id,
-            action=CtrlfActionType.CREATE,
-        )
+    def test_page_list_should_have_necessary_data(self):
+        # Given: page와 page_history를 생성한다.
+        self._make_pages_in_topic(self.topic, 10)
 
-        # When: API를 실행 했을 때,
-        response = self._call_api(valid_topic_id)
+        # When: page list api를 호출한다.
+        response = self._call_api(self.topic.id)
 
-        # Then: issue_id가 응답 값 내에 있어야 하고,
-        self.assertIn("issue_id", response.data[0])
-        # And: page에 해당하는 issue_id 이어야 한다
-        self.assertEqual(response.data[0]["issue_id"], 1)
-
-    def test_page_list_should_have_issue_id_but_value_is_none(self):
-        # Given: 유효한 topic_id를 설정하고,
-        valid_topic_id = self.topic.id
-        # And: page를 생성하고,
-        self._make_pages_in_topic(topic=self.topic, count=10)
-        # And: 해당하는 issue가 없는 상태에서
-
-        # When: API를 실행 했을 때,
-        response = self._call_api(valid_topic_id)
-
-        # Then: issue_id가 응답 값 내에 있어야 하고,
-        self.assertIn("issue_id", response.data[0])
-        # And: page에 해당하는 issue_id는 None 이어야 한다
-        self.assertIsNone(response.data[0]["issue_id"])
+        # Then: 응답 데이터에 id, title, topic, owners, version_no, is_approved가 포함되어야한다.
+        self.page_list_data_test(response.data)
 
 
 class TestPageCreate(TestPageBase):
