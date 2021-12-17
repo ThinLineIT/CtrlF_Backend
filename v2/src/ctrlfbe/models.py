@@ -67,6 +67,9 @@ class PageHistory(CommonTimestamp):
     version_no = models.IntegerField(default=1)
     version_type = models.CharField(max_length=30, choices=PageVersionType.choices)
 
+    def __str__(self):
+        return f"id:{self.page_id}-title:{self.page.title}-version:{self.version_no}"
+
 
 class Issue(CommonTimestamp):
     owner = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE, help_text="이슈를 생성한 사람")
