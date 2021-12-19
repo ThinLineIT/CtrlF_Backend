@@ -241,7 +241,7 @@ class TestPageDetail(TestPageBase):
 
     def _call_api(self, page_id, version_no):
         return self.client.get(
-            reverse("pages:page_detail", kwargs={"page_id": page_id}), data={"version_no": version_no}
+            reverse("pages:page_detail_or_update", kwargs={"page_id": page_id}), data={"version_no": version_no}
         )
 
     def test_page_detail_should_return_200(self):
@@ -288,3 +288,55 @@ class TestPageDetail(TestPageBase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         # And: "버전 정보를 찾을 수 없습니다."라는 메시지를 출력한다.
         self.assertEqual(response.data["message"], "버전 정보를 찾을 수 없습니다.")
+
+
+class TestPageUpdate(TestPageBase):
+    def _call_api(self, page_id, request_body, token=None):
+        if token:
+            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        else:
+            header = {}
+        return self.client.post(
+            reverse("pages:page_detail_or_update", kwargs={"page_id": page_id}), request_body, **header
+        )
+
+    def _assert_page_history_model_and_expected(self, page, request_body):
+        page_history = PageHistory.objects.filter(page=page, version_type=PageVersionType.UPDATE).first()
+        self.assertEqual(page_history.owner, self.user)
+        self.assertEqual(page_history.page.id, page.id)
+        self.assertEqual(page_history.title, request_body["new_title"])
+        self.assertEqual(page_history.content, request_body["new_content"])
+        self.assertEqual(page_history.version_type, PageVersionType.UPDATE)
+        self.assertFalse(page_history.is_approved)
+
+    def _assert_issue_model_and_expected(self, page, request_body):
+        issue = Issue.objects.all()[0]
+        self.assertEqual(issue.owner, self.user)
+        self.assertEqual(issue.title, request_body["new_title"])
+        self.assertEqual(issue.reason, request_body["reason"])
+        self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
+        self.assertEqual(issue.related_model_type, CtrlfContentType.PAGE)
+        self.assertEqual(issue.related_model_id, page.id)
+        self.assertEqual(issue.action, CtrlfActionType.UPDATE)
+
+    def test_update_page_should_return_201(self):
+        # Given: 유효한 request body를 세팅하고,
+        request_body = {
+            "new_title": "새로운 페이지 타이틀",
+            "new_content": "새로운 페이지 컨텐트",
+            "reason": "새로운 이유",
+        }
+        # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
+        token = self._login()
+        # And: page를 1개 생성한 상태에서,
+        page = self._make_pages_in_topic(self.topic, 1)[0]
+
+        # When : API 실행
+        response = self._call_api(page_id=page.id, request_body=request_body, token=token)
+
+        # Then : 상태코드 201를 리턴해야한다
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # And: Page update Issue가 정상적으로 생성된다.
+        self._assert_issue_model_and_expected(page, request_body)
+        # And: PageHistory가 정상적으로 생성된다.
+        self._assert_page_history_model_and_expected(page, request_body)

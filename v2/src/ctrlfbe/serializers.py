@@ -73,6 +73,12 @@ class TopicUpdateRequestBodySerializer(serializers.Serializer):
     reason = serializers.CharField()
 
 
+class PageUpdateRequestBodySerializer(serializers.Serializer):
+    new_title = serializers.CharField()
+    new_content = serializers.CharField()
+    reason = serializers.CharField()
+
+
 class TopicUpdateResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
 
@@ -206,3 +212,15 @@ class ImageUploadRequestBodySerializer(serializers.Serializer):
 
 class ImageSerializer(serializers.Serializer):
     img_url = serializers.CharField()
+
+
+class PageHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PageHistory
+        fields = "__all__"
+
+    def create(self, validated_data):
+        owner = validated_data.pop("owner")
+        page = validated_data.pop("page")
+        page_history = PageHistory.objects.create(owner=owner, page=page, **validated_data)
+        return page_history

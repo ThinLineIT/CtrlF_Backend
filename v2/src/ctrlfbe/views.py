@@ -36,6 +36,7 @@ from .models import (
     Note,
     Page,
     PageHistory,
+    PageVersionType,
     Topic,
 )
 from .paginations import IssueListPagination, NoteListPagination
@@ -45,8 +46,10 @@ from .serializers import (
     IssueSerializer,
     NoteSerializer,
     NoteUpdateRequestBodySerializer,
+    PageHistorySerializer,
     PageListSerializer,
     PageSerializer,
+    PageUpdateRequestBodySerializer,
     TopicSerializer,
     TopicUpdateRequestBodySerializer,
 )
@@ -218,6 +221,37 @@ class PageViewSet(BaseContentViewSet):
         data["version_no"] = version_no
 
         return Response(data=data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
+    def update(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        page = Page.objects.filter(id=kwargs["page_id"]).first()
+        PageUpdateRequestBodySerializer(data=request.data)
+        issue_data = {
+            "owner": ctrlf_user.id,
+            "title": request.data["new_title"],
+            "reason": request.data["reason"],
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.PAGE,
+            "action": CtrlfActionType.UPDATE,
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=page)
+
+        page_history = PageHistory.objects.filter(page=page).first()
+        page_history_data = {
+            "owner": ctrlf_user.id,
+            "page": page.id,
+            "title": request.data["new_title"],
+            "content": request.data["new_content"],
+            "version_no": page_history.version_no + 1,
+            "version_type": PageVersionType.UPDATE,
+        }
+        page_history_serializer = PageHistorySerializer(data=page_history_data)
+        page_history_serializer.is_valid(raise_exception=True)
+        page_history_serializer.save()
+        return Response(status=status.HTTP_201_CREATED)
 
 
 class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
