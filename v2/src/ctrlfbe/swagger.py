@@ -10,6 +10,7 @@ from ctrlfbe.serializers import (
     NoteUpdateRequestBodySerializer,
     NoteUpdateResponseSerializer,
     PageCreateRequestBodySerializer,
+    PageDetailQuerySerializer,
     PageListSerializer,
     PageSerializer,
     TopicCreateRequestBodySerializer,
@@ -94,6 +95,7 @@ SWAGGER_PAGE_DETAIL_VIEW = {
     "responses": {200: PageSerializer()},
     "operation_summary": "Page Detail API",
     "operation_description": "page_id에 해당하는 Page의 상세 내용을 리턴합니다",
+    "query_serializer": PageDetailQuerySerializer,
     "tags": ["디테일 화면"],
 }
 
