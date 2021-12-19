@@ -226,7 +226,12 @@ class PageViewSet(BaseContentViewSet):
     def update(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
         page = Page.objects.filter(id=kwargs["page_id"]).first()
-        PageUpdateRequestBodySerializer(data=request.data)
+        if page is None:
+            return Response(data={"message": "페이지를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        page_serializer = PageUpdateRequestBodySerializer(data=request.data)
+        page_serializer.is_valid(raise_exception=True)
+
         issue_data = {
             "owner": ctrlf_user.id,
             "title": request.data["new_title"],

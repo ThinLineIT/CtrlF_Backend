@@ -319,7 +319,7 @@ class TestPageUpdate(TestPageBase):
         self.assertEqual(issue.related_model_id, page.id)
         self.assertEqual(issue.action, CtrlfActionType.UPDATE)
 
-    def test_update_page_should_return_201(self):
+    def test_update_page_should_return_201_created(self):
         # Given: 유효한 request body를 세팅하고,
         request_body = {
             "new_title": "새로운 페이지 타이틀",
@@ -340,3 +340,23 @@ class TestPageUpdate(TestPageBase):
         self._assert_issue_model_and_expected(page, request_body)
         # And: PageHistory가 정상적으로 생성된다.
         self._assert_page_history_model_and_expected(page, request_body)
+
+    def test_update_page_should_return_404_not_found(self):
+        # Given: 유효한 request body를 세팅하고,
+        request_body = {
+            "new_title": "새로운 페이지 타이틀",
+            "new_content": "새로운 페이지 컨텐트",
+            "reason": "새로운 이유",
+        }
+        # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
+        token = self._login()
+        # And: 존재하지 않는 page id를 넘겼을 때,
+        page_id = 99999
+
+        # When : API 실행
+        response = self._call_api(page_id=page_id, request_body=request_body, token=token)
+
+        # Then: 상태코드 404를 리턴해야한다
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And: 메세지는 "페이지를 찾을 수 없습니다." 이어야 한다
+        self.assertEqual(response.json()["message"], "페이지를 찾을 수 없습니다.")
