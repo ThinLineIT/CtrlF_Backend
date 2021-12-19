@@ -9,39 +9,83 @@ from ctrlfbe.swagger import (
     SWAGGER_NOTE_CREATE_VIEW,
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
+    SWAGGER_NOTE_UPDATE_VIEW,
     SWAGGER_PAGE_CREATE_VIEW,
     SWAGGER_PAGE_DETAIL_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
     SWAGGER_TOPIC_CREATE_VIEW,
     SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
+    SWAGGER_TOPIC_UPDATE_VIEW,
 )
 from django.conf import settings
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
+from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from .basedata import NoteData, PageData, TopicData
-from .constants import ERR_NOT_FOUND_MSG_MAP, ERR_UNEXPECTED
-from .models import CtrlfContentType, CtrlfIssueStatus, Issue, Note, Page, Topic
+from .models import (
+    CtrlfActionType,
+    CtrlfContentType,
+    CtrlfIssueStatus,
+    Issue,
+    Note,
+    Page,
+    Topic,
+)
 from .paginations import IssueListPagination, NoteListPagination
 from .serializers import (
     IssueCreateSerializer,
     IssueDetailSerializer,
     IssueSerializer,
     NoteSerializer,
+    NoteUpdateRequestBodySerializer,
     PageListSerializer,
     PageSerializer,
     TopicSerializer,
+    TopicUpdateRequestBodySerializer,
 )
 
 s3_client = S3Client()
 
 
-class NoteViewSet(CtrlfAuthenticationMixin, ModelViewSet):
+class BaseContentViewSet(CtrlfAuthenticationMixin, ModelViewSet):
+    def paginated_list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    def list(self, request, *args, **kwargs):
+        parent_model_kwargs = self.get_parent_kwargs(list(kwargs.values())[0])
+        self.queryset = self.child_model.objects.filter(**parent_model_kwargs)
+
+        return super().list(request, *args, **kwargs)
+
+    def get_parent_kwargs(self, parent_id):
+        parent_name = str(self.parent_model._meta).split(".")[1]
+        parent_queryset = self.parent_model.objects.filter(id=parent_id)
+        parent = get_object_or_404(parent_queryset)
+
+        return {parent_name: parent}
+
+    def create(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        kwargs["model_data"]["owners"] = [ctrlf_user.id]
+        kwargs["issue_data"]["owner"] = ctrlf_user.id
+
+        related_model_serializer = self.get_serializer(data=kwargs["model_data"])
+        issue_serializer = IssueCreateSerializer(data=kwargs["issue_data"])
+
+        related_model_serializer.is_valid(raise_exception=True)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=related_model_serializer.save())
+
+        return Response(status=status.HTTP_201_CREATED)
+
+
+class NoteViewSet(BaseContentViewSet):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
     pagination_class = NoteListPagination
@@ -49,67 +93,94 @@ class NoteViewSet(CtrlfAuthenticationMixin, ModelViewSet):
 
     @swagger_auto_schema(**SWAGGER_NOTE_LIST_VIEW)
     def list(self, request, *args, **kwargs):
-        return super().list(self, request, *args, **kwargs)
+        return super().paginated_list(request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_NOTE_CREATE_VIEW)
     def create(self, request, *args, **kwargs):
-        ctrlf_user = self._ctrlf_authentication(request)
-        note_data, issue_data = NoteData().build_data(request, ctrlf_user)
-
-        note_serializer = NoteSerializer(data=note_data)
-        issue_serializer = IssueCreateSerializer(data=issue_data)
-
-        if note_serializer.is_valid() and issue_serializer.is_valid():
-            issue_serializer.save(related_model=note_serializer.save())
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        return Response(status=status.HTTP_201_CREATED)
+        data = NoteData(request).build_data()
+        return super().create(request, **data)
 
     @swagger_auto_schema(**SWAGGER_NOTE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(self, request, *args, **kwargs)
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(**SWAGGER_NOTE_UPDATE_VIEW)
+    def update(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        note_id = kwargs["note_id"]
+        note = Note.objects.filter(id=note_id).first()
+        if note is None:
+            return Response(data={"message": "Note를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        note_serializer = NoteUpdateRequestBodySerializer(data=request.data)
+        if not note_serializer.is_valid():
+            return Response(data={"message": "요청이 올바르지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
+        issue_data = {
+            "owner": ctrlf_user.id,
+            "title": request.data["new_title"],
+            "reason": request.data["reason"],
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.NOTE,
+            "action": CtrlfActionType.UPDATE,
+            "etc": note.title,
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=note)
+
+        return Response(data={"message": "Note 수정 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
 
 
-class TopicViewSet(CtrlfAuthenticationMixin, ModelViewSet):
+class TopicViewSet(BaseContentViewSet):
+    parent_model = Note
+    child_model = Topic
     queryset = Topic.objects.all()
     serializer_class = TopicSerializer
     lookup_url_kwarg = "topic_id"
 
     @swagger_auto_schema(**SWAGGER_TOPIC_LIST_VIEW)
     def list(self, request, *args, **kwargs):
-        note_id = list(kwargs.values())[0]
-        note = Note.objects.filter(id=note_id).first()
-        if note is None:
-            return Response(
-                data={"message": ERR_NOT_FOUND_MSG_MAP.get("note", ERR_UNEXPECTED)},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        self.queryset = Topic.objects.filter(note=note)
-
         return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_TOPIC_CREATE_VIEW)
     def create(self, request, *args, **kwargs):
-        ctrlf_user = self._ctrlf_authentication(request)
-        topic_data, issue_data = TopicData().build_data(request, ctrlf_user)
-
-        topic_serializer = TopicSerializer(data=topic_data)
-        issue_serializer = IssueCreateSerializer(data=issue_data)
-
-        if topic_serializer.is_valid() and issue_serializer.is_valid():
-            issue_serializer.save(related_model=topic_serializer.save())
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_201_CREATED)
+        data = TopicData(request).build_data()
+        return super().create(request, **data)
 
     @swagger_auto_schema(**SWAGGER_TOPIC_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(self, request, *args, **kwargs)
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(**SWAGGER_TOPIC_UPDATE_VIEW)
+    def update(self, request, *args, **kwargs):
+        ctrlf_user = self._ctrlf_authentication(request)
+        topic = Topic.objects.filter(id=kwargs["topic_id"]).first()
+        if topic is None:
+            return Response(data={"message": "Topic이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        topic_serializer = TopicUpdateRequestBodySerializer(data=request.data)
+        if not topic_serializer.is_valid():
+            return Response(data={"message": "요청이 유효하지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        issue_data = {
+            "owner": ctrlf_user.id,
+            "title": request.data["new_title"],
+            "reason": request.data["reason"],
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.TOPIC,
+            "action": CtrlfActionType.UPDATE,
+            "etc": topic.title,
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=topic)
+
+        return Response(data={"message": "Topic 수정 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
 
 
-class PageViewSet(CtrlfAuthenticationMixin, ModelViewSet):
+class PageViewSet(BaseContentViewSet):
+    parent_model = Topic
+    child_model = Page
     queryset = Page.objects.all()
     lookup_url_kwarg = "page_id"
     serializer_class = PageSerializer
@@ -117,35 +188,16 @@ class PageViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     @swagger_auto_schema(**SWAGGER_PAGE_LIST_VIEW)
     def list(self, request, *args, **kwargs):
         self.serializer_class = PageListSerializer
-        topic_id = list(kwargs.values())[0]
-        topic = Topic.objects.filter(id=topic_id).first()
-        if topic is None:
-            return Response(
-                data={"message": ERR_NOT_FOUND_MSG_MAP.get("topic", ERR_UNEXPECTED)},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        self.queryset = Page.objects.filter(topic=topic)
-        return super().list(self, request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_PAGE_CREATE_VIEW)
     def create(self, request, *args, **kwargs):
-        ctrlf_user = self._ctrlf_authentication(request)
-        page_data, issue_data = PageData().build_data(request, ctrlf_user)
-
-        page_serializer = PageSerializer(data=page_data)
-        issue_serializer = IssueCreateSerializer(data=issue_data)
-
-        if page_serializer.is_valid() and issue_serializer.is_valid():
-            issue_serializer.save(related_model=page_serializer.save())
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        return Response(status=status.HTTP_201_CREATED)
+        data = PageData(request).build_data()
+        return super().create(request, **data)
 
     @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(self, request, *args, **kwargs)
+        return super().retrieve(request, *args, **kwargs)
 
 
 class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
@@ -161,13 +213,13 @@ class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     @swagger_auto_schema(**SWAGGER_ISSUE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = IssueDetailSerializer
-        return super().retrieve(self, request, *args, **kwargs)
+        return super().retrieve(request, *args, **kwargs)
 
 
 class IssueApproveView(CtrlfAuthenticationMixin, APIView):
     @swagger_auto_schema(**SWAGGER_ISSUE_APPROVE_VIEW)
     def post(self, request, *args, **kwargs):
-        ctrlf_user = self._ctrlf_authentication(request)
+        issue_approve_request_user = self._ctrlf_authentication(request)
         issue_id = request.data["issue_id"]
         try:
             issue = Issue.objects.get(id=issue_id)
@@ -175,9 +227,19 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             return Response(data={"message": "이슈 ID를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            ctrlf_content = self.get_content(issue=issue, ctrlf_user=ctrlf_user)
+            ctrlf_content = self.get_content(issue=issue, ctrlf_user=issue_approve_request_user)
         except ValueError:
-            return Response(data={"message": "승인 권한이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={"message": "승인 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        if issue.action == CtrlfActionType.UPDATE:
+            if isinstance(ctrlf_content, Note):
+                ctrlf_content.title = issue.title
+
+        if issue.action == CtrlfActionType.UPDATE:
+            if not ctrlf_content.owners.filter(email=issue_approve_request_user.email).exists():
+                return Response(status=status.HTTP_403_FORBIDDEN)
+            if isinstance(ctrlf_content, Topic):
+                ctrlf_content.title = issue.title
 
         ctrlf_content.is_approved = True
         ctrlf_content.save()
@@ -196,15 +258,16 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             if issue.related_model_type == CtrlfContentType.TOPIC
             else None
         )
-        if type(content) is Page:
-            if not content.topic.owners.filter(id=ctrlf_user.id).exists():
-                raise ValueError
-        elif type(content) is Topic:
-            if not content.note.owners.filter(id=ctrlf_user.id).exists():
-                raise ValueError
-        elif type(content) is Note:
-            if not content.owners.filter(id=ctrlf_user.id).exists():
-                raise ValueError
+        if issue.action == CtrlfActionType.CREATE:
+            if type(content) is Page:
+                if not content.topic.owners.filter(id=ctrlf_user.id).exists():
+                    raise ValueError
+            elif type(content) is Topic:
+                if not content.note.owners.filter(id=ctrlf_user.id).exists():
+                    raise ValueError
+            elif type(content) is Note:
+                if not content.owners.filter(id=ctrlf_user.id).exists():
+                    raise ValueError
 
         return content
 

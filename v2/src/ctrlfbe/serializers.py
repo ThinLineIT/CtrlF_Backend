@@ -7,6 +7,15 @@ class NoteListSerializer(serializers.ListSerializer):
     pass
 
 
+class NoteUpdateRequestBodySerializer(serializers.Serializer):
+    new_title = serializers.CharField()
+    reason = serializers.CharField()
+
+
+class NoteUpdateResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
@@ -49,6 +58,15 @@ class TopicSerializer(serializers.ModelSerializer):
             topic = Topic.objects.all(**validated_data)
             topic.owners.add(owner)
             return topic
+
+
+class TopicUpdateRequestBodySerializer(serializers.Serializer):
+    new_title = serializers.CharField()
+    reason = serializers.CharField()
+
+
+class TopicUpdateResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
 
 
 class TopicCreateRequestBodySerializer(serializers.Serializer):
@@ -112,6 +130,10 @@ class IssueDetailSerializer(serializers.Serializer):
     related_model_type = serializers.CharField()
     related_model_id = serializers.IntegerField()
     action = serializers.CharField()
+    legacy_title = serializers.SerializerMethodField()
+
+    def get_legacy_title(self, issue):
+        return issue.etc or ""
 
     def get_page_id(self, issue):
         if issue.related_model_type == CtrlfContentType.PAGE:

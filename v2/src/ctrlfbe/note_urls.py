@@ -24,5 +24,5 @@ urlpatterns = [
         ),
         name="topic_list",
     ),
-    path("<int:note_id>/", NoteViewSet.as_view({"get": "retrieve"}), name="note_detail_update_delete"),
+    path("<int:note_id>/", NoteViewSet.as_view({"get": "retrieve", "put": "update"}), name="note_detail_update_delete"),
 ]

@@ -1,19 +1,21 @@
+from rest_framework.request import Request
+
 from .models import CtrlfActionType, CtrlfContentType, CtrlfIssueStatus
 
 
 class BaseData:
-    def __init__(self):
-        pass
+    request: Request
 
-    def build_data(self, request, ctrlf_user):
+    def __init__(self, request):
+        self.request = request
+
+    def build_data(self):
         model_data = {
-            "title": request.data["title"],
-            "owners": [ctrlf_user.id],
+            "title": self.request.data["title"],
         }
         issue_data = {
-            "owner": ctrlf_user.id,
-            "title": request.data["title"],
-            "reason": request.data["reason"],
+            "title": self.request.data["title"],
+            "reason": self.request.data["reason"],
             "status": CtrlfIssueStatus.REQUESTED,
             "action": CtrlfActionType.CREATE,
         }
@@ -21,35 +23,27 @@ class BaseData:
 
 
 class NoteData(BaseData):
-    def __init__(self):
-        super().__init__()
-
-    def build_data(self, request, ctrlf_user):
-        note_data, issue_data = super(NoteData, self).build_data(request, ctrlf_user)
+    def build_data(self):
+        note_data, issue_data = super().build_data()
         issue_data["related_model_type"] = CtrlfContentType.NOTE
 
-        return note_data, issue_data
+        return {"model_data": note_data, "issue_data": issue_data}
 
 
 class TopicData(BaseData):
-    def __init__(self):
-        super().__init__()
-
-    def build_data(self, request, ctrlf_user):
-        topic_data, issue_data = super(TopicData, self).build_data(request, ctrlf_user)
-        topic_data["note"] = request.data["note_id"]
+    def build_data(self):
+        topic_data, issue_data = super().build_data()
+        topic_data["note"] = self.request.data["note_id"]
         issue_data["related_model_type"] = CtrlfContentType.TOPIC
 
-        return topic_data, issue_data
+        return {"model_data": topic_data, "issue_data": issue_data}
 
 
 class PageData(BaseData):
-    def __init__(self):
-        super().__init__()
-
-    def build_data(self, request, ctrlf_user):
-        page_data, issue_data = super(PageData, self).build_data(request, ctrlf_user)
-        page_data["topic"] = request.data["topic_id"]
-        page_data["content"] = request.data["content"]
+    def build_data(self):
+        page_data, issue_data = super().build_data()
+        page_data["topic"] = self.request.data["topic_id"]
+        page_data["content"] = self.request.data["content"]
         issue_data["related_model_type"] = CtrlfContentType.PAGE
-        return page_data, issue_data
+
+        return {"model_data": page_data, "issue_data": issue_data}
