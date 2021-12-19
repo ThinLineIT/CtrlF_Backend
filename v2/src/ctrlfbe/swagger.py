@@ -4,7 +4,7 @@ from ctrlfbe.serializers import (
     IssueApproveRequestBodySerializer,
     IssueApproveResponseSerializer,
     IssueDetailSerializer,
-    IssueSerializer,
+    IssueListSerializer,
     NoteCreateRequestBodySerializer,
     NoteSerializer,
     NoteUpdateRequestBodySerializer,
@@ -100,7 +100,7 @@ SWAGGER_PAGE_DETAIL_VIEW = {
 }
 
 SWAGGER_ISSUE_LIST_VIEW = {
-    "responses": {200: IssueSerializer(many=True)},
+    "responses": {200: IssueListSerializer(many=True)},
     "operation_summary": "Issue List API",
     "operation_description": "Cursor based pagination 처리된 Issue List를 리턴 합니다",
     "tags": ["이슈 화면"],

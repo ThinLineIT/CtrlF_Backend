@@ -42,7 +42,7 @@ from .paginations import IssueListPagination, NoteListPagination
 from .serializers import (
     IssueCreateSerializer,
     IssueDetailSerializer,
-    IssueSerializer,
+    IssueListSerializer,
     NoteSerializer,
     NoteUpdateRequestBodySerializer,
     PageListSerializer,
@@ -222,7 +222,7 @@ class PageViewSet(BaseContentViewSet):
 
 class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     queryset = Issue.objects.all()
-    serializer_class = IssueSerializer
+    serializer_class = IssueListSerializer
     pagination_class = IssueListPagination
     lookup_url_kwarg = "issue_id"
 
