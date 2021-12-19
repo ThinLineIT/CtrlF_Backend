@@ -301,6 +301,8 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
                 ctrlf_content.title = issue.title
 
         if issue.action == CtrlfActionType.UPDATE:
+            if not ctrlf_content.owners.filter(email=issue_approve_request_user.email).exists():
+                return Response(status=status.HTTP_403_FORBIDDEN)
             if isinstance(ctrlf_content, Page):
                 page_id = issue.related_model_id
 

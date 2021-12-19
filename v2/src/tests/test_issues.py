@@ -517,7 +517,7 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다.
         owner_token = self._login(self.owner_data)
 
-        # When: topic owner가 approve issue api를 호출한다.
+        # When: page owner가 approve issue api를 호출한다.
         response = self._call_api(request_body, owner_token)
 
         # Then: status code는 200을 리턴한다.
@@ -533,3 +533,46 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         new_page = Page.objects.filter(id=page.id).first()
         self.assertEqual(new_page.title, new_page_history_data["title"])
         self.assertEqual(new_page.content, new_page_history_data["content"])
+
+    def test_issue_approve_should_update_page_title_and_content_on_approval_user_is_not_page_owner(self):
+        # Given: Page와 Issue를 생성한다.
+        page, issue = self._make_page()
+        issue.action = CtrlfActionType.UPDATE
+        # And: issue owner가 page owner와 다른 사람으로 세팅한다
+        user_info = {
+            "email": "test@naver.com",
+            "password": "q1w2e3r4",
+        }
+        issue_request_user = CtrlfUser.objects.create_user(**user_info)
+        issue.owner = issue_request_user
+        issue.save()
+        # And: page에 대한 page history를 생성한다 - 이미 있던 것
+        prev_page_history_data = {
+            "page": page,
+            "owner": self.user,
+            "title": "prev title",
+            "content": "prev content",
+            "version_type": PageVersionType.CURRENT,
+            "version_no": 1,
+        }
+        PageHistory.objects.create(**prev_page_history_data)
+        # And: page에 대한 page history를 생성한다 - UPDATE
+        new_page_history_data = {
+            "page": page,
+            "owner": self.user,
+            "title": "new title",
+            "content": "new content",
+            "version_type": PageVersionType.UPDATE,
+            "version_no": 2,
+        }
+        PageHistory.objects.create(**new_page_history_data)
+        # And: request_body로 유효한 issue id가 주어진다.
+        request_body = {"issue_id": issue.id}
+        # And: page owner가 아닌, issue 요청자의 정보로 토큰을 생성하여서
+        issue_request_user_token = self._login(user_info)
+
+        # When: Page owner가 아닌, issue를 생성한 사람이 approve issue api를 호출한다.
+        response = self._call_api(request_body, issue_request_user_token)
+
+        # Then: status code는 403을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
