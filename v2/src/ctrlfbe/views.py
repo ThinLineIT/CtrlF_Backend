@@ -300,6 +300,24 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             if isinstance(ctrlf_content, Topic):
                 ctrlf_content.title = issue.title
 
+        if issue.action == CtrlfActionType.UPDATE:
+            if isinstance(ctrlf_content, Page):
+                page_id = issue.related_model_id
+
+                new_page_history = PageHistory.objects.filter(page=page_id, version_type=PageVersionType.UPDATE).first()
+                prev_page_history = PageHistory.objects.filter(
+                    page=page_id, version_type=PageVersionType.CURRENT
+                ).first()
+                prev_page_history.version_type = PageVersionType.PREVIOUS
+                prev_page_history.save()
+
+                new_page_history.is_approved = True
+                new_page_history.version_type = PageVersionType.CURRENT
+                new_page_history.save()
+
+                ctrlf_content.title = new_page_history.title
+                ctrlf_content.content = new_page_history.content
+
         ctrlf_content.is_approved = True
         ctrlf_content.save()
         issue.status = CtrlfIssueStatus.APPROVED
