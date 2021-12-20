@@ -38,18 +38,6 @@ class NoteSerializer(serializers.ModelSerializer):
         return note
 
 
-class IssueCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Issue
-        fields = "__all__"
-
-    def create(self, validated_data):
-        owner = validated_data.pop("owner")
-        related_model_id = validated_data.pop("related_model").id
-        issue = Issue.objects.create(owner=owner, related_model_id=related_model_id, **validated_data)
-        return issue
-
-
 class NoteCreateRequestBodySerializer(serializers.Serializer):
     title = serializers.CharField()
     reason = serializers.CharField(help_text="이슈의 reason에 대한 내용")
@@ -83,9 +71,7 @@ class TopicCreateRequestBodySerializer(serializers.Serializer):
     reason = serializers.CharField(help_text="이슈의 reason에 대한 내용")
 
 
-class PageSerializer(serializers.ModelSerializer):
-    issue_id = serializers.SerializerMethodField(method_name="get_issue_id")
-
+class PageCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
         fields = "__all__"
@@ -104,8 +90,33 @@ class PageSerializer(serializers.ModelSerializer):
         page_history = PageHistory.objects.create(**page_history_data)
         return page_history
 
-    def get_issue_id(self, page):
-        issue = Issue.objects.filter(related_model_id=page.id, related_model_type=CtrlfContentType.PAGE).first()
+
+class PageDetailSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField(method_name="get_id")
+    topic = serializers.SerializerMethodField(method_name="get_topic")
+    owners = serializers.SerializerMethodField(method_name="get_owners")
+    issue_id = serializers.SerializerMethodField(method_name="get_issue_id")
+
+    class Meta:
+        model = PageHistory
+        exclude = ["owner", "page"]
+        read_only_fields = ["id", "created_at"]
+
+    def get_id(self, page_history):
+        temp = page_history.page.id
+        return temp
+
+    def get_topic(self, page_history):
+        temp = page_history.page.topic.id
+        return temp
+
+    def get_owners(self, page_history):
+        page = page_history.page
+        owners = list(page.owners.values_list("id", flat=True))
+        return owners
+
+    def get_issue_id(self, page_history):
+        issue = Issue.objects.filter(related_model_id=page_history.id, related_model_type=CtrlfContentType.PAGE).first()
         if issue is None:
             return None
         return issue.id
@@ -145,6 +156,18 @@ class IssueListSerializer(serializers.Serializer):
     status = serializers.CharField()
     related_model_type = serializers.CharField()
     action = serializers.CharField()
+
+
+class IssueCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Issue
+        fields = "__all__"
+
+    def create(self, validated_data):
+        owner = validated_data.pop("owner")
+        related_model_id = validated_data.pop("related_model").id
+        issue = Issue.objects.create(owner=owner, related_model_id=related_model_id, **validated_data)
+        return issue
 
 
 class IssueDetailSerializer(serializers.Serializer):
