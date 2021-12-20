@@ -42,11 +42,12 @@ from .paginations import IssueListPagination, NoteListPagination
 from .serializers import (
     IssueCreateSerializer,
     IssueDetailSerializer,
-    IssueSerializer,
+    IssueListSerializer,
     NoteSerializer,
     NoteUpdateRequestBodySerializer,
+    PageCreateSerializer,
+    PageDetailSerializer,
     PageListSerializer,
-    PageSerializer,
     TopicSerializer,
     TopicUpdateRequestBodySerializer,
 )
@@ -184,7 +185,7 @@ class PageViewSet(BaseContentViewSet):
     child_model = Page
     queryset = Page.objects.all()
     lookup_url_kwarg = "page_id"
-    serializer_class = PageSerializer
+    serializer_class = PageCreateSerializer
 
     @swagger_auto_schema(**SWAGGER_PAGE_LIST_VIEW)
     def list(self, request, *args, **kwargs):
@@ -209,20 +210,15 @@ class PageViewSet(BaseContentViewSet):
         if page_history is None:
             return Response(data={"message": "버전 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
-        page_serializer = self.get_serializer_class()
-        data = page_serializer(page).data
-
-        data["title"] = page_history.title
-        data["content"] = page_history.content
-        data["version_type"] = page_history.version_type
-        data["version_no"] = version_no
+        page_serializer = PageDetailSerializer(page_history)
+        data = page_serializer.data
 
         return Response(data=data, status=status.HTTP_200_OK)
 
 
 class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     queryset = Issue.objects.all()
-    serializer_class = IssueSerializer
+    serializer_class = IssueListSerializer
     pagination_class = IssueListPagination
     lookup_url_kwarg = "issue_id"
 
