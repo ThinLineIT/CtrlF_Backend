@@ -22,6 +22,12 @@ class CtrlfIssueStatus(models.TextChoices):
     CLOSED = "CLOSED", "닫힘"
 
 
+class PageVersionType(models.TextChoices):
+    CURRENT = "CURRENT", "최신"
+    UPDATE = "UPDATE", "수정요청"
+    PREVIOUS = "PREVIOUS", "과거"
+
+
 class Note(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)
     title = models.CharField(max_length=100)
@@ -46,11 +52,23 @@ class Page(CommonTimestamp):
     topic = models.ForeignKey("Topic", on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     content = models.TextField(default="")
-    summary = models.CharField(max_length=300, default="")
     is_approved = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.topic.note.title}-{self.topic.title}-{self.title}"
+
+
+class PageHistory(CommonTimestamp):
+    owner = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE)
+    page = models.ForeignKey(Page, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    is_approved = models.BooleanField(default=False)
+    version_no = models.IntegerField(default=1)
+    version_type = models.CharField(max_length=30, choices=PageVersionType.choices)
+
+    def __str__(self):
+        return f"id:{self.page_id}-title:{self.page.title}-version:{self.version_no}"
 
 
 class Issue(CommonTimestamp):

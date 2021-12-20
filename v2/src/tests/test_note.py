@@ -8,7 +8,7 @@ from django.urls import reverse
 from rest_framework import status
 
 
-class TestNoteList(TestCase):
+class TestNoteBase(TestCase):
     def setUp(self) -> None:
         self.client = Client()
         self.user_data = {
@@ -17,31 +17,31 @@ class TestNoteList(TestCase):
         }
         self.user = CtrlfUser.objects.create_user(**self.user_data)
 
-    def _call_api(self, cursor, token=None):
-        if token:
-            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
-        else:
-            header = {}
-        return self.client.get(reverse("notes:note_list_create"), {"cursor": cursor}, **header)
-
-    def _make_notes(self, count):
-        for i in range(1, count + 1):
-            note = Note.objects.create(title=f"test title {i}")
-            note.owners.add(self.user)
-
-    def _login(self):
+    def _login(self, user_data):
         serializer = LoginSerializer()
-        return serializer.validate(self.user_data)["token"]
+        return serializer.validate(user_data)["token"]
+
+    def _make_note_list(self, count):
+        note_list = []
+        for i in range(count):
+            note = Note.objects.create(title=f"test title {i + 1}")
+            note.owners.add(self.user)
+            note_list.append(note)
+
+        return note_list
+
+
+class TestNoteList(TestNoteBase):
+    def _call_api(self, cursor):
+        return self.client.get(reverse("notes:note_list_create"), {"cursor": cursor})
 
     def test_retrieve_note_list_should_return_200(self):
         # Given: 미리 30개의 노트를 생성하고, 시작 cursor가 주어진다.
-        self._make_notes(30)
+        self._make_note_list(30)
         given_cursor = 0
-        # And: 로그인해서 토큰을 발급받은 상황이다.
-        token = self._login()
 
         # When: retrieve note list api를 호출한다.
-        response = self._call_api(given_cursor, token)
+        response = self._call_api(given_cursor)
 
         # Then: status code 200을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -52,13 +52,11 @@ class TestNoteList(TestCase):
 
     def test_retrieve_note_list_on_note_count_less_than_30(self):
         # Given: 10개의 note를 생성하고 시작 cursor를 0으로 주어진다.
-        self._make_notes(10)
+        self._make_note_list(10)
         given_cursor = 3
-        # And: 로그인해서 토큰을 발급 받은 상황이다.
-        token = self._login()
 
         # When: retrieve note list api를 호출한다.
-        response = self._call_api(given_cursor, token)
+        response = self._call_api(given_cursor)
 
         # Then: status code는 200을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -70,11 +68,9 @@ class TestNoteList(TestCase):
     def test_retrieve_note_list_on_no_note(self):
         # Given: 노트 생성 없이, cursor만 주어진다.
         given_cursor = 0
-        # And: 로그인해서 토큰을 발급받은 상황이다.
-        token = self._login()
 
         # When: retrieve note list api를 호풀한다.
-        response = self._call_api(given_cursor, token)
+        response = self._call_api(given_cursor)
 
         # Then: status code는 200을 리턴한다
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -84,19 +80,7 @@ class TestNoteList(TestCase):
         self.assertEqual(len(response.data["notes"]), 0)
 
 
-class TestNoteCreate(TestCase):
-    def setUp(self) -> None:
-        self.client = Client()
-        self.data = {
-            "email": "test@test.com",
-            "password": "12345",
-        }
-        self.user = CtrlfUser.objects.create_user(**self.data)
-
-    def _login(self):
-        serializer = LoginSerializer()
-        return serializer.validate(self.data)["token"]
-
+class TestNoteCreate(TestNoteBase):
     def _call_api(self, request_body, token=None):
         if token:
             header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
@@ -108,7 +92,7 @@ class TestNoteCreate(TestCase):
         # Given: note title과 issue 내용이 주어진다
         request_body = {"title": "test note title", "reason": "reason for note create"}
         # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
-        token = self._login()
+        token = self._login(self.user_data)
 
         # When: 인증이 필요한 create note api를 호출한다.
         response = self._call_api(request_body, token)
@@ -142,7 +126,7 @@ class TestNoteCreate(TestCase):
         invalid_title = ""
         request_body = {"title": invalid_title, "reason": "reason for note create"}
         # And: 로그인 해서 토큰을 발급받은 상황이다.
-        token = self._login()
+        token = self._login(self.user_data)
 
         # When: 인증이 필요한 create note api를 호출한다.
         response = self._call_api(request_body, token)
@@ -158,7 +142,7 @@ class TestNoteCreate(TestCase):
         invalid_issue_reason = ""
         request_body = {"title": "test title", "reason": invalid_issue_reason}
         # And: 로그인 해서 토큰을 발급받은 상황이다.
-        token = self._login()
+        token = self._login(self.user_data)
 
         # When: 인증이 필요한 create note api를 호출한다.
         response = self._call_api(request_body, token)
@@ -170,20 +154,43 @@ class TestNoteCreate(TestCase):
         self.assertEqual(Issue.objects.count(), 0)
 
 
-class TestNoteUpdate(TestCase):
-    def setUp(self) -> None:
-        self.client = Client()
-        self.data = {
-            "email": "test@test.com",
-            "password": "12345",
-        }
-        self.user = CtrlfUser.objects.create_user(**self.data)
-        self.note = Note.objects.create(title="test note title before update")
-        self.note.owners.add(self.user)
+class TestNoteDetail(TestNoteBase):
+    def setUp(self):
+        super().setUp()
+        self.note = self._make_note_list(1)[0]
 
-    def _login(self):
-        serializer = LoginSerializer()
-        return serializer.validate(self.data)["token"]
+    def _call_api(self, note_id):
+        return self.client.get(reverse("notes:note_detail_update_delete", kwargs={"note_id": note_id}))
+
+    def test_note_detail_should_return_200(self):
+        # Given: 정상적인 note id
+        note_id = self.note.id
+        # When : API 실행
+        response = self._call_api(note_id)
+        # Then : 상태코드 200
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And  : 미리 생성했던 정보와 일치해야 함.
+        data = response.data
+        self.assertEqual(data["id"], note_id)
+        self.assertEqual(data["title"], self.note.title)
+        self.assertEqual(data["is_approved"], self.note.is_approved)
+        self.assertIn(self.user.id, data["owners"])
+
+    def test_note_detail_should_return_404_by_invalid_note_id(self):
+        # Given : 존재하지 않는 note id
+        invalid_note_id = 999
+        # When : API 실행
+        response = self._call_api(invalid_note_id)
+        # Then : 상태코드 404
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And  : 메세지는 "노트를 찾을 수 없습니다." 이어야 함.
+        self.assertEqual(response.data["message"], "노트를 찾을 수 없습니다.")
+
+
+class TestNoteUpdate(TestNoteBase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.note = self._make_note_list(1)[0]
 
     def _call_api(self, request_body, note_id, token=None):
         if token:
@@ -204,7 +211,7 @@ class TestNoteUpdate(TestCase):
             "reason": "reason for update note title",
         }
         # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
-        token = self._login()
+        token = self._login(self.user_data)
 
         # When: 인증이 필요한 update note api를 호출한다.
         response = self._call_api(request_body, self.note.id, token)
@@ -225,7 +232,7 @@ class TestNoteUpdate(TestCase):
         # And: 유효하지 않은 note id가 주어진다.
         invalid_note_id = 2342395
         # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
-        token = self._login()
+        token = self._login(self.user_data)
 
         # When: 인증이 필요한 update note api를 호출한다.
         response = self._call_api(request_body, invalid_note_id, token)
@@ -240,7 +247,7 @@ class TestNoteUpdate(TestCase):
             "reason": "reason for update note title",
         }
         # And: 회원가입된 user정보로 로그인을 해서 토큰을 발급받은 상황이다.
-        token = self._login()
+        token = self._login(self.user_data)
 
         # When: 인증이 필요한 update note api를 호출한다.
         response = self._call_api(request_body, self.note.id, token)

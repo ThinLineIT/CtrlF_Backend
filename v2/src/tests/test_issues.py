@@ -7,6 +7,8 @@ from ctrlfbe.models import (
     Issue,
     Note,
     Page,
+    PageHistory,
+    PageVersionType,
     Topic,
 )
 from django.test import Client, TestCase
@@ -55,10 +57,18 @@ class IssueTextMixin:
         }
         self.page = Page.objects.create(**page_data)
         self.page.owners.add(self.user)
+        page_history_data = {
+            "owner": self.user,
+            "page": self.page,
+            "title": "test page",
+            "version_type": PageVersionType.CURRENT,
+        }
+
+        self.page_history = PageHistory.objects.create(**page_history_data)
         return self.note, self.topic, self.page
 
 
-class TestIssue(IssueTextMixin, TestCase):
+class TestListIssue(IssueTextMixin, TestCase):
     def setUp(self) -> None:
         super().setUp()
 
@@ -122,7 +132,7 @@ class TestIssueDetail(IssueTextMixin, TestCase):
             reason="reason for create page",
             status=CtrlfIssueStatus.REQUESTED,
             related_model_type=CtrlfContentType.PAGE,
-            related_model_id=page.id,
+            related_model_id=self.page_history.id,
             action=CtrlfActionType.CREATE,
             etc="legacy title",
         )
@@ -144,7 +154,6 @@ class TestIssueDetail(IssueTextMixin, TestCase):
         self.assertEqual(response.data["page_id"], self.page.id)
 
         # And: issue에 대한 content의 id를 제공해야한다
-        self.assertEqual(response.data["related_model_id"], self.page.id)
         self.assertEqual(response.data["legacy_title"], "legacy title")
 
     def test_issue_detail_should_return_404_not_found_on_issue_does_not_exist(self):
