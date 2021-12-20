@@ -290,6 +290,15 @@ class TestIssueApprove(IssueTextMixin, TestCase):
     def test_issue_approve_should_return_200_on_issue_about_page(self):
         # Given: Page와 Issue를 생성한다.
         page, issue = self._make_page()
+        # And: page에 대한 page_history를 생성
+        page_history_data = {
+            "owner": self.owner,
+            "page": page,
+            "title": "test page title",
+            "content": "test page content",
+            "version_type": PageVersionType.CURRENT,
+        }
+        PageHistory.objects.create(**page_history_data)
         # And: request_body로 유효한 issue id가 주어진다.
         request_body = {"issue_id": issue.id}
         # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다.
@@ -335,6 +344,15 @@ class TestIssueApprove(IssueTextMixin, TestCase):
     def test_should_return_403_on_unauthorized_about_issue(self):
         # Given: Page와 Issue를 생성한다.
         page, issue = self._make_page()
+        # And: page에 대한 page_history를 생성
+        page_history_data = {
+            "owner": self.owner,
+            "page": page,
+            "title": "test page title",
+            "content": "test page content",
+            "version_type": PageVersionType.CURRENT,
+        }
+        PageHistory.objects.create(**page_history_data)
         # And: request_body로 유효한 issue id가 주어진다.
         request_body = {"issue_id": issue.id}
         # And: owner 정보가 아닌 다른 user 정보로 로그인

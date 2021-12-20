@@ -13,6 +13,7 @@ from ctrlfbe.swagger import (
     SWAGGER_PAGE_CREATE_VIEW,
     SWAGGER_PAGE_DETAIL_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
+    SWAGGER_PAGE_UPDATE_VIEW,
     SWAGGER_TOPIC_CREATE_VIEW,
     SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
@@ -218,7 +219,7 @@ class PageViewSet(BaseContentViewSet):
 
         return Response(data=data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
+    @swagger_auto_schema(**SWAGGER_PAGE_UPDATE_VIEW)
     def update(self, request, *args, **kwargs):
         ctrlf_user = self._ctrlf_authentication(request)
         page = Page.objects.filter(id=kwargs["page_id"]).first()
@@ -227,6 +228,19 @@ class PageViewSet(BaseContentViewSet):
 
         page_serializer = PageUpdateRequestBodySerializer(data=request.data)
         page_serializer.is_valid(raise_exception=True)
+
+        version_count = PageHistory.objects.filter(page=page).count()
+        page_history_data = {
+            "owner": ctrlf_user.id,
+            "page": page.id,
+            "title": request.data["new_title"],
+            "content": request.data["new_content"],
+            "version_no": version_count + 1,
+            "version_type": PageVersionType.UPDATE,
+        }
+        page_history_serializer = PageHistorySerializer(data=page_history_data)
+        page_history_serializer.is_valid(raise_exception=True)
+        new_page_history = page_history_serializer.save()
 
         issue_data = {
             "owner": ctrlf_user.id,
@@ -238,20 +252,8 @@ class PageViewSet(BaseContentViewSet):
         }
         issue_serializer = IssueCreateSerializer(data=issue_data)
         issue_serializer.is_valid(raise_exception=True)
-        issue_serializer.save(related_model=page)
+        issue_serializer.save(related_model=new_page_history)
 
-        page_history = PageHistory.objects.filter(page=page).first()
-        page_history_data = {
-            "owner": ctrlf_user.id,
-            "page": page.id,
-            "title": request.data["new_title"],
-            "content": request.data["new_content"],
-            "version_no": page_history.version_no + 1,
-            "version_type": PageVersionType.UPDATE,
-        }
-        page_history_serializer = PageHistorySerializer(data=page_history_data)
-        page_history_serializer.is_valid(raise_exception=True)
-        page_history_serializer.save()
         return Response(status=status.HTTP_201_CREATED)
 
 
@@ -300,7 +302,7 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             if not ctrlf_content.owners.filter(email=issue_approve_request_user.email).exists():
                 return Response(status=status.HTTP_403_FORBIDDEN)
             if isinstance(ctrlf_content, Page):
-                page_id = issue.related_model_id
+                page_id = PageHistory.objects.filter(id=issue.related_model_id).first().page.id
 
                 new_page_history = PageHistory.objects.filter(page=page_id, version_type=PageVersionType.UPDATE).first()
                 prev_page_history = PageHistory.objects.filter(
@@ -318,6 +320,12 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
 
         ctrlf_content.is_approved = True
         ctrlf_content.save()
+        if isinstance(ctrlf_content, Page):
+            page_history = ctrlf_content.pagehistory_set.first()
+            if page_history is not None:
+                page_history.is_approved = True
+                page_history.save()
+
         issue.status = CtrlfIssueStatus.APPROVED
         issue.save()
 
@@ -325,7 +333,7 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
 
     def get_content(self, issue, ctrlf_user):
         content = (
-            Page.objects.get(id=issue.related_model_id)
+            PageHistory.objects.get(id=issue.related_model_id).page
             if issue.related_model_type == CtrlfContentType.PAGE
             else Note.objects.get(id=issue.related_model_id)
             if issue.related_model_type == CtrlfContentType.NOTE

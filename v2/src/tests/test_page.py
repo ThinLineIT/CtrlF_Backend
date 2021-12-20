@@ -1,3 +1,5 @@
+import json
+
 from ctrlf_auth.models import CtrlfUser
 from ctrlf_auth.serializers import LoginSerializer
 from ctrlfbe.models import (
@@ -241,7 +243,7 @@ class TestPageDetail(TestPageBase):
 
     def _call_api(self, page_id, version_no):
         return self.client.get(
-            reverse("pages:page_detail_or_update", kwargs={"page_id": page_id}), data={"version_no": version_no}
+            reverse("pages:page_detail_update", kwargs={"page_id": page_id}), data={"version_no": version_no}
         )
 
     def test_page_detail_should_return_200(self):
@@ -296,8 +298,11 @@ class TestPageUpdate(TestPageBase):
             header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
         else:
             header = {}
-        return self.client.post(
-            reverse("pages:page_detail_or_update", kwargs={"page_id": page_id}), request_body, **header
+        return self.client.put(
+            reverse("pages:page_detail_update", kwargs={"page_id": page_id}),
+            json.dumps(request_body),
+            content_type="application/json",
+            **header,
         )
 
     def _assert_page_history_model_and_expected(self, page, request_body):
@@ -316,7 +321,6 @@ class TestPageUpdate(TestPageBase):
         self.assertEqual(issue.reason, request_body["reason"])
         self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
         self.assertEqual(issue.related_model_type, CtrlfContentType.PAGE)
-        self.assertEqual(issue.related_model_id, page.id)
         self.assertEqual(issue.action, CtrlfActionType.UPDATE)
 
     def test_update_page_should_return_201_created(self):

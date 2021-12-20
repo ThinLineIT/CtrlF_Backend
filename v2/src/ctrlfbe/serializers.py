@@ -203,7 +203,7 @@ class IssueDetailSerializer(serializers.Serializer):
         if issue.related_model_type == CtrlfContentType.TOPIC:
             return issue.related_model_id
         elif issue.related_model_type == CtrlfContentType.PAGE:
-            page = Page.objects.get(id=issue.related_model_id)
+            page = PageHistory.objects.get(id=issue.related_model_id).page
             return Topic.objects.get(id=page.topic.id).id
         else:
             return None
@@ -214,7 +214,7 @@ class IssueDetailSerializer(serializers.Serializer):
         elif issue.related_model_type == CtrlfContentType.TOPIC:
             topic = Topic.objects.get(id=issue.related_model_id)
         else:
-            page = Page.objects.get(id=issue.related_model_id)
+            page = PageHistory.objects.get(id=issue.related_model_id).page
             topic = Topic.objects.get(id=page.topic.id)
         return Note.objects.get(id=topic.note.id).id
 

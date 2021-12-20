@@ -19,9 +19,9 @@ urlpatterns = [
         PageViewSet.as_view(
             {
                 "get": "retrieve",
-                "post": "update",
+                "put": "update",
             }
         ),
-        name="page_detail_or_update",
+        name="page_detail_update",
     ),
 ]
