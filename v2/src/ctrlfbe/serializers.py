@@ -136,7 +136,7 @@ class PageListSerializer(serializers.ModelSerializer):
         fields = ["id", "owners", "topic", "title", "is_approved", "version_no"]
 
     def get_version_no(self, page):
-        page_history = page.pagehistory_set.filter(version_type="LATEST")
+        page_history = page.pagehistory_set.filter(version_type=PageVersionType.CURRENT)
 
         if len(page_history) == 0:
             return 1
