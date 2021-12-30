@@ -35,37 +35,49 @@ class PageTestMixin(TestCase):
     def _make_pages_in_topic(self, topic, count):
         page_list = []
         for i in range(count):
-            title = f"test page {i + 1}"
-            content = f"test content {i + 1}"
-
-            page = Page.objects.create(topic=topic, title=title, content=content)
+            page = Page.objects.create(topic=topic)
             page.owners.add(self.user)
-
-            PageHistory.objects.create(
-                page=page, title=title, content=content, owner=self.user, version_type=PageVersionType.CURRENT
-            )
             page_list.append(page)
         return page_list
+
+    def _make_page_history_in_page(self, page_list, count):
+        page_history_list = []
+        for i in range(count):
+            page_history_data = {
+                "title": f"test page title {i + 1}",
+                "content": f"test page content {i + 1}",
+                "owner": self.user,
+                "page": page_list[i],
+                "version_type": PageVersionType.CURRENT,
+            }
+            page_history = PageHistory.objects.create(**page_history_data)
+            page_history_list.append(page_history)
+        return page_history_list
 
 
 class TestPageList(PageTestMixin):
     def _call_api(self, topic_id):
         return self.client.get(reverse("topics:page_list", kwargs={"topic_id": topic_id}))
 
-    def _assert_page_list_data_and_expected(self, page_list):
-        for i in range(len(page_list)):
-            data = page_list[i]
-            self.assertEqual(data["id"], i + 1)
-            self.assertEqual(data["title"], f"test page {i + 1}")
-            self.assertEqual(data["is_approved"], False)
-            self.assertEqual(data["version_no"], 1)
-            self.assertEqual(data["topic"], self.topic.id)
-            self.assertEqual(data["owners"], [self.user.id])
+    def _assert_page_list_data_and_expected(self, actual, *expected):
+        expected_page_list = expected[0]
+        expected_page_history_list = expected[1]
+        for i in range(len(actual)):
+            data = actual[i]
+            expected_page = expected_page_list[i]
+            expected_page_history = expected_page_history_list[i]
+            self.assertEqual(data["id"], expected_page.id)
+            self.assertEqual(data["title"], expected_page_history.title)
+            self.assertEqual(data["is_approved"], expected_page_history.is_approved)
+            self.assertEqual(data["version_no"], expected_page_history.version_no)
+            self.assertEqual(data["topic"], expected_page.topic.id)
+            self.assertEqual(data["owners"], [expected_page.owners.first().id])
 
     def test_page_list_should_return_200_ok_and_page_list(self):
-        # Given: Page 10개 생성, 유효한 topic id가 주어진다.
+        # Given: Page와 PageHistory 10개 생성, 유효한 topic id가 주어진다.
         valid_topic_id = self.topic.id
         page_list = self._make_pages_in_topic(topic=self.topic, count=10)
+        self._make_page_history_in_page(page_list, 10)
 
         # When : valid topic id로 Page List API 호출한다.
         response = self._call_api(valid_topic_id)
@@ -90,12 +102,15 @@ class TestPageList(PageTestMixin):
         self.assertEqual(response.data, [])
 
     def test_page_list_should_return_only_page_list_belonging_to_specific_topic(self):
-        # Given: topic A, B를 생성한다.
+        # Given: Topic A, B를 생성한다.
         topic_a = Topic.objects.create(note=self.note, title="topic A")
         topic_b = Topic.objects.create(note=self.note, title="topic B")
-        # And: topic A에 3개, topic B에 5개의 page를 생성한다.
+        # And: Topic A에 3개, Topic B에 5개의 Page를 생성한다.
         page_list_in_topic_a = self._make_pages_in_topic(topic=topic_a, count=3)
-        self._make_pages_in_topic(topic=topic_b, count=5)
+        page_list_in_topic_b = self._make_pages_in_topic(topic=topic_b, count=5)
+        # And: 각 Page에 PageHistory를 생성한다.
+        self._make_page_history_in_page(page_list_in_topic_a, 3)
+        self._make_page_history_in_page(page_list_in_topic_b, 5)
 
         # When: topic A의 id로 Page List API 호출한다.
         response = self._call_api(topic_a.id)
@@ -119,14 +134,15 @@ class TestPageList(PageTestMixin):
         self.assertEqual(response.data["message"], "토픽을 찾을 수 없습니다.")
 
     def test_page_list_should_have_necessary_data(self):
-        # Given: Page를 10개 생성한다.
-        self._make_pages_in_topic(self.topic, 10)
+        # Given: Page, PageHistory를 10개 생성한다.
+        page_list = self._make_pages_in_topic(self.topic, 10)
+        page_history_list = self._make_page_history_in_page(page_list, 10)
 
         # When: valid topic id로 Page List API를 호출한다.
         response = self._call_api(self.topic.id)
 
         # Then: 응답 데이터에 id, title, topic, owners, version_no, is_approved가 포함되어야한다.
-        self._assert_page_list_data_and_expected(response.data)
+        self._assert_page_list_data_and_expected(response.data, *(page_list, page_history_list))
 
 
 class TestPageCreate(PageTestMixin):
@@ -151,9 +167,6 @@ class TestPageCreate(PageTestMixin):
         owner = self.page.owners.all()[0]
         self.assertEqual(owner, self.user)
         self.assertEqual(self.page.topic.id, request_body["topic_id"])
-        self.assertEqual(self.page.title, request_body["title"])
-        self.assertEqual(self.page.content, request_body["content"])
-        self.assertFalse(self.page.is_approved)
 
     def _assert_issue_model_and_expected(self, request_body):
         issue = Issue.objects.all()[0]
@@ -280,27 +293,26 @@ class TestPageCreate(PageTestMixin):
 class TestPageDetail(PageTestMixin):
     def setUp(self):
         super().setUp()
-        self.page = self._make_pages_in_topic(topic=self.topic, count=1)[0]
+        self.page_list = self._make_pages_in_topic(topic=self.topic, count=1)
+        self.page_history_list = self._make_page_history_in_page(page_list=self.page_list, count=1)
 
     def _call_api(self, page_id, version_no):
-        return self.client.get(
-            reverse("pages:page_detail_update", kwargs={"page_id": page_id}), data={"version_no": version_no}
-        )
+        return self.client.get(reverse("pages:page_detail", kwargs={"page_id": page_id, "version_no": version_no}))
 
     def _assert_page_detail_data_and_expected(self, data):
-        page = self.page
+        page = self.page_list[0]
+        page_history = self.page_history_list[0]
         self.assertEqual(data["id"], page.id)
-        self.assertEqual(data["version_no"], 1)
-        self.assertEqual(data["issue_id"], None)
-        self.assertEqual(data["title"], page.title)
-        self.assertEqual(data["content"], page.content)
+        self.assertEqual(data["version_no"], page_history.version_no)
+        self.assertEqual(data["title"], page_history.title)
+        self.assertEqual(data["content"], page_history.content)
         self.assertFalse(data["is_approved"])
         self.assertEqual(data["topic"], self.topic.id)
         self.assertEqual(data["owners"], [self.user.id])
 
     def test_page_detail_should_return_200_ok_and_page_detail_data(self):
         # Given: 유효한 page id와 version number가 주어진다.
-        valid_page_id = self.page.id
+        valid_page_id = self.page_list[0].id
         valid_version_no = 1
 
         # When: Page Detail API 호출한다.
@@ -326,7 +338,7 @@ class TestPageDetail(PageTestMixin):
 
     def test_page_detail_should_return_404_not_found_by_invalid_version_no(self):
         # Given: valid page id와 invalid version number가 주어진다.
-        valid_page_id = self.page.id
+        valid_page_id = self.page_list[0].id
         invalid_version_no = 3255
 
         # When: Page Detail API 호출한다.

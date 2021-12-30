@@ -321,7 +321,7 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
         ctrlf_content.is_approved = True
         ctrlf_content.save()
         if isinstance(ctrlf_content, Page):
-            page_history = ctrlf_content.pagehistory_set.first()
+            page_history = ctrlf_content.page_history.first()
             if page_history is not None:
                 page_history.is_approved = True
                 page_history.save()

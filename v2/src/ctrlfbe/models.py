@@ -50,17 +50,15 @@ class Topic(CommonTimestamp):
 class Page(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)
     topic = models.ForeignKey("Topic", on_delete=models.CASCADE)
-    title = models.CharField(max_length=100)
-    content = models.TextField(default="")
-    is_approved = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.topic.note.title}-{self.topic.title}-{self.title}"
+        page_history = self.page_history.filter(version_type=PageVersionType.CURRENT).first()
+        return f"{self.topic.note.title}-{self.topic.title}-{page_history.title}"
 
 
 class PageHistory(CommonTimestamp):
     owner = models.ForeignKey(CtrlfUser, on_delete=models.CASCADE)
-    page = models.ForeignKey(Page, on_delete=models.CASCADE)
+    page = models.ForeignKey(Page, related_name="page_history", on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     content = models.TextField()
     is_approved = models.BooleanField(default=False)
@@ -68,7 +66,7 @@ class PageHistory(CommonTimestamp):
     version_type = models.CharField(max_length=30, choices=PageVersionType.choices)
 
     def __str__(self):
-        return f"id:{self.page_id}-title:{self.page.title}-version:{self.version_no}"
+        return f"page_id:{self.page_id}-title:{self.title}-version:{self.version_no}"
 
 
 class Issue(CommonTimestamp):
@@ -79,7 +77,7 @@ class Issue(CommonTimestamp):
     related_model_type = models.CharField(
         max_length=30, choices=CtrlfContentType.choices, help_text="NOTE, TOPIC, PAGE"
     )
-    related_model_id = models.IntegerField(default=0, help_text="note_id, topic_id, page_id")
+    related_model_id = models.IntegerField(default=0, help_text="note_id, topic_id, page_history_id")
     action = models.CharField(max_length=30, default="", choices=CtrlfActionType.choices, help_text="CRUD")
     etc = models.CharField(max_length=300, null=True, help_text="legacy title을 저장하는 용도 및 다양하게 사용")
 
