@@ -203,21 +203,9 @@ class PageViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
-        version_no = int(request.query_params["version_no"])
-        page_id = list(kwargs.values())[0]
-
-        page = Page.objects.filter(id=page_id).first()
-        if page is None:
-            return Response(data={"message": "페이지를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
-        page_history = PageHistory.objects.filter(page=page, version_no=version_no).first()
-        if page_history is None:
-            return Response(data={"message": "버전 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
-        page_serializer = PageDetailSerializer(page_history)
-        data = page_serializer.data
-
-        return Response(data=data, status=status.HTTP_200_OK)
+        page = self.get_object()
+        page_serializer = PageDetailSerializer(page, context=kwargs)
+        return Response(data=page_serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(**SWAGGER_PAGE_UPDATE_VIEW)
     def update(self, request, *args, **kwargs):

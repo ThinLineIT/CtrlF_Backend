@@ -365,7 +365,7 @@ class TestPageUpdate(PageTestMixin):
         else:
             header = {}
         return self.client.put(
-            reverse("pages:page_detail_update", kwargs={"page_id": page_id}),
+            reverse("pages:page_update", kwargs={"page_id": page_id}),
             json.dumps(request_body),
             content_type="application/json",
             **header,

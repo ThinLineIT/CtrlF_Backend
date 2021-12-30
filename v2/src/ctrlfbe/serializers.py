@@ -91,6 +91,9 @@ class PageHistorySerializer(serializers.ModelSerializer):
 
 
 class PageCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=True)
+    content = serializers.CharField(required=True)
+
     class Meta:
         model = Page
         fields = "__all__"
@@ -98,11 +101,14 @@ class PageCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         owner = validated_data["owners"][0]
+        title = validated_data.pop("title")
+        content = validated_data.pop("content")
+
         page = super().create(validated_data)
         page_history_data = {
             "owner": owner,
-            "title": validated_data["title"],
-            "content": validated_data["content"],
+            "title": title,
+            "content": content,
             "page": page,
             "version_type": PageVersionType.CURRENT,
         }
