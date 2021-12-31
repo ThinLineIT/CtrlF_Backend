@@ -187,7 +187,9 @@ class IssueCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         owner = validated_data.pop("owner")
-        related_model_id = validated_data.pop("related_model").id
+        related_model = validated_data.pop("related_model")
+        related_model_id = related_model.id
+        validated_data["etc"] = related_model.title
         issue = Issue.objects.create(owner=owner, related_model_id=related_model_id, **validated_data)
         return issue
 

@@ -46,7 +46,6 @@ from .serializers import (
     IssueDetailSerializer,
     IssueListSerializer,
     NoteSerializer,
-    NoteUpdateRequestBodySerializer,
     PageCreateSerializer,
     PageDetailSerializer,
     PageHistorySerializer,
@@ -90,6 +89,18 @@ class BaseContentViewSet(CtrlfAuthenticationMixin, ModelViewSet):
 
         return Response(status=status.HTTP_201_CREATED)
 
+    def update(self, request, *args, **issue_data):
+        ctrlf_user = self._ctrlf_authentication(request)
+        related_model = self.get_object()
+
+        issue_data["owner"] = ctrlf_user.id
+
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=related_model)
+
+        return Response(data={"message": "Note 수정 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
+
 
 class NoteViewSet(BaseContentViewSet):
     queryset = Note.objects.all()
@@ -103,7 +114,7 @@ class NoteViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_NOTE_CREATE_VIEW)
     def create(self, request, *args, **kwargs):
-        data = NoteData(request).build_data()
+        data = NoteData(request).build_create_data()
         return super().create(request, **data)
 
     @swagger_auto_schema(**SWAGGER_NOTE_DETAIL_VIEW)
@@ -112,29 +123,8 @@ class NoteViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_NOTE_UPDATE_VIEW)
     def update(self, request, *args, **kwargs):
-        ctrlf_user = self._ctrlf_authentication(request)
-        note_id = kwargs["note_id"]
-        note = Note.objects.filter(id=note_id).first()
-        if note is None:
-            return Response(data={"message": "Note를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
-        note_serializer = NoteUpdateRequestBodySerializer(data=request.data)
-        if not note_serializer.is_valid():
-            return Response(data={"message": "요청이 올바르지 않습니다."}, status=status.HTTP_400_BAD_REQUEST)
-        issue_data = {
-            "owner": ctrlf_user.id,
-            "title": request.data["new_title"],
-            "reason": request.data["reason"],
-            "status": CtrlfIssueStatus.REQUESTED,
-            "related_model_type": CtrlfContentType.NOTE,
-            "action": CtrlfActionType.UPDATE,
-            "etc": note.title,
-        }
-        issue_serializer = IssueCreateSerializer(data=issue_data)
-        issue_serializer.is_valid(raise_exception=True)
-        issue_serializer.save(related_model=note)
-
-        return Response(data={"message": "Note 수정 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
+        data = NoteData(request).build_update_data()
+        return super().update(request, **data)
 
 
 class TopicViewSet(BaseContentViewSet):
@@ -150,7 +140,7 @@ class TopicViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_TOPIC_CREATE_VIEW)
     def create(self, request, *args, **kwargs):
-        data = TopicData(request).build_data()
+        data = TopicData(request).build_create_data()
         return super().create(request, **data)
 
     @swagger_auto_schema(**SWAGGER_TOPIC_DETAIL_VIEW)
@@ -198,7 +188,7 @@ class PageViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_PAGE_CREATE_VIEW)
     def create(self, request, *args, **kwargs):
-        data = PageData(request).build_data()
+        data = PageData(request).build_create_data()
         return super().create(request, **data)
 
     @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
