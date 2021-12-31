@@ -255,3 +255,85 @@ class TestNoteUpdate(TestNoteBase):
 
         # Then: status code는 400을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_should_return_400_bad_request_when_invalid_reason(self):
+        # Given: request body에 invalid reason이 주어진다.
+        invalid_reason = ""
+        request_body = {
+            "new_title": "test update note title",
+            "reason": invalid_reason,
+        }
+        # And: 회원가입된 user 정보로 로그인을 해서 토큰을 발급받은 상황이다.
+        token = self._login(self.user_data)
+
+        # When: 인증이 필요한 Note Update API를 호출한다.
+        response = self._call_api(request_body, self.note.id, token)
+
+        # Then : status code는 400을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And: Note Update에 관한 Issue는 생성되지 않는다.
+        self.assertEqual(Issue.objects.count(), 0)
+
+    def test_should_return_401_unauthorized_when_not_have_token_in_header(self):
+        # Given: 유효한 request body와 Note id가 주어진다.
+        request_body = {
+            "new_title": "test update note title",
+            "reason": "some reason for note update",
+        }
+        note_id = self.note.id
+        # And: 로그인을 하지 않은 상황
+        token = None
+
+        # When: 인증이 필요한 Note Update API를 호출한다.
+        response = self._call_api(request_body, note_id, token)
+
+        # Then: status code는 401을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        # And: Note Update에 관한 Issue는 생성되지 않는다.
+        self.assertEqual(Issue.objects.count(), 0)
+
+    def test_should_update_note_title_when_approving_issue_related_note_update(self):
+        # Given: Note Update API를 호출하여 Note Update Issue를 생성한다.
+        request_body = {
+            "new_title": "test update note title",
+            "reason": "some reason for note update",
+        }
+        note_id = self.note.id
+        token = self._login(self.user_data)
+        self._call_api(request_body, note_id, token)
+        issue = Issue.objects.all()[0]
+
+        # When: Note Update Issue에 대한 Issue Approve API를 호출한다.
+        header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        response = self.client.post(reverse("actions:issue_approve"), {"issue_id": issue.id}, **header)
+
+        # Then: status code는 200이다.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: Note의 title이 업데이트 된다.
+        note = Note.objects.get(id=self.note.id)
+        self.assertEqual(note.title, request_body["new_title"])
+
+    def test_should_not_update_note_title_when_not_having_permission_about_update_note_issue(self):
+        # Given: Note Update API를 호출하여 Note Update Issue를 생성한다.
+        request_body = {
+            "new_title": "test update note title",
+            "reason": "some reason for note update",
+        }
+        note_id = self.note.id
+        token = self._login(self.user_data)
+        self._call_api(request_body, note_id, token)
+        issue = Issue.objects.all()[0]
+        # And: 해당 Note의 owner가 아닌 user로 로그인하여 토큰을 발급 받는다.
+        another_user_data = {"email": "test2@test.com", "password": "12345"}
+        CtrlfUser.objects.create_user(**another_user_data)
+        another_token = self._login(another_user_data)
+
+        # When: Note Update Issue에 대한 Issue Approve API를 호출한다.
+        header = {"HTTP_AUTHORIZATION": f"Bearer {another_token}"}
+        response = self.client.post(reverse("actions:issue_approve"), {"issue_id": issue.id}, **header)
+
+        # Then: status code는 403이다.
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # And: Note title은 업데이트 되지 않는다.
+        note = Note.objects.get(id=self.note.id)
+        self.assertEqual(note.title, self.note.title)
