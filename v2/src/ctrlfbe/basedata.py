@@ -52,6 +52,11 @@ class TopicData(BaseData):
 
         return {"model_data": topic_data, "issue_data": issue_data}
 
+    def build_update_data(self):
+        issue_data = super().build_update_data()
+        issue_data["related_model_type"] = CtrlfContentType.TOPIC
+        return issue_data
+
 
 class PageData(BaseData):
     def build_create_data(self):
