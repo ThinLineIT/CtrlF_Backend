@@ -34,7 +34,7 @@ class PageTestMixin(TestCase):
 
     def _make_pages_in_topic(self, topic, count):
         page_list = []
-        for i in range(count):
+        for _ in range(count):
             page = Page.objects.create(topic=topic)
             page.owners.add(self.user)
             page_list.append(page)
