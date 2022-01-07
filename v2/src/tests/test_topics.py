@@ -134,13 +134,12 @@ class TestTopicCreate(TestTopicMixin, TestCase):
         }
         user_token_of_creating_new_topic = _login(self.user_data)
         self._call_topic_create_api(topic_create_request_body, user_token_of_creating_new_topic)
-        return user_token_of_creating_new_topic
 
     def _assert_topic_and_expected(self, actual, expected):
         self.assertEqual(actual.title, expected["title"])
         self.assertFalse(actual.is_approved)
         self.assertEqual(actual.note.id, expected["note_id"])
-        self.assertIn(actual.owners.first().id, [self.user.id])
+        self.assertIn(self.user, actual.owners.all())
 
     def _assert_issue_about_topic_create_and_expected(self, actual, expected):
         self.assertEqual(actual.title, expected["title"])
@@ -168,9 +167,11 @@ class TestTopicCreate(TestTopicMixin, TestCase):
         # Then: status code는 201을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # And: Topic이 정상적으로 생성된다.
-        self._assert_topic_and_expected(actual=Topic.objects.first(), expected=valid_request_body)
+        topic = Topic.objects.first()
+        self._assert_topic_and_expected(actual=topic, expected=valid_request_body)
         # And: Issue가 정상적으로 생성된다.
-        self._assert_issue_about_topic_create_and_expected(actual=Issue.objects.first(), expected=valid_request_body)
+        issue = Issue.objects.first()
+        self._assert_issue_about_topic_create_and_expected(actual=issue, expected=valid_request_body)
 
     def test_topic_create_should_return_404_not_found_on_invalid_note_id(self):
         # Given: 유효하지 않은 Note id가 주어진다.
@@ -263,7 +264,7 @@ class TestTopicCreate(TestTopicMixin, TestCase):
         # And: 해당 Issue에 권한을 가진 token을 발급 받는다.
         user_token_of_having_permission_to_issue_approve = _login(self.user_data)
 
-        # When: Note Create Issue에 대한 Issue Approve API를 호출한다.
+        # When: Topic Create Issue에 대한 Issue Approve API를 호출한다.
         response = self._call_issue_approve_api(topic_create_issue_id, user_token_of_having_permission_to_issue_approve)
 
         # Then: status code는 200을 리턴한다.
@@ -282,7 +283,7 @@ class TestTopicCreate(TestTopicMixin, TestCase):
         CtrlfUser.objects.create_user(**another_user_data)
         user_token_of_not_having_permission_to_issue_approve = _login(another_user_data)
 
-        # When: Note Create Issue에 대한 Issue Approve API를 호출한다.
+        # When: Topic Create Issue에 대한 Issue Approve API를 호출한다.
         response = self._call_issue_approve_api(
             topic_create_issue_id, user_token_of_not_having_permission_to_issue_approve
         )
@@ -299,11 +300,11 @@ class TestTopicDetail(TestTopicMixin, TestCase):
         super().setUp()
         self.topic = self._make_topics_in_note(note=self.note, count=1)[0]
 
-    def _assert_topic_detail_data_and_expected(self, actual, expected):
-        self.assertEqual(actual.title, expected["title"])
-        self.assertEqual(actual.note.id, expected["note"])
-        self.assertEqual(actual.is_approved, expected["is_approved"])
-        self.assertIn(actual.owners.first().id, expected["owners"])
+    def _assert_topic_detail_and_expected(self, actual, expected):
+        self.assertEqual(actual["title"], expected.title)
+        self.assertEqual(actual["note"], expected.note.id)
+        self.assertEqual(actual["is_approved"], expected.is_approved)
+        self.assertIn(expected.owners.first().id, actual["owners"])
 
     def test_topic_detail_should_return_200_ok_and_topic_detail_data(self):
         # Given: 유효한 Topic id가 주어진다.
@@ -315,7 +316,8 @@ class TestTopicDetail(TestTopicMixin, TestCase):
         # Then: status code는 200을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And: 응답 데이터에 필요한 정보들을 리턴한다.
-        self._assert_topic_detail_data_and_expected(actual=Topic.objects.get(id=valid_topic_id), expected=response.data)
+        topic = Topic.objects.get(id=valid_topic_id)
+        self._assert_topic_detail_and_expected(actual=response.data, expected=topic)
 
     def test_topic_detail_should_return_404_not_found_on_invalid_topic_id(self):
         # Given: 유효하지 않은 Topic id가 주어진다.
@@ -335,7 +337,7 @@ class TestTopicUpdate(TestTopicMixin, TestCase):
         super().setUp()
         self.topic = self._make_topics_in_note(note=self.note, count=1)[0]
 
-    def _assert_update_topic_issue_and_expected(self, actual, expected):
+    def _assert_issue_about_update_topic_and_expected(self, actual, expected):
         self.assertEqual(actual.title, expected["new_title"])
         self.assertEqual(actual.owner, self.user)
         self.assertEqual(actual.reason, expected["reason"])
@@ -372,7 +374,8 @@ class TestTopicUpdate(TestTopicMixin, TestCase):
         # Then: status code는 200을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And: 생성된 Issue의 etc값은 Topic의 기존 title, title값은 new_title이다.
-        self._assert_update_topic_issue_and_expected(actual=Issue.objects.first(), expected=valid_request_body)
+        issue = Issue.objects.first()
+        self._assert_issue_about_update_topic_and_expected(actual=issue, expected=valid_request_body)
 
     def test_topic_update_should_return_404_not_found_on_invalid_topic_id(self):
         # Given: 새로운 Topic title과 Issue reason이 주어진다.
@@ -461,7 +464,7 @@ class TestTopicUpdate(TestTopicMixin, TestCase):
     def test_should_update_topic_title_on_approving_issue_about_topic_update(self):
         # Given: Topic Update API를 호출하여 Topic Update Issue를 생성한다.
         self._create_issue_about_topic_update_by_calling_topic_update_api()
-        # And: Topic Update Issue의 id가 주어진다.
+        # And: Topic Update Issue가 주어진다.
         valid_issue = Issue.objects.first()
         # And: 해당 Issue에 권한이 있는 user token을 발급받는다.
         user_token_of_having_permission_to_issue_approve = _login(self.user_data)
@@ -469,7 +472,7 @@ class TestTopicUpdate(TestTopicMixin, TestCase):
         # When: Topic Update Issue에 대한 Issue Approve API를 호출한다.
         response = self._call_issue_approve_api(valid_issue.id, user_token_of_having_permission_to_issue_approve)
 
-        # Then: status code는 200이다.
+        # Then: status code는 200을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And: Topic의 title이 업데이트 된다.
         topic = Topic.objects.get(id=self.topic.id)
@@ -478,7 +481,7 @@ class TestTopicUpdate(TestTopicMixin, TestCase):
     def test_should_not_update_topic_title_on_not_having_permission_to_topic_update_issue(self):
         # Given: Topic Update API를 호출하여 Topic Update Issue를 생성한다.
         self._create_issue_about_topic_update_by_calling_topic_update_api()
-        # And: Topic Update Issue의 id가 주어진다.
+        # And: Topic Update Issue가 주어진다.
         valid_issue = Issue.objects.first()
         # And: 해당 Issue에 권한이 없는 user token을 발급받는다.
         another_user_data = {"email": "test2@test.com", "password": "12345"}
@@ -488,7 +491,7 @@ class TestTopicUpdate(TestTopicMixin, TestCase):
         # When: Topic Update Issue에 대한 Issue Approve API를 호출한다.
         response = self._call_issue_approve_api(valid_issue.id, user_token_not_having_permission_to_issue)
 
-        # Then: status code는 403이다.
+        # Then: status code는 403을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         # And: Topic의 title이 업데이트 되지 않는다.
         topic = Topic.objects.get(id=self.topic.id)

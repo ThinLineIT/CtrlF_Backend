@@ -53,10 +53,10 @@ class NoteTestMixin:
 class TestNoteList(NoteTestMixin, TestCase):
     def _assert_note_list_and_expected(self, actual, expected):
         for i in range(len(actual)):
-            self.assertEqual(actual[i].title, expected[i]["title"])
-            self.assertEqual(actual[i].id, expected[i]["id"])
-            self.assertEqual(actual[i].is_approved, expected[i]["is_approved"])
-            self.assertIn(actual[i].owners.first().id, expected[i]["owners"])
+            self.assertEqual(actual[i]["title"], expected[i].title)
+            self.assertEqual(actual[i]["id"], expected[i].id)
+            self.assertEqual(actual[i]["is_approved"], expected[i].is_approved)
+            self.assertIn(expected[i].owners.first().id, actual[i]["owners"])
 
     def test_note_list_should_return_200_ok_and_next_cursor_and_note_list(self):
         # Given: Note를 30개 생성한다.
@@ -74,7 +74,9 @@ class TestNoteList(NoteTestMixin, TestCase):
         # And: start_cursor부터 30개의 Note list를 리턴한다.
         self.assertEqual(len(response.data["notes"]), 30)
         # And: 응답 데이터로 필요한 정보들을 리턴한다.
-        self._assert_note_list_and_expected(note_list[start_cursor : start_cursor + 30], response.data["notes"])
+        self._assert_note_list_and_expected(
+            actual=response.data["notes"], expected=note_list[start_cursor : start_cursor + 30]
+        )
 
     def test_note_list_should_return_note_list_max_length_30(self):
         # Given: Note를 50개 생성한다.
@@ -92,7 +94,9 @@ class TestNoteList(NoteTestMixin, TestCase):
         # And: start_cursor부터 30개의 Note list를 리턴한다.
         self.assertEqual(len(response.data["notes"]), 30)
         # And: 응답 데이터로 필요한 정보들을 리턴한다.
-        self._assert_note_list_and_expected(note_list[start_cursor : start_cursor + 30], response.data["notes"])
+        self._assert_note_list_and_expected(
+            actual=response.data["notes"], expected=note_list[start_cursor : start_cursor + 30]
+        )
 
     def test_note_list_should_return_200_ok_on_note_count_less_than_30(self):
         # Given: Note를 10개 생선한다.
@@ -110,7 +114,9 @@ class TestNoteList(NoteTestMixin, TestCase):
         # And: 시작 cursor부터 7개의 note list를 리턴한다.
         self.assertEqual(len(response.data["notes"]), 7)
         # And: 응답 데이터로 필요한 정보들을 리턴한다.
-        self._assert_note_list_and_expected(note_list[start_cursor : start_cursor + 30], response.data["notes"])
+        self._assert_note_list_and_expected(
+            actual=response.data["notes"], expected=note_list[start_cursor : start_cursor + 30]
+        )
 
     def test_note_list_should_return_200_ok_and_empty_list_on_not_exist_note(self):
         # Given: 노트 생성 없이, cursor만 주어진다.
@@ -160,9 +166,11 @@ class TestNoteCreate(NoteTestMixin, TestCase):
         # Then: status code는 201을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # And: Note가 정상적으로 생성된다.
-        self._assert_note_and_expected(actual=Note.objects.first(), expected=valid_request_body)
+        note = Note.objects.first()
+        self._assert_note_and_expected(actual=note, expected=valid_request_body)
         # And: Issue가 정상적으로 생성된다.
-        self._assert_issue_about_note_create_and_expected(actual=Issue.objects.first(), expected=valid_request_body)
+        issue = Issue.objects.first()
+        self._assert_issue_about_note_create_and_expected(actual=issue, expected=valid_request_body)
 
     def test_create_note_should_return_400_bad_request_on_invalid_title(self):
         # Given: 유효하지 않은 Note title이 주어진다.
@@ -259,10 +267,10 @@ class TestNoteDetail(NoteTestMixin, TestCase):
         self.note = self._make_note_list(1)[0]
 
     def _assert_note_detail_and_expected(self, actual, expected):
-        self.assertEqual(actual.id, expected["id"])
-        self.assertEqual(actual.title, expected["title"])
-        self.assertEqual(actual.is_approved, expected["is_approved"])
-        self.assertIn(actual.owners.first().id, expected["owners"])
+        self.assertEqual(actual["id"], expected.id)
+        self.assertEqual(actual["title"], expected.title)
+        self.assertEqual(actual["is_approved"], expected.is_approved)
+        self.assertIn(expected.owners.first().id, actual["owners"])
 
     def test_note_detail_should_return_200_ok_and_note_detail_data(self):
         # Given: 유효한 Note id가 주어진다.
@@ -274,7 +282,8 @@ class TestNoteDetail(NoteTestMixin, TestCase):
         # Then: status code는 200을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And: 응답 데이터에 필요한 정보들을 리턴한다.
-        self._assert_note_detail_and_expected(actual=Note.objects.get(id=valid_note_id), expected=response.data)
+        note = Note.objects.get(id=valid_note_id)
+        self._assert_note_detail_and_expected(actual=response.data, expected=note)
 
     def test_note_detail_should_return_404_not_found_on_invalid_note_id(self):
         # Given: invalid Note id가 주어진다.
@@ -300,6 +309,16 @@ class TestNoteUpdate(NoteTestMixin, TestCase):
         valid_note_id = self.note.id
         self._call_note_update_api(note_update_request_body, valid_note_id, user_token_of_creating_update_note_issue)
 
+    def _assert_issue_about_update_note_and_expected(self, actual, expected):
+        self.assertEqual(actual.title, expected["new_title"])
+        self.assertEqual(actual.owner, self.user)
+        self.assertEqual(actual.reason, expected["reason"])
+        self.assertEqual(actual.status, CtrlfIssueStatus.REQUESTED)
+        self.assertEqual(actual.related_model_type, CtrlfContentType.NOTE)
+        self.assertEqual(actual.related_model_id, self.note.id)
+        self.assertEqual(actual.action, CtrlfActionType.UPDATE)
+        self.assertEqual(actual.etc, self.note.title)
+
     def test_update_note_should_return_200_ok_and_create_issue_about_note_update(self):
         # Given: 새로운 Note title과 Issue reason이 주어진다.
         valid_request_body = {
@@ -320,8 +339,7 @@ class TestNoteUpdate(NoteTestMixin, TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And: 생성된 Issue의 etc는 기존 Note의 title과 같고, Issue의 title은 new_title과 같다.
         issue = Issue.objects.first()
-        self.assertEqual(issue.etc, self.note.title)
-        self.assertEqual(issue.title, valid_request_body["new_title"])
+        self._assert_issue_about_update_note_and_expected(actual=issue, expected=valid_request_body)
 
     def test_update_note_should_return_404_not_found_on_invalid_note_id(self):
         # Given: 바꿀 note title과 reason이 주어진다.
@@ -412,7 +430,7 @@ class TestNoteUpdate(NoteTestMixin, TestCase):
     def test_should_update_note_title_on_approving_issue_about_note_update(self):
         # Given: Note Update API를 호출하여 Note Update Issue를 생성한다.
         self._create_issue_about_note_update_by_calling_note_update_api()
-        # And: Note Update Issue의 id가 주어진다.
+        # And: Note Update Issue가 주어진다.
         valid_issue = Issue.objects.first()
         # And: 해당 Issue에 권한이 있는 user token을 발급받는다.
         issue_approve_user_token = _login(self.user_data)
@@ -429,7 +447,7 @@ class TestNoteUpdate(NoteTestMixin, TestCase):
     def test_should_not_update_note_title_on_not_having_permission_about_update_note_issue(self):
         # Given: Note Update API를 호출하여 Note Update Issue를 생성한다.
         self._create_issue_about_note_update_by_calling_note_update_api()
-        # And: Note Update Issue의 id가 주어진다.
+        # And: Note Update Issue가 주어진다.
         valid_issue = Issue.objects.first()
         # And: 해당 Issue에 권한이 없는 user의 토큰을 발급받는다.
         another_user_data = {"email": "test2@test.com", "password": "12345"}
