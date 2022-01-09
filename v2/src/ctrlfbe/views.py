@@ -50,7 +50,6 @@ from .serializers import (
     PageDetailSerializer,
     PageHistorySerializer,
     PageListSerializer,
-    PageUpdateRequestBodySerializer,
     TopicSerializer,
 )
 
@@ -74,13 +73,12 @@ class BaseContentViewSet(CtrlfAuthenticationMixin, ModelViewSet):
 
         return {parent_name: parent}
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **data):
         ctrlf_user = self._ctrlf_authentication(request)
-        kwargs["model_data"]["owners"] = [ctrlf_user.id]
-        kwargs["issue_data"]["owner"] = ctrlf_user.id
+        model_data, issue_data = self.append_ctrlf_user(data, ctrlf_user)
 
-        related_model_serializer = self.get_serializer(data=kwargs["model_data"])
-        issue_serializer = IssueCreateSerializer(data=kwargs["issue_data"])
+        related_model_serializer = self.get_serializer(data=model_data)
+        issue_serializer = IssueCreateSerializer(data=issue_data)
 
         related_model_serializer.is_valid(raise_exception=True)
         issue_serializer.is_valid(raise_exception=True)
@@ -90,15 +88,21 @@ class BaseContentViewSet(CtrlfAuthenticationMixin, ModelViewSet):
 
     def update(self, request, *args, **issue_data):
         ctrlf_user = self._ctrlf_authentication(request)
-        related_model = self.get_object()
-
         issue_data["owner"] = ctrlf_user.id
 
         issue_serializer = IssueCreateSerializer(data=issue_data)
         issue_serializer.is_valid(raise_exception=True)
-        issue_serializer.save(related_model=related_model)
+        issue_serializer.save(related_model=self.get_object())
 
         return Response(data={"message": "Note 수정 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
+
+    def append_ctrlf_user(self, data, ctrlf_user):
+        if self.serializer_class is PageHistorySerializer:
+            data["model_data"]["owner"] = ctrlf_user.id
+        else:
+            data["model_data"]["owners"] = [ctrlf_user.id]
+        data["issue_data"]["owner"] = ctrlf_user.id
+        return data["model_data"], data["issue_data"]
 
 
 class NoteViewSet(BaseContentViewSet):
@@ -171,46 +175,14 @@ class PageViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
-        page = self.get_object()
-        page_serializer = PageDetailSerializer(page, context=kwargs)
+        page_serializer = PageDetailSerializer(self.get_object(), context=kwargs)
         return Response(data=page_serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(**SWAGGER_PAGE_UPDATE_VIEW)
     def update(self, request, *args, **kwargs):
-        ctrlf_user = self._ctrlf_authentication(request)
-        page = Page.objects.filter(id=kwargs["page_id"]).first()
-        if page is None:
-            return Response(data={"message": "페이지를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
-        page_serializer = PageUpdateRequestBodySerializer(data=request.data)
-        page_serializer.is_valid(raise_exception=True)
-
-        version_count = PageHistory.objects.filter(page=page).count()
-        page_history_data = {
-            "owner": ctrlf_user.id,
-            "page": page.id,
-            "title": request.data["new_title"],
-            "content": request.data["new_content"],
-            "version_no": version_count + 1,
-            "version_type": PageVersionType.UPDATE,
-        }
-        page_history_serializer = PageHistorySerializer(data=page_history_data)
-        page_history_serializer.is_valid(raise_exception=True)
-        new_page_history = page_history_serializer.save()
-
-        issue_data = {
-            "owner": ctrlf_user.id,
-            "title": request.data["new_title"],
-            "reason": request.data["reason"],
-            "status": CtrlfIssueStatus.REQUESTED,
-            "related_model_type": CtrlfContentType.PAGE,
-            "action": CtrlfActionType.UPDATE,
-        }
-        issue_serializer = IssueCreateSerializer(data=issue_data)
-        issue_serializer.is_valid(raise_exception=True)
-        issue_serializer.save(related_model=new_page_history)
-
-        return Response(status=status.HTTP_201_CREATED)
+        self.serializer_class = PageHistorySerializer
+        data = PageData(request).build_update_data(self.get_object())
+        return super().create(request, **data)
 
 
 class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):

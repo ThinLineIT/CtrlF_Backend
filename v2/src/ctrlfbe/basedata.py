@@ -1,6 +1,12 @@
 from rest_framework.request import Request
 
-from .models import CtrlfActionType, CtrlfContentType, CtrlfIssueStatus
+from .models import (
+    CtrlfActionType,
+    CtrlfContentType,
+    CtrlfIssueStatus,
+    PageHistory,
+    PageVersionType,
+)
 
 
 class BaseData:
@@ -66,3 +72,16 @@ class PageData(BaseData):
         issue_data["related_model_type"] = CtrlfContentType.PAGE
 
         return {"model_data": page_data, "issue_data": issue_data}
+
+    def build_update_data(self, page):
+        issue_data = super().build_update_data()
+        issue_data["related_model_type"] = CtrlfContentType.PAGE
+        version_count = PageHistory.objects.filter(page=page).count()
+        page_history_data = {
+            "page": page.id,
+            "title": self.request.data["new_title"],
+            "content": self.request.data["new_content"],
+            "version_no": version_count + 1,
+            "version_type": PageVersionType.UPDATE,
+        }
+        return {"model_data": page_history_data, "issue_data": issue_data}
