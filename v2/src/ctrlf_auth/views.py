@@ -70,9 +70,12 @@ class SendingAuthEmailView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = SendingAuthEmailSerializer(data=request.data)
         if serializer.is_valid():
-            email_auth_code = EmailAuthCode.objects.create(code=generate_auth_code())
-            send_email.delay(code=email_auth_code.code, to=serializer.data["email"])
-            signing_token = generate_signing_token(data=serializer.data)
+            auth_code = generate_auth_code()
+            EmailAuthCode.objects.create(code=auth_code)
+            send_email.delay(code=auth_code, to=serializer.data["email"])
+            signed_data = serializer.data
+            signed_data["code"] = auth_code
+            signing_token = generate_signing_token(data=signed_data)
             return Response(
                 status=status.HTTP_200_OK, data=SendingAuthEmailResponse({"signing_token": signing_token}).data
             )

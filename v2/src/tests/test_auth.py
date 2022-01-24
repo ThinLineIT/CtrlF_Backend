@@ -127,6 +127,7 @@ class TestSendingAuthEmail(TestCase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         signing_token = response.json()["signing_token"]
         self.assertEqual(signing.loads(signing_token)["email"], "test1234@test.com")
+        self.assertEqual(signing.loads(signing_token)["code"], "1q2w3e4r")
 
     def test_sending_auth_email_should_return_400_on_email_from_request_body_is_invalid_format(self):
         request_body = {"email": "test1234test.com"}  # invalid email format
