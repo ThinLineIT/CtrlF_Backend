@@ -275,7 +275,7 @@ class TestCheckVerificationCode(TestCase):
     def test_verification_code_should_return_200(self):
         # Given: 일치하는 코드
         email = "kwon5604@naver.com"
-        request_body = {"code": self.code, "signing_token": generate_signing_token({"email": email})}
+        request_body = {"code": self.code, "signing_token": generate_signing_token({"code": self.code, "email": email})}
         # When : API 실행
         response = self._call_api(request_body)
         # Then : 상태코드 200 리턴.
@@ -284,6 +284,21 @@ class TestCheckVerificationCode(TestCase):
         signing_token = signing.loads(response.json()["signing_token"])
         self.assertEqual(signing_token["email"], email)
         self.assertEqual(signing_token["code"], self.code)
+
+    def test_verification_code_should_return_400_by_not_matched_verification_code(self):
+        # Given: 일치하지 않는 코드가 주어지고,
+        email = "kwon5604@naver.com"
+        not_matched_code = "not_matched_code"
+        request_body = {
+            "code": self.code,
+            "signing_token": generate_signing_token({"code": not_matched_code, "email": email}),
+        }
+        # When : API 실행
+        response = self._call_api(request_body)
+        # Then : 상태코드 400 리턴.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And: "유효하지 않은 인증코드 입니다." 를 리턴해야 한다
+        self.assertEqual(response.data["message"], "유효하지 않은 인증코드 입니다.")
 
     def test_verification_code_should_return_400_by_expired_signing_token(self):
         # Given: 일치하는 코드
