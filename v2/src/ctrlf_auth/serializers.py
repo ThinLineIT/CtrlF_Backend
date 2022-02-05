@@ -2,6 +2,7 @@ from ctrlf_auth.constants import (
     MSG_EXPIRED_VERIFICATION_CODE,
     MSG_NOT_EXIST_VERIFICATION_CODE,
     MSG_NOT_MATCHED_PASSWORD,
+    MSG_VERIFICATION_CODE_NOT_MATCHED,
     VERIFICATION_TIMEOUT_SECONDS,
 )
 from ctrlf_auth.models import CtrlfUser, EmailAuthCode
@@ -125,9 +126,12 @@ class CheckVerificationCodeSerializer(serializers.Serializer):
         if not EmailAuthCode.objects.filter(code=data["code"]).exists():
             raise ValidationError(MSG_NOT_EXIST_VERIFICATION_CODE)
         try:
-            decode_signing_token(token=data["signing_token"], max_age=VERIFICATION_TIMEOUT_SECONDS)
+            decoded = decode_signing_token(token=data["signing_token"], max_age=VERIFICATION_TIMEOUT_SECONDS)
         except ValueError:
             raise ValidationError(MSG_EXPIRED_VERIFICATION_CODE)
+        else:
+            if decoded["code"] != data["code"]:
+                raise ValidationError(MSG_VERIFICATION_CODE_NOT_MATCHED)
         return data
 
 
