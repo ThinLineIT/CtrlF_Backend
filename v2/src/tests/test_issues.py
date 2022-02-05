@@ -51,21 +51,19 @@ class IssueTextMixin:
         self.note.owners.add(self.user)
         self.topic = Topic.objects.create(note=self.note, title="test topic")
         self.topic.owners.add(self.user)
-        page_data = {
-            "topic": self.topic,
-            "title": "test page",
-        }
-        self.page = Page.objects.create(**page_data)
+        self.page = Page.objects.create(topic=self.topic)
         self.page.owners.add(self.user)
+
         page_history_data = {
             "owner": self.user,
             "page": self.page,
             "title": "test page",
+            "content": "test content",
             "version_type": PageVersionType.CURRENT,
         }
 
         self.page_history = PageHistory.objects.create(**page_history_data)
-        return self.note, self.topic, self.page
+        return self.note, self.topic, self.page, self.page_history
 
 
 class TestListIssue(IssueTextMixin, TestCase):
@@ -123,7 +121,7 @@ class TestIssueDetail(IssueTextMixin, TestCase):
 
     def test_issue_detail_should_return_issue_on_success(self):
         # Given: Issue에 해당하는 컨텐츠들을 생성한다
-        note, topic, page = self._make_all_contents()
+        note, topic, page, page_history = self._make_all_contents()
         # And: page 생성에 대한 컨텐트 요청을 생성하고
         # And: 이슈를 1개 생성 하였을 때,
         issue = Issue.objects.create(
@@ -152,9 +150,6 @@ class TestIssueDetail(IssueTextMixin, TestCase):
         self.assertEqual(response.data["note_id"], self.note.id)
         self.assertEqual(response.data["topic_id"], self.topic.id)
         self.assertEqual(response.data["page_id"], self.page.id)
-
-        # And: issue에 대한 content의 id를 제공해야한다
-        self.assertEqual(response.data["legacy_title"], "legacy title")
 
     def test_issue_detail_should_return_404_not_found_on_issue_does_not_exist(self):
         # Given: 이슈를 생성하지 않았을 때,
@@ -213,13 +208,16 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         return topic.id, issue.id
 
     def _make_page(self):
-        page_data = {
-            "topic": self.topic,
+        page = Page.objects.create(topic=self.topic)
+        page.owners.add(self.owner)
+        page_history_data = {
+            "owner": self.user,
+            "page": page,
             "title": "test page title",
             "content": "test page content",
+            "version_type": PageVersionType.CURRENT,
         }
-        page = Page.objects.create(**page_data)
-        page.owners.add(self.owner)
+        page_history = PageHistory.objects.create(**page_history_data)
         issue_data = {
             "owner": self.owner,
             "title": "test page title",
@@ -230,7 +228,7 @@ class TestIssueApprove(IssueTextMixin, TestCase):
             "action": CtrlfActionType.CREATE,
         }
         issue = Issue.objects.create(**issue_data)
-        return page, issue
+        return page, issue, page_history
 
     def _login(self, user_data):
         serializer = LoginSerializer()
@@ -289,7 +287,7 @@ class TestIssueApprove(IssueTextMixin, TestCase):
 
     def test_issue_approve_should_return_200_on_issue_about_page(self):
         # Given: Page와 Issue를 생성한다.
-        page, issue = self._make_page()
+        page, issue, page_history = self._make_page()
         # And: request_body로 유효한 issue id가 주어진다.
         request_body = {"issue_id": issue.id}
         # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다.
@@ -302,16 +300,16 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And: "승인 완료"라는 메세지를 리턴한다
         self.assertEqual(response.data["message"], "승인 완료")
-        # And: Page의 is_apporved는 True이다.
-        page = Page.objects.get(id=page.id)
-        self.assertTrue(page.is_approved)
+        # And: PageHistory의 is_apporved는 True이다.
+        result = PageHistory.objects.get(id=page_history.id)
+        self.assertTrue(result.is_approved)
         # And: Issue의 status는 APPROVED이다.
         issue = Issue.objects.get(id=issue.id)
         self.assertEqual(issue.status, CtrlfIssueStatus.APPROVED)
 
     def test_should_return_404_on_invalid_issue_id(self):
         # Given: Page와 Issue를 생성한다.
-        page, issue = self._make_page()
+        page, issue, page_history = self._make_page()
         # And: request_body로 유효하지 않은 issue id가 주어진다.
         invalid_issue_id = 2952389
         request_body = {"issue_id": invalid_issue_id}
@@ -326,15 +324,15 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         # And: "이슈 ID를 찾을 수 없습니다."라는 메세지를 리턴한다.
         self.assertEqual(response.data["message"], "이슈 ID를 찾을 수 없습니다.")
         # And: 생성한 Page의 is_approved는 False이다.
-        page = Page.objects.get(id=page.id)
-        self.assertFalse(page.is_approved)
+        result = PageHistory.objects.get(id=page_history.id)
+        self.assertFalse(result.is_approved)
         # And: 생성한 Issue의 Status는 REQUESTD이다
         issue = Issue.objects.get(id=issue.id)
         self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
 
     def test_should_return_403_on_unauthorized_about_issue(self):
         # Given: Page와 Issue를 생성한다.
-        page, issue = self._make_page()
+        page, issue, page_history = self._make_page()
         # And: request_body로 유효한 issue id가 주어진다.
         request_body = {"issue_id": issue.id}
         # And: owner 정보가 아닌 다른 user 정보로 로그인
@@ -348,8 +346,8 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         # And: "승인 권한이 없습니다."라는 메세지를 리턴한다.
         self.assertEqual(response.data["message"], "승인 권한이 없습니다.")
         # And: 생성한 Page의 is_approved는 False이다.
-        page = Page.objects.get(id=page.id)
-        self.assertFalse(page.is_approved)
+        result = PageHistory.objects.get(id=page_history.id)
+        self.assertFalse(result.is_approved)
         # And: 생성한 Issue의 Status는 REQUESTD이다
         issue = Issue.objects.get(id=issue.id)
         self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
@@ -496,19 +494,11 @@ class TestIssueApprove(IssueTextMixin, TestCase):
 
     def test_issue_approve_should_update_page_title_and_content_on_update_issue_approval(self):
         # Given: Page와 Issue를 생성한다.
-        page, issue = self._make_page()
+        page, issue, page_history = self._make_page()
         issue.action = CtrlfActionType.UPDATE
         issue.save()
         # And: page에 대한 page history를 생성한다 - 이미 있던 것
-        prev_page_history_data = {
-            "page": page,
-            "owner": self.user,
-            "title": "prev title",
-            "content": "prev content",
-            "version_type": PageVersionType.CURRENT,
-            "version_no": 1,
-        }
-        prev_page_history = PageHistory.objects.create(**prev_page_history_data)
+        prev_page_history = PageHistory.objects.get(id=page_history.id)
         # And: page에 대한 page history를 생성한다 - UPDATE
         new_page_history_data = {
             "page": page,
@@ -536,14 +526,10 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         new_page_history = PageHistory.objects.filter(id=new_page_history.id).first()
         self.assertEqual(new_page_history.version_type, PageVersionType.CURRENT)
         self.assertTrue(new_page_history.is_approved)
-        # And: 새로운 page history에 따라서, ctrlf_content는 업데이트 되어야 한다
-        new_page = Page.objects.filter(id=page.id).first()
-        self.assertEqual(new_page.title, new_page_history_data["title"])
-        self.assertEqual(new_page.content, new_page_history_data["content"])
 
     def test_issue_approve_should_update_page_title_and_content_on_approval_user_is_not_page_owner(self):
         # Given: Page와 Issue를 생성한다.
-        page, issue = self._make_page()
+        page, issue, page_history = self._make_page()
         issue.action = CtrlfActionType.UPDATE
         # And: issue owner가 page owner와 다른 사람으로 세팅한다
         user_info = {

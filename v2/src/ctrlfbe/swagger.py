@@ -13,6 +13,7 @@ from ctrlfbe.serializers import (
     PageDetailQuerySerializer,
     PageDetailSerializer,
     PageListSerializer,
+    PageUpdateRequestBodySerializer,
     TopicCreateRequestBodySerializer,
     TopicSerializer,
     TopicUpdateRequestBodySerializer,
@@ -96,6 +97,13 @@ SWAGGER_PAGE_DETAIL_VIEW = {
     "operation_summary": "Page Detail API",
     "operation_description": "page_id에 해당하는 Page의 상세 내용을 리턴합니다",
     "query_serializer": PageDetailQuerySerializer,
+    "tags": ["디테일 화면"],
+}
+
+SWAGGER_PAGE_UPDATE_VIEW = {
+    "operation_summary": "Page Update Request API",
+    "operation_description": "Page 업데이트를 위한 Issue를 생성합니다.",
+    "request_body": PageUpdateRequestBodySerializer,
     "tags": ["디테일 화면"],
 }
 

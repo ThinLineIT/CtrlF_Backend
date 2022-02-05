@@ -14,14 +14,6 @@ urlpatterns = [
         ),
         name="page_create",
     ),
-    path(
-        "<int:page_id>/",
-        PageViewSet.as_view(
-            {
-                "get": "retrieve",
-                "post": "update",
-            }
-        ),
-        name="page_detail_or_update",
-    ),
+    path("<int:page_id>/", PageViewSet.as_view({"put": "update"}), name="page_update"),
+    path("<int:page_id>/<int:version_no>/", PageViewSet.as_view({"get": "retrieve"}), name="page_detail"),
 ]
