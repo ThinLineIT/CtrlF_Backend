@@ -119,6 +119,7 @@ class PageCreateSerializer(serializers.ModelSerializer):
 class PageDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
+        fields = "__all__"
 
     def to_representation(self, page):
         version_no = self.context["version_no"]
@@ -257,3 +258,7 @@ class ImageUploadRequestBodySerializer(serializers.Serializer):
 
 class ImageSerializer(serializers.Serializer):
     img_url = serializers.CharField()
+
+
+class IssueCountSerializer(serializers.Serializer):
+    issues_count = serializers.IntegerField()
