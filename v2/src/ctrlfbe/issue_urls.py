@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import IssueViewSet
+from .views import IssueCount, IssueViewSet
 
 app_name = "issues"
 
@@ -15,4 +15,5 @@ urlpatterns = [
         ),
         name="issue_detail",
     ),
+    path("issue-count/", IssueCount.as_view(), name="issue_count"),
 ]

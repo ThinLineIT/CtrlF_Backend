@@ -4,6 +4,7 @@ from ctrlfbe.swagger import (
     SWAGGER_HEALTH_CHECK_VIEW,
     SWAGGER_IMAGE_UPLOAD_VIEW,
     SWAGGER_ISSUE_APPROVE_VIEW,
+    SWAGGER_ISSUE_COUNT,
     SWAGGER_ISSUE_DETAIL_VIEW,
     SWAGGER_ISSUE_LIST_VIEW,
     SWAGGER_NOTE_CREATE_VIEW,
@@ -42,6 +43,7 @@ from .models import (
 )
 from .paginations import IssueListPagination, NoteListPagination
 from .serializers import (
+    IssueCountSerializer,
     IssueCreateSerializer,
     IssueDetailSerializer,
     IssueListSerializer,
@@ -297,6 +299,13 @@ class ImageUploadView(APIView):
         s3_client.upload_file_object(image_data=image_data, bucket_path=bucket_path, content_type=file_content_type)
 
         return Response(data={"image_url": f"{self.BASE_URL}/{bucket_path}"}, status=status.HTTP_200_OK)
+
+
+class IssueCount(APIView):
+    @swagger_auto_schema(**SWAGGER_ISSUE_COUNT)
+    def get(self, request):
+        serializer = IssueCountSerializer({"issues_count": Issue.objects.count()})
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
 class HealthCheckView(APIView):

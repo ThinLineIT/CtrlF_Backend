@@ -569,3 +569,22 @@ class TestIssueApprove(IssueTextMixin, TestCase):
 
         # Then: status code는 403을 리턴한다.
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class TestIssueCount(IssueTextMixin, TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+
+    def _call_api(self):
+        return self.client.get(reverse("issues:issue_count"))
+
+    def test_issue_count_should_return_count_of_all_issues(self):
+        # Given: 5개의 이슈를 생성하고,
+        want_to_make_issue_count = 5
+        self._make_issues(want_to_make_issue_count)
+
+        # When: api를 호출했을 때,
+        response = self._call_api()
+
+        # Then: 생성한 Issue 개수 만큼 리턴 해야한다
+        self.assertEqual(response.json()["issues_count"], want_to_make_issue_count)

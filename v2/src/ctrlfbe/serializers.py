@@ -258,3 +258,7 @@ class ImageUploadRequestBodySerializer(serializers.Serializer):
 
 class ImageSerializer(serializers.Serializer):
     img_url = serializers.CharField()
+
+
+class IssueCountSerializer(serializers.Serializer):
+    issues_count = serializers.IntegerField()
