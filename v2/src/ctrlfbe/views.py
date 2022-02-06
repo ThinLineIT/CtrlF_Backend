@@ -189,13 +189,14 @@ class PageViewSet(BaseContentViewSet):
 
 
 class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
-    queryset = Issue.objects.filter(Q(status=CtrlfIssueStatus.REQUESTED) | Q(status=CtrlfIssueStatus.REJECTED))
+    queryset = Issue.objects.all()
     serializer_class = IssueListSerializer
     pagination_class = IssueListPagination
     lookup_url_kwarg = "issue_id"
 
     @swagger_auto_schema(**SWAGGER_ISSUE_LIST_VIEW)
     def list(self, request, *args, **kwargs):
+        self.queryset = self.queryset.filter(Q(status=CtrlfIssueStatus.REQUESTED) | Q(status=CtrlfIssueStatus.REJECTED))
         return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(**SWAGGER_ISSUE_DETAIL_VIEW)
