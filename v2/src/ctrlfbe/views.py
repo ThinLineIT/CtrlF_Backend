@@ -21,6 +21,7 @@ from ctrlfbe.swagger import (
     SWAGGER_TOPIC_UPDATE_VIEW,
 )
 from django.conf import settings
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
@@ -188,7 +189,7 @@ class PageViewSet(BaseContentViewSet):
 
 
 class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
-    queryset = Issue.objects.all()
+    queryset = Issue.objects.filter(Q(status=CtrlfIssueStatus.REQUESTED) | Q(status=CtrlfIssueStatus.REJECTED))
     serializer_class = IssueListSerializer
     pagination_class = IssueListPagination
     lookup_url_kwarg = "issue_id"

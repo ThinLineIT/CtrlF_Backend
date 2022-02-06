@@ -46,6 +46,17 @@ class IssueTextMixin:
                 action=CtrlfActionType.CREATE,
             )
 
+    def _make_issues_by_status(self, title: str, reason: str, status: CtrlfIssueStatus):
+        Issue.objects.create(
+            owner=self.user,
+            title="test title",
+            reason="reason for note or topic or page crud",
+            status=status,
+            related_model_type=CtrlfContentType.NOTE,
+            related_model_id=1,
+            action=CtrlfActionType.CREATE,
+        )
+
     def _make_all_contents(self):
         self.note = Note.objects.create(title="test note")
         self.note.owners.add(self.user)
@@ -113,6 +124,25 @@ class TestListIssue(IssueTextMixin, TestCase):
         self.assertEqual(response.data["next_cursor"], 0)
         # And: empty list를 리턴한다.
         self.assertEqual(len(response.data["issues"]), 0)
+
+    def test_issue_list_should_return_200_on_filtering(self):
+        # Given: 미리 4개의 이슈를 생성하고, 시작 cursor가 주어진다.
+        self._make_issues_by_status(title="test1", reason="reasons1", status=CtrlfIssueStatus.REQUESTED)
+        self._make_issues_by_status(title="test2", reason="reasons2", status=CtrlfIssueStatus.APPROVED)
+        self._make_issues_by_status(title="test3", reason="reasons3", status=CtrlfIssueStatus.CLOSED)
+        self._make_issues_by_status(title="test4", reason="reasons4", status=CtrlfIssueStatus.REJECTED)
+        given_cursor = 0
+
+        # When: issue list api를 호출한다.
+        response = self._call_api(given_cursor)
+
+        # Then: status code 200을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # And: 이슈의 개수는 2개이어야 한다 -> REQUESTED, REJECTED
+        self.assertEqual(len(response.data["issues"]), 2)
+        # And: 이슈 status는 REQUESTED or REJECTED 이어야 한다
+        for issue in response.data["issues"]:
+            self.assertIn(issue["status"], {CtrlfIssueStatus.REQUESTED, CtrlfIssueStatus.REJECTED})
 
 
 class TestIssueDetail(IssueTextMixin, TestCase):
