@@ -1,5 +1,5 @@
 from ctrlfbe.constants import MAX_PRINTABLE_NOTE_COUNT
-from ctrlfbe.models import Issue, Note
+from ctrlfbe.models import Note
 from rest_framework.pagination import CursorPagination
 from rest_framework.response import Response
 
@@ -21,7 +21,7 @@ class IssueListPagination(CursorPagination):
 
     def paginate_queryset(self, queryset, request, view=None):
         self.current_cursor = int(request.query_params["cursor"])
-        issues = Issue.objects.all()[self.current_cursor : self.current_cursor + MAX_PRINTABLE_NOTE_COUNT]
+        issues = queryset[self.current_cursor : self.current_cursor + MAX_PRINTABLE_NOTE_COUNT]
         return issues
 
     def get_paginated_response(self, data):
