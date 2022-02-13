@@ -1,6 +1,6 @@
 from common.models import CommonTimestamp
 from ctrlf_auth.models import CtrlfUser
-from django.db import models
+from django.db import models, transaction
 
 
 class CtrlfContentType(models.TextChoices):
@@ -36,6 +36,19 @@ class Note(CommonTimestamp):
     def __str__(self):
         return f"{self.title}"
 
+    def exists_owner(self, owner_id):
+        return self.owners.filter(id=owner_id).exists()
+
+    def process_update(self, title):
+        self.title = title
+        self.is_approved = True
+        self.save()
+
+    def process_create(self):
+        with transaction.atomic():
+            self.is_approved = True
+            self.save()
+
 
 class Topic(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)
@@ -46,6 +59,19 @@ class Topic(CommonTimestamp):
     def __str__(self):
         return f"{self.note.title}-{self.title}"
 
+    def exists_note_owner(self, owner_id):
+        return self.note.owners.filter(id=owner_id).exists()
+
+    def process_update(self, title):
+        self.title = title
+        self.is_approved = True
+        self.save()
+
+    def process_create(self):
+        with transaction.atomic():
+            self.is_approved = True
+            self.save()
+
 
 class Page(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)
@@ -54,6 +80,43 @@ class Page(CommonTimestamp):
     def __str__(self):
         page_history = self.page_history.filter(version_type=PageVersionType.CURRENT).first()
         return f"{self.topic.note.title}-{self.topic.title}-{page_history.title}"
+
+    def exists_topic_owner(self, owner_id):
+        return self.topic.owners.filter(id=owner_id).exists()
+
+    def process_update(self):
+        with transaction.atomic():
+            prev_page_history = PageHistory.page_version.current(self).first()
+            prev_page_history.version_type = PageVersionType.PREVIOUS
+            prev_page_history.save()
+
+            new_page_history = PageHistory.page_version.to_update(self).first()
+            new_page_history.is_approved = True
+            new_page_history.version_type = PageVersionType.CURRENT
+            new_page_history.save()
+
+            self.title = new_page_history.title
+            self.content = new_page_history.content
+            self.is_approved = True
+            self.save()
+
+    def process_create(self):
+        with transaction.atomic():
+            self.is_approved = True
+            self.save()
+
+            page_history = self.page_history.first()
+            if page_history:
+                page_history.is_approved = True
+                page_history.save()
+
+
+class PageHistoryQuerySet(models.QuerySet):
+    def current(self, page):
+        return self.filter(page=page, version_type=PageVersionType.CURRENT)
+
+    def to_update(self, page):
+        return self.filter(page=page, version_type=PageVersionType.UPDATE)
 
 
 class PageHistory(CommonTimestamp):
@@ -64,6 +127,9 @@ class PageHistory(CommonTimestamp):
     is_approved = models.BooleanField(default=False)
     version_no = models.IntegerField(default=1)
     version_type = models.CharField(max_length=30, choices=PageVersionType.choices)
+    objects = models.Manager()
+
+    page_version = PageHistoryQuerySet.as_manager()
 
     def __str__(self):
         return f"page_id:{self.page_id}-title:{self.title}-version:{self.version_no}"
@@ -83,3 +149,12 @@ class Issue(CommonTimestamp):
 
     def __str__(self):
         return f"{self.title}-{self.related_model_type}-{self.related_model_id}"
+
+    def get_ctrlf_content(self):
+        page_history = PageHistory.objects.filter(id=self.related_model_id).first()
+        page = page_history and page_history.page
+        return {
+            CtrlfContentType.PAGE: page,
+            CtrlfContentType.NOTE: Note.objects.filter(id=self.related_model_id).first(),
+            CtrlfContentType.TOPIC: Topic.objects.filter(id=self.related_model_id).first(),
+        }.get(self.related_model_type)

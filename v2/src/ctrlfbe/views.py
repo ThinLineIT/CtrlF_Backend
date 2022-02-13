@@ -31,17 +31,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from .basedata import NoteData, PageData, TopicData
-from .models import (
-    CtrlfActionType,
-    CtrlfContentType,
-    CtrlfIssueStatus,
-    Issue,
-    Note,
-    Page,
-    PageHistory,
-    PageVersionType,
-    Topic,
-)
+from .models import CtrlfActionType, CtrlfIssueStatus, Issue, Note, Page, Topic
 from .paginations import IssueListPagination, NoteListPagination
 from .serializers import (
     IssueCountSerializer,
@@ -214,77 +204,38 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             issue = Issue.objects.get(id=issue_id)
         except Issue.DoesNotExist:
             return Response(data={"message": "이슈 ID를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
         try:
-            ctrlf_content = self.get_content(issue=issue, ctrlf_user=issue_approve_request_user)
+            ctrlf_content = self.get_ctrlf_content(issue=issue, ctrlf_user=issue_approve_request_user)
         except ValueError:
             return Response(data={"message": "승인 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
 
-        if issue.action == CtrlfActionType.UPDATE:
-            if isinstance(ctrlf_content, Note):
-                ctrlf_content.title = issue.title
+        if not ctrlf_content.owners.filter(email=issue_approve_request_user.email).exists():
+            return Response(status=status.HTTP_403_FORBIDDEN)
 
         if issue.action == CtrlfActionType.UPDATE:
-            if not ctrlf_content.owners.filter(email=issue_approve_request_user.email).exists():
-                return Response(status=status.HTTP_403_FORBIDDEN)
-            if isinstance(ctrlf_content, Topic):
-                ctrlf_content.title = issue.title
-
-        if issue.action == CtrlfActionType.UPDATE:
-            if not ctrlf_content.owners.filter(email=issue_approve_request_user.email).exists():
-                return Response(status=status.HTTP_403_FORBIDDEN)
-            if isinstance(ctrlf_content, Page):
-                page_id = PageHistory.objects.filter(id=issue.related_model_id).first().page.id
-
-                new_page_history = PageHistory.objects.filter(page=page_id, version_type=PageVersionType.UPDATE).first()
-                prev_page_history = PageHistory.objects.filter(
-                    page=page_id, version_type=PageVersionType.CURRENT
-                ).first()
-                prev_page_history.version_type = PageVersionType.PREVIOUS
-                prev_page_history.save()
-
-                new_page_history.is_approved = True
-                new_page_history.version_type = PageVersionType.CURRENT
-                new_page_history.save()
-
-                ctrlf_content.title = new_page_history.title
-                ctrlf_content.content = new_page_history.content
-
-        ctrlf_content.is_approved = True
-        ctrlf_content.save()
-        if isinstance(ctrlf_content, Page):
-            page_history = ctrlf_content.page_history.first()
-            if page_history is not None:
-                page_history.is_approved = True
-                page_history.save()
+            is_page = ctrlf_content.__class__ is Page
+            ctrlf_content.process_update() if is_page else ctrlf_content.process_update(issue.title)
+        elif issue.action == CtrlfActionType.CREATE:
+            ctrlf_content.process_create()
 
         issue.status = CtrlfIssueStatus.APPROVED
         issue.save()
 
         return Response(data={"message": "승인 완료"}, status=status.HTTP_200_OK)
 
-    def get_content(self, issue, ctrlf_user):
-        content = (
-            PageHistory.objects.get(id=issue.related_model_id).page
-            if issue.related_model_type == CtrlfContentType.PAGE
-            else Note.objects.get(id=issue.related_model_id)
-            if issue.related_model_type == CtrlfContentType.NOTE
-            else Topic.objects.get(id=issue.related_model_id)
-            if issue.related_model_type == CtrlfContentType.TOPIC
-            else None
-        )
+    def get_ctrlf_content(self, issue, ctrlf_user):
+        ctrlf_content = issue.get_ctrlf_content()
         if issue.action == CtrlfActionType.CREATE:
-            if type(content) is Page:
-                if not content.topic.owners.filter(id=ctrlf_user.id).exists():
-                    raise ValueError
-            elif type(content) is Topic:
-                if not content.note.owners.filter(id=ctrlf_user.id).exists():
-                    raise ValueError
-            elif type(content) is Note:
-                if not content.owners.filter(id=ctrlf_user.id).exists():
-                    raise ValueError
+            self.validate_exists_owner(ctrlf_content, ctrlf_user)
+        return ctrlf_content
 
-        return content
+    def validate_exists_owner(self, content, ctrlf_user):
+        owner_id = ctrlf_user.id
+        exists_owner_method_map = {Page: "exists_topic_owner", Topic: "exists_note_owner", Note: "exists_owner"}[
+            content.__class__
+        ]
+        if not getattr(content, exists_owner_method_map)(owner_id):
+            raise ValueError
 
 
 class ImageUploadView(APIView):
