@@ -36,11 +36,13 @@ class PageTestMixin:
         return self.client.post(reverse("pages:page_create"), request_body, **_get_header(token))
 
     def _call_page_detail_api(self, page_id, version_no):
-        return self.client.get(reverse("pages:page_detail", kwargs={"page_id": page_id, "version_no": version_no}))
+        return self.client.get(
+            reverse("pages:page_detail_update", kwargs={"page_id": page_id}), {"version_no": version_no}
+        )
 
     def _call_page_update_api(self, request_body, page_id, token=None):
         return self.client.put(
-            reverse("pages:page_update", kwargs={"page_id": page_id}),
+            reverse("pages:page_detail_update", kwargs={"page_id": page_id}),
             json.dumps(request_body),
             content_type="application/json",
             **_get_header(token),

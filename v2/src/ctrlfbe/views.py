@@ -178,7 +178,8 @@ class PageViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
-        page_serializer = PageDetailSerializer(self.get_object(), context=kwargs)
+        version_no = self.request.query_params.get("version_no")
+        page_serializer = PageDetailSerializer(self.get_object(), context={"version_no": int(version_no)})
         return Response(data=page_serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(**SWAGGER_PAGE_UPDATE_VIEW)

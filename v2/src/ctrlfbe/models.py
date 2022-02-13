@@ -53,6 +53,8 @@ class Page(CommonTimestamp):
 
     def __str__(self):
         page_history = self.page_history.filter(version_type=PageVersionType.CURRENT).first()
+        if page_history is None:
+            return "page_history is None"
         return f"{self.topic.note.title}-{self.topic.title}-{page_history.title}"
 
 
