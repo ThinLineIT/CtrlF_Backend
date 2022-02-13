@@ -1,5 +1,5 @@
+from django.http import Http404
 from rest_framework import serializers
-from rest_framework.generics import get_object_or_404
 
 from .models import (
     CtrlfContentType,
@@ -123,8 +123,9 @@ class PageDetailSerializer(serializers.ModelSerializer):
 
     def to_representation(self, page):
         version_no = self.context["version_no"]
-        page_history_queryset = page.page_history.filter(page=page, version_no=version_no)
-        page_history = get_object_or_404(page_history_queryset)
+        page_history = page.page_history.filter(page=page, version_no=version_no).first()
+        if page_history is None:
+            raise Http404("No PageHistory matches the given query.")
         owners = serializers.PrimaryKeyRelatedField(many=True, queryset=page.owners.all())
         issue = Issue.objects.filter(related_model_id=page_history.id, related_model_type=CtrlfContentType.PAGE).first()
         issue_id = issue.id if issue is not None else None
