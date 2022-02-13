@@ -25,6 +25,14 @@ class NoteUpdateResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
 
 
+class NoteDeleteRequestBodySerializer(serializers.Serializer):
+    reason = serializers.CharField()
+
+
+class NoteDeleteResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note

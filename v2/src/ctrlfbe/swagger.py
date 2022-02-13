@@ -7,6 +7,8 @@ from ctrlfbe.serializers import (
     IssueDetailSerializer,
     IssueListSerializer,
     NoteCreateRequestBodySerializer,
+    NoteDeleteRequestBodySerializer,
+    NoteDeleteResponseSerializer,
     NoteSerializer,
     NoteUpdateRequestBodySerializer,
     NoteUpdateResponseSerializer,
@@ -67,6 +69,14 @@ SWAGGER_NOTE_UPDATE_VIEW = {
     "request_body": NoteUpdateRequestBodySerializer(),
     "operation_summary": "Note Update Request API",
     "operation_description": "Note 업데이트를 위한 Issue를 생성합니다.",
+    "tags": ["디테일 화면"],
+}
+
+SWAGGER_NOTE_DELETE_VIEW = {
+    "responses": {200: NoteDeleteResponseSerializer()},
+    "request_body": NoteDeleteRequestBodySerializer(),
+    "operation_summary": "Note Delete Request API",
+    "operation_description": "Note 삭제를 위한 Issue를 생성합니다.",
     "tags": ["디테일 화면"],
 }
 

@@ -38,6 +38,14 @@ class NoteTestMixin:
             **_get_header(token),
         )
 
+    def _call_note_delete_api(self, request_body, note_id, token=None):
+        return self.client.delete(
+            reverse("notes:note_detail_update_delete", kwargs={"note_id": note_id}),
+            data=json.dumps(request_body),
+            content_type="application/json",
+            **_get_header(token),
+        )
+
     def _call_issue_approve_api(self, issue_id, token):
         return self.client.post(reverse("actions:issue_approve"), {"issue_id": issue_id}, **_get_header(token))
 
@@ -462,3 +470,56 @@ class TestNoteUpdate(NoteTestMixin, TestCase):
         # And: Note title은 업데이트 되지 않는다.
         note = Note.objects.get(id=self.note.id)
         self.assertNotEqual(note.title, valid_issue.title)
+
+
+class TestNoteDelete(NoteTestMixin, TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.note = self._make_note_list(1)[0]
+
+    def test_note_delete_on_success(self):
+        # Given: 새로운 Note title과 Issue reason이 주어진다.
+        valid_request_body = {
+            "reason": "reason for delete note",
+        }
+        # And: 로그인 해서 토큰을 발급받는다.
+        user_token_of_creating_note_delete_issue = _login(self.user_data)
+        # And: 수정할 Note의 id가 주어진다.
+        valid_note_id = self.note.id
+
+        # When: Note 삭제 API를 호출 했을 떄
+        self._call_note_delete_api(valid_request_body, valid_note_id, user_token_of_creating_note_delete_issue)
+
+        # Then: Issue가 정상적으로 생성된다.
+        issue = Issue.objects.first()
+        note = Note.objects.get(id=self.note.id)
+        self.assertEqual(issue.title, f"{note.title} 삭제")
+        self.assertEqual(issue.reason, valid_request_body["reason"])
+        self.assertEqual(issue.owner.id, self.user.id)
+        self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
+        self.assertEqual(issue.related_model_type, CtrlfContentType.NOTE)
+        self.assertEqual(issue.related_model_id, Note.objects.first().id)
+        self.assertEqual(issue.action, CtrlfActionType.DELETE)
+
+    def test_note_delete_on_fail_with_invalid_note_id(self):
+        # Given: 새로운 Note title과 Issue reason이 주어진다.
+        valid_request_body = {
+            "reason": "reason for delete note",
+        }
+        # And: 로그인 해서 토큰을 발급받는다.
+        user_token_of_creating_note_delete_issue = _login(self.user_data)
+        # And: 유효하지 않은 수정할 Note의 id가 주어진다.
+        invalid_note_id = 9999999
+
+        # When: Note 삭제 API를 호출 했을 떄
+        response = self._call_note_delete_api(
+            valid_request_body, invalid_note_id, user_token_of_creating_note_delete_issue
+        )
+
+        # Then: status code는 404을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And: "노트를 찾을 수 없습니다."라는 메시지를 리턴한다.
+        self.assertEqual(response.data["message"], "노트를 찾을 수 없습니다.")
+        # Then: Issue가 생성되지 않아야 한다
+        issue = Issue.objects.first()
+        self.assertIsNone(issue)

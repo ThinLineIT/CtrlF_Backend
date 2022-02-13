@@ -8,6 +8,7 @@ from ctrlfbe.swagger import (
     SWAGGER_ISSUE_DETAIL_VIEW,
     SWAGGER_ISSUE_LIST_VIEW,
     SWAGGER_NOTE_CREATE_VIEW,
+    SWAGGER_NOTE_DELETE_VIEW,
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
     SWAGGER_NOTE_UPDATE_VIEW,
@@ -89,6 +90,17 @@ class BaseContentViewSet(CtrlfAuthenticationMixin, ModelViewSet):
 
         return Response(data={"message": "Note 수정 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
 
+    def delete(self, request, *args, **issue_data):
+        ctrlf_user = self._ctrlf_authentication(request)
+        issue_data["owner"] = ctrlf_user.id
+        issue_data["title"] = f"{self.get_object().title} 삭제"
+
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=self.get_object())
+
+        return Response(data={"message": "Note 삭제 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
+
     def append_ctrlf_user(self, data, ctrlf_user):
         if self.serializer_class is PageHistorySerializer:
             data["model_data"]["owner"] = ctrlf_user.id
@@ -121,6 +133,11 @@ class NoteViewSet(BaseContentViewSet):
     def update(self, request, *args, **kwargs):
         data = NoteData(request).build_update_data()
         return super().update(request, **data)
+
+    @swagger_auto_schema(**SWAGGER_NOTE_DELETE_VIEW)
+    def delete(self, request, *args, **kwargs):
+        data = NoteData(request).build_delete_data()
+        return super().delete(request, **data)
 
 
 class TopicViewSet(BaseContentViewSet):
