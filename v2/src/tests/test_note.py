@@ -8,6 +8,7 @@ from ctrlfbe.models import (
     Issue,
     Note,
 )
+from ctrlfbe.serializers import IssueCreateSerializer
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -523,3 +524,60 @@ class TestNoteDelete(NoteTestMixin, TestCase):
         # Then: Issue가 생성되지 않아야 한다
         issue = Issue.objects.first()
         self.assertIsNone(issue)
+
+    def test_should_delete_note_on_approving_issue_about_note_delete(self):
+        # Given: Note Delete Issue를 생성한다
+        note_delete_request_body = {"reason": "reason for note delete"}
+        issue_data = {
+            "owner": self.user.id,
+            "title": f"{self.note.title} 삭제",
+            "related_model_type": CtrlfContentType.NOTE,
+            "action": CtrlfActionType.DELETE,
+            "status": CtrlfIssueStatus.REQUESTED,
+            "reason": note_delete_request_body["reason"],
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=self.note)
+        # And: Note Delete Issue가 주어진다.
+        valid_issue = Issue.objects.first()
+        # And: 해당 Issue에 권한이 있는 user token을 발급받는다.
+        issue_approve_user_token = _login(self.user_data)
+
+        # When: Note Update Issue에 대한 Issue Approve API를 호출한다.
+        response = self._call_issue_approve_api(valid_issue.id, issue_approve_user_token)
+
+        # Then: status code는 204이다.
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        # And: Note는 None 이어야 한다
+        self.assertIsNone(Note.objects.filter(id=self.note.id).first())
+
+    def test_should_not_delete_note_on_not_having_permission_about_delete_note_issue(self):
+        # Given: Note Delete Issue를 생성한다
+        note_delete_request_body = {"reason": "reason for note delete"}
+        issue_data = {
+            "owner": self.user.id,
+            "title": f"{self.note.title} 삭제",
+            "related_model_type": CtrlfContentType.NOTE,
+            "action": CtrlfActionType.DELETE,
+            "status": CtrlfIssueStatus.REQUESTED,
+            "reason": note_delete_request_body["reason"],
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=self.note)
+        # And: Note Delete Issue가 주어진다.
+        valid_issue = Issue.objects.first()
+        # And: 해당 Issue에 권한이 없는 user의 토큰을 발급받는다.
+        another_user_data = {"email": "test2@test.com", "password": "12345"}
+        CtrlfUser.objects.create_user(**another_user_data)
+        user_token_not_having_permission_to_issue = _login(another_user_data)
+
+        # When: Note Update Issue에 대한 Issue Approve API를 호출한다.
+        response = self._call_issue_approve_api(valid_issue.id, user_token_not_having_permission_to_issue)
+
+        # Then: status code는 403이다.
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # And: Note는 삭제되지 않아야 한다.
+        note = Note.objects.filter(id=self.note.id).first()
+        self.assertIsNotNone(note)

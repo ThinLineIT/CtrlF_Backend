@@ -235,6 +235,9 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             ctrlf_content.process_update() if is_page else ctrlf_content.process_update(issue.title)
         elif issue.action == CtrlfActionType.CREATE:
             ctrlf_content.process_create()
+        else:
+            ctrlf_content.process_delete()
+            return Response(data={"message": "삭제 완료"}, status=status.HTTP_204_NO_CONTENT)
 
         issue.status = CtrlfIssueStatus.APPROVED
         issue.save()

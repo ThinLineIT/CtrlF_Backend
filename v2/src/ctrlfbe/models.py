@@ -49,6 +49,9 @@ class Note(CommonTimestamp):
             self.is_approved = True
             self.save()
 
+    def process_delete(self):
+        self.delete()
+
 
 class Topic(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)
