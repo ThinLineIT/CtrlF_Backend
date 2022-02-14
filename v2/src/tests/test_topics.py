@@ -32,11 +32,11 @@ class TestTopicMixin:
         return self.client.post(reverse("topics:topic_create"), request_body, **_get_header(token))
 
     def _call_topic_detail_api(self, topic_id):
-        return self.client.get(reverse("topics:topic_detail_update", kwargs={"topic_id": topic_id}))
+        return self.client.get(reverse("topics:topic_detail_update_delete", kwargs={"topic_id": topic_id}))
 
     def _call_topic_update_api(self, request_body, topic_id, token=None):
         return self.client.put(
-            reverse("topics:topic_detail_update", kwargs={"topic_id": topic_id}),
+            reverse("topics:topic_detail_update_delete", kwargs={"topic_id": topic_id}),
             data=json.dumps(request_body),
             content_type="application/json",
             **_get_header(token),
@@ -44,7 +44,7 @@ class TestTopicMixin:
 
     def _call_topic_delete_api(self, request_body, topic_id, token=None):
         return self.client.delete(
-            reverse("topics:topic_detail_update", kwargs={"topic_id": topic_id}),
+            reverse("topics:topic_detail_update_delete", kwargs={"topic_id": topic_id}),
             data=json.dumps(request_body),
             content_type="application/json",
             **_get_header(token),
