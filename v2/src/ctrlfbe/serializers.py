@@ -76,6 +76,14 @@ class PageUpdateRequestBodySerializer(serializers.Serializer):
     reason = serializers.CharField()
 
 
+class PageDeleteResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
+class PageDeleteRequestBodySerializer(serializers.Serializer):
+    reason = serializers.CharField()
+
+
 class TopicUpdateResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
 

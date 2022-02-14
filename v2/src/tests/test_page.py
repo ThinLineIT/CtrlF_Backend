@@ -12,6 +12,7 @@ from ctrlfbe.models import (
     PageVersionType,
     Topic,
 )
+from ctrlfbe.serializers import IssueCreateSerializer
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -37,12 +38,20 @@ class PageTestMixin:
 
     def _call_page_detail_api(self, page_id, version_no):
         return self.client.get(
-            reverse("pages:page_detail_update", kwargs={"page_id": page_id}), {"version_no": version_no}
+            reverse("pages:page_detail_update_delete", kwargs={"page_id": page_id}), {"version_no": version_no}
         )
 
     def _call_page_update_api(self, request_body, page_id, token=None):
         return self.client.put(
-            reverse("pages:page_detail_update", kwargs={"page_id": page_id}),
+            reverse("pages:page_detail_update_delete", kwargs={"page_id": page_id}),
+            json.dumps(request_body),
+            content_type="application/json",
+            **_get_header(token),
+        )
+
+    def _call_page_delete_api(self, request_body, page_id, token=None):
+        return self.client.delete(
+            reverse("pages:page_detail_update_delete", kwargs={"page_id": page_id}),
             json.dumps(request_body),
             content_type="application/json",
             **_get_header(token),
@@ -664,3 +673,112 @@ class TestPageUpdate(PageTestMixin, TestCase):
         # And: Issue Approve에 대한 PageHistory의 PageVersionType은 UPDATE이다.
         new_page_history = PageHistory.objects.get(version_no=2)
         self.assertEqual(new_page_history.version_type, PageVersionType.UPDATE)
+
+
+class TestPageDelete(PageTestMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.page = self._make_pages_in_topic(self.topic, 1)[0]
+        self.page_history = self._make_page_history_in_page([self.page])[0]
+
+    def test_page_delete_on_success(self):
+        # Given: 새로운 Page title과 Issue reason이 주어진다.
+        valid_request_body = {
+            "reason": "reason for delete page",
+        }
+        # And: 로그인 해서 토큰을 발급받는다.
+        user_token_of_creating_page_delete_issue = _login(self.user_data)
+        # And: 수정할 Page id가 주어진다.
+        valid_note_id = self.topic.id
+
+        # When: Page 삭제 API를 호출 했을 떄
+        self._call_page_delete_api(valid_request_body, valid_note_id, user_token_of_creating_page_delete_issue)
+
+        # Then: Issue가 정상적으로 생성된다.
+        issue = Issue.objects.first()
+        self.assertEqual(issue.title, f"{self.page_history.title} 삭제")
+        self.assertEqual(issue.reason, valid_request_body["reason"])
+        self.assertEqual(issue.owner.id, self.user.id)
+        self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
+        self.assertEqual(issue.related_model_type, CtrlfContentType.PAGE)
+        self.assertEqual(issue.related_model_id, self.page_history.id)
+        self.assertEqual(issue.action, CtrlfActionType.DELETE)
+
+    def test_page_delete_on_fail_with_invalid_topic_id(self):
+        # Given: 새로운 Page title과 Issue reason이 주어진다.
+        valid_request_body = {
+            "reason": "reason for delete page",
+        }
+        # And: 로그인 해서 토큰을 발급받는다.
+        user_token_of_creating_page_delete_issue = _login(self.user_data)
+        # And: 유효하지 않은 수정할 Page id가 주어진다.
+        invalid_topic_id = 9999999
+
+        # When: Page 삭제 API를 호출 했을 떄
+        response = self._call_page_delete_api(
+            valid_request_body, invalid_topic_id, user_token_of_creating_page_delete_issue
+        )
+
+        # Then: status code는 404을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And: "페이지를 찾을 수 없습니다."라는 메시지를 리턴한다.
+        self.assertEqual(response.data["message"], "페이지를 찾을 수 없습니다.")
+        # Then: Issue가 생성되지 않아야 한다
+        issue = Issue.objects.first()
+        self.assertIsNone(issue)
+
+    def test_should_delete_note_on_approving_issue_about_page_delete(self):
+        # Given: Page Delete Issue를 생성한다
+        page_delete_request_body = {"reason": "reason for page delete"}
+        issue_data = {
+            "owner": self.user.id,
+            "title": f"{self.page_history.title} 삭제",
+            "related_model_type": CtrlfContentType.PAGE,
+            "action": CtrlfActionType.DELETE,
+            "status": CtrlfIssueStatus.REQUESTED,
+            "reason": page_delete_request_body["reason"],
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=self.note)
+        # And: Page Delete Issue가 주어진다.
+        valid_issue = Issue.objects.first()
+        # And: 해당 Issue에 권한이 있는 user token을 발급받는다.
+        issue_approve_user_token = _login(self.user_data)
+
+        # When: Page Delete Issue에 대한 Issue Approve API를 호출한다.
+        response = self._call_issue_approve_api(valid_issue.id, issue_approve_user_token)
+
+        # Then: status code는 204이다.
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        # And: Page는 None 이어야 한다
+        self.assertIsNone(Page.objects.filter(id=self.page.id).first())
+
+    def test_should_not_delete_topic_on_not_having_permission_about_delete_topic_issue(self):
+        # Given: Page Delete Issue를 생성한다
+        page_delete_request_body = {"reason": "reason for page delete"}
+        issue_data = {
+            "owner": self.user.id,
+            "title": f"{self.page_history.title} 삭제",
+            "related_model_type": CtrlfContentType.PAGE,
+            "action": CtrlfActionType.DELETE,
+            "status": CtrlfIssueStatus.REQUESTED,
+            "reason": page_delete_request_body["reason"],
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=self.note)
+        # And: Page Delete Issue가 주어진다.
+        valid_issue = Issue.objects.first()
+        # And: 해당 Issue에 권한이 없는 user의 토큰을 발급받는다.
+        another_user_data = {"email": "test2@test.com", "password": "12345"}
+        CtrlfUser.objects.create_user(**another_user_data)
+        user_token_not_having_permission_to_issue = _login(another_user_data)
+
+        # When: Page Delete Issue에 대한 Issue Approve API를 호출한다.
+        response = self._call_issue_approve_api(valid_issue.id, user_token_not_having_permission_to_issue)
+
+        # Then: status code는 403이다.
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # And: Page는 삭제되지 않아야 한다.
+        self.assertIsNotNone(Page.objects.filter(id=self.page.id).first())

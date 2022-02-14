@@ -118,6 +118,9 @@ class Page(CommonTimestamp):
                 page_history.is_approved = True
                 page_history.save()
 
+    def process_delete(self):
+        self.delete()
+
 
 class PageHistoryQuerySet(models.QuerySet):
     def current(self, page):

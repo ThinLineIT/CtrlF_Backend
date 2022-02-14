@@ -13,6 +13,8 @@ from ctrlfbe.serializers import (
     NoteUpdateRequestBodySerializer,
     NoteUpdateResponseSerializer,
     PageCreateRequestBodySerializer,
+    PageDeleteRequestBodySerializer,
+    PageDeleteResponseSerializer,
     PageDetailQuerySerializer,
     PageDetailSerializer,
     PageListSerializer,
@@ -131,6 +133,14 @@ SWAGGER_PAGE_UPDATE_VIEW = {
     "operation_summary": "Page Update Request API",
     "operation_description": "Page 업데이트를 위한 Issue를 생성합니다.",
     "request_body": PageUpdateRequestBodySerializer,
+    "tags": ["디테일 화면"],
+}
+
+SWAGGER_PAGE_DELETE_VIEW = {
+    "operation_summary": "Page Delete Request API",
+    "operation_description": "Page 삭제 위한 Issue를 생성합니다.",
+    "responses": {200: PageDeleteResponseSerializer()},
+    "request_body": PageDeleteRequestBodySerializer,
     "tags": ["디테일 화면"],
 }
 

@@ -103,3 +103,8 @@ class PageData(BaseData):
             "version_type": PageVersionType.UPDATE,
         }
         return {"model_data": page_history_data, "issue_data": issue_data}
+
+    def build_delete_data(self, page):
+        issue_data = super().build_delete_data()
+        issue_data["related_model_type"] = CtrlfContentType.PAGE
+        return issue_data

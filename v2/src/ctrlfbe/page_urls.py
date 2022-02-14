@@ -14,5 +14,9 @@ urlpatterns = [
         ),
         name="page_create",
     ),
-    path("<int:page_id>/", PageViewSet.as_view({"get": "retrieve", "put": "update"}), name="page_detail_update"),
+    path(
+        "<int:page_id>/",
+        PageViewSet.as_view({"get": "retrieve", "put": "update", "delete": "delete"}),
+        name="page_detail_update_delete",
+    ),
 ]
