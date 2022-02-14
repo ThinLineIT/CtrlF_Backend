@@ -80,6 +80,14 @@ class TopicUpdateResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
 
 
+class TopicDeleteResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
+class TopicDeleteRequestBodySerializer(serializers.Serializer):
+    reason = serializers.CharField()
+
+
 class TopicCreateRequestBodySerializer(serializers.Serializer):
     note_id = serializers.IntegerField()
     title = serializers.CharField()

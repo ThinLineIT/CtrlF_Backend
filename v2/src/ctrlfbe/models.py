@@ -75,6 +75,9 @@ class Topic(CommonTimestamp):
             self.is_approved = True
             self.save()
 
+    def process_delete(self):
+        self.delete()
+
 
 class Page(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)

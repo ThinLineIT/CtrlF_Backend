@@ -17,6 +17,7 @@ from ctrlfbe.swagger import (
     SWAGGER_PAGE_LIST_VIEW,
     SWAGGER_PAGE_UPDATE_VIEW,
     SWAGGER_TOPIC_CREATE_VIEW,
+    SWAGGER_TOPIC_DELETE_VIEW,
     SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
     SWAGGER_TOPIC_UPDATE_VIEW,
@@ -99,7 +100,7 @@ class BaseContentViewSet(CtrlfAuthenticationMixin, ModelViewSet):
         issue_serializer.is_valid(raise_exception=True)
         issue_serializer.save(related_model=self.get_object())
 
-        return Response(data={"message": "Note 삭제 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
+        return Response(data={"message": "삭제 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
 
     def append_ctrlf_user(self, data, ctrlf_user):
         if self.serializer_class is PageHistorySerializer:
@@ -164,6 +165,11 @@ class TopicViewSet(BaseContentViewSet):
     def update(self, request, *args, **kwargs):
         data = TopicData(request).build_update_data()
         return super().update(request, **data)
+
+    @swagger_auto_schema(**SWAGGER_TOPIC_DELETE_VIEW)
+    def delete(self, request, *args, **kwargs):
+        data = TopicData(request).build_delete_data()
+        return super().delete(request, **data)
 
 
 class PageViewSet(BaseContentViewSet):

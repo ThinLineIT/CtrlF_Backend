@@ -18,6 +18,8 @@ from ctrlfbe.serializers import (
     PageListSerializer,
     PageUpdateRequestBodySerializer,
     TopicCreateRequestBodySerializer,
+    TopicDeleteRequestBodySerializer,
+    TopicDeleteResponseSerializer,
     TopicSerializer,
     TopicUpdateRequestBodySerializer,
     TopicUpdateResponseSerializer,
@@ -106,6 +108,14 @@ SWAGGER_TOPIC_UPDATE_VIEW = {
     "request_body": TopicUpdateRequestBodySerializer(),
     "operation_summary": "Topic Update Request API",
     "operation_description": "Topic 업데이트를 위한 Issue를 생성합니다.",
+    "tags": ["디테일 화면"],
+}
+
+SWAGGER_TOPIC_DELETE_VIEW = {
+    "responses": {200: TopicDeleteResponseSerializer()},
+    "request_body": TopicDeleteRequestBodySerializer(),
+    "operation_summary": "Topic Delete Request API",
+    "operation_description": "Topic 삭제를 위한 Issue를 생성합니다.",
     "tags": ["디테일 화면"],
 }
 
