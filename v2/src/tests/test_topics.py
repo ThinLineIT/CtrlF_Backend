@@ -582,6 +582,9 @@ class TestTopicDelete(TestTopicMixin, TestCase):
 
         # Then: status code는 204이다.
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        # And: issue도 삭제되어야 한다
+        valid_issue = Issue.objects.first()
+        self.assertIsNone(valid_issue)
         # And: Topic은 None 이어야 한다
         self.assertIsNone(Topic.objects.filter(id=self.topic.id).first())
 

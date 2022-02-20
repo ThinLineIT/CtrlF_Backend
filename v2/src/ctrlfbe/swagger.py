@@ -77,7 +77,7 @@ SWAGGER_NOTE_UPDATE_VIEW = {
 }
 
 SWAGGER_NOTE_DELETE_VIEW = {
-    "responses": {200: NoteDeleteResponseSerializer()},
+    "responses": {204: NoteDeleteResponseSerializer()},
     "request_body": NoteDeleteRequestBodySerializer(),
     "operation_summary": "Note Delete Request API",
     "operation_description": "Note 삭제를 위한 Issue를 생성합니다.",
@@ -114,7 +114,7 @@ SWAGGER_TOPIC_UPDATE_VIEW = {
 }
 
 SWAGGER_TOPIC_DELETE_VIEW = {
-    "responses": {200: TopicDeleteResponseSerializer()},
+    "responses": {204: TopicDeleteResponseSerializer()},
     "request_body": TopicDeleteRequestBodySerializer(),
     "operation_summary": "Topic Delete Request API",
     "operation_description": "Topic 삭제를 위한 Issue를 생성합니다.",
@@ -139,7 +139,7 @@ SWAGGER_PAGE_UPDATE_VIEW = {
 SWAGGER_PAGE_DELETE_VIEW = {
     "operation_summary": "Page Delete Request API",
     "operation_description": "Page 삭제 위한 Issue를 생성합니다.",
-    "responses": {200: PageDeleteResponseSerializer()},
+    "responses": {204: PageDeleteResponseSerializer()},
     "request_body": PageDeleteRequestBodySerializer,
     "tags": ["디테일 화면"],
 }

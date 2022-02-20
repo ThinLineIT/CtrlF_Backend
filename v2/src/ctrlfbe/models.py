@@ -50,6 +50,9 @@ class Note(CommonTimestamp):
             self.save()
 
     def process_delete(self):
+        Issue.objects.filter(
+            action=CtrlfActionType.DELETE, related_model_id=self.id, related_model_type=CtrlfContentType.NOTE
+        ).delete()
         self.delete()
 
 
@@ -76,6 +79,9 @@ class Topic(CommonTimestamp):
             self.save()
 
     def process_delete(self):
+        Issue.objects.filter(
+            action=CtrlfActionType.DELETE, related_model_id=self.id, related_model_type=CtrlfContentType.TOPIC
+        ).delete()
         self.delete()
 
 
@@ -119,6 +125,9 @@ class Page(CommonTimestamp):
                 page_history.save()
 
     def process_delete(self):
+        Issue.objects.filter(
+            action=CtrlfActionType.DELETE, related_model_id=self.id, related_model_type=CtrlfContentType.PAGE
+        ).delete()
         self.delete()
 
 

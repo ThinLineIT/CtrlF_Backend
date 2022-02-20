@@ -751,6 +751,9 @@ class TestPageDelete(PageTestMixin, TestCase):
 
         # Then: status code는 204이다.
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        # And: issue도 삭제되어야 한다
+        valid_issue = Issue.objects.first()
+        self.assertIsNone(valid_issue)
         # And: Page는 None 이어야 한다
         self.assertIsNone(Page.objects.filter(id=self.page.id).first())
 
