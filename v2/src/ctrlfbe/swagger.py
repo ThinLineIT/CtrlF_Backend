@@ -182,6 +182,18 @@ SWAGGER_ISSUE_DELETE_VIEW = {
     "tags": ["이슈 화면"],
 }
 
+SWAGGER_ISSUE_CLOSE_VIEW = {
+    "responses": {
+        200: IssueActionResponseSerializer(),
+        400: IssueActionResponseSerializer(),
+        401: IssueActionResponseSerializer(),
+    },
+    "request_body": IssueActionRequestBodySerializer(),
+    "operation_summary": "Issue Close API",
+    "operation_description": "issue_id에 해당하는 Issue의 상태를 Closed로 변경합니다",
+    "tags": ["이슈 화면"],
+}
+
 SWAGGER_IMAGE_UPLOAD_VIEW = {
     "operation_summary": "Image Upload API",
     "operation_description": "Page content의 이미지를 aws s3에 업로드합니다.",

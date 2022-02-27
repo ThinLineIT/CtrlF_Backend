@@ -809,3 +809,101 @@ class TestIssueDelete(IssueTextMixin, TestCase):
 
         # Then: 상태코드는 403 이어야 한다
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class TestIssueClose(IssueTextMixin, TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.owner_data = {
+            "email": "jinho@naver.com",
+            "password": "q1w2e3r4",
+        }
+        self.owner = CtrlfUser.objects.create_user(**self.owner_data)
+        self.note = Note.objects.create(title="basic note")
+        self.note.owners.add(self.owner)
+        topic_data = {"note": self.note, "title": "basic topic"}
+        self.topic = Topic.objects.create(**topic_data)
+        self.topic.owners.add(self.owner)
+
+    def _make_note(self):
+        note = Note.objects.create(title="test note title")
+        note.owners.add(self.owner)
+        issue_data = {
+            "owner": self.owner,
+            "title": "test note title",
+            "reason": "reason for note create",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.NOTE,
+            "related_model_id": note.id,
+            "action": CtrlfActionType.CREATE,
+        }
+        issue = Issue.objects.create(**issue_data)
+        return note.id, issue.id
+
+    def _make_topic(self):
+        topic_data = {"note": self.note, "title": "test topic title"}
+        topic = Topic.objects.create(**topic_data)
+        topic.owners.add(self.owner)
+        issue_data = {
+            "owner": self.owner,
+            "title": "test topic title",
+            "reason": "reason for topic create",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.TOPIC,
+            "related_model_id": topic.id,
+            "action": CtrlfActionType.CREATE,
+        }
+        issue = Issue.objects.create(**issue_data)
+        return topic.id, issue.id
+
+    def _make_page(self):
+        page = Page.objects.create(topic=self.topic)
+        page.owners.add(self.owner)
+        page_history_data = {
+            "owner": self.user,
+            "page": page,
+            "title": "test page title",
+            "content": "test page content",
+            "version_type": PageVersionType.CURRENT,
+        }
+        page_history = PageHistory.objects.create(**page_history_data)
+        issue_data = {
+            "owner": self.owner,
+            "title": "test page title",
+            "reason": "reason for page create",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.PAGE,
+            "related_model_id": page.id,
+            "action": CtrlfActionType.CREATE,
+        }
+        issue = Issue.objects.create(**issue_data)
+        return page, issue, page_history
+
+    def _login(self, user_data):
+        serializer = LoginSerializer()
+        return serializer.validate(user_data)["token"]
+
+    def _call_api(self, request_body, token=None):
+        if token:
+            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        else:
+            header = {}
+        return self.client.post(reverse("actions:issue_close"), request_body, content_type="application/json", **header)
+
+    def test_issue_delete_on_success_with_page(self):
+        # Given: Page와 Issue를 생성한다.
+        page, issue, page_history = self._make_page()
+        # And: issue의 상태는 Approved가 아니다
+        issue.status = CtrlfIssueStatus.REJECTED
+        issue.save()
+        # And: request_body로 유효한 issue id가 주어진다.
+        request_body = {"issue_id": issue.id}
+        # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+        owner_token = self._login(self.owner_data)
+
+        # When: Issue Close API 를 호출했을 때,
+        self._call_api(request_body, owner_token)
+
+        # Then: 이슈의 상태는 Closed 가 되어야 한다
+        issue = Issue.objects.filter(id=issue.id).first()
+        self.assertEqual(issue.status, CtrlfIssueStatus.CLOSED)

@@ -4,6 +4,7 @@ from ctrlfbe.swagger import (
     SWAGGER_HEALTH_CHECK_VIEW,
     SWAGGER_IMAGE_UPLOAD_VIEW,
     SWAGGER_ISSUE_APPROVE_VIEW,
+    SWAGGER_ISSUE_CLOSE_VIEW,
     SWAGGER_ISSUE_COUNT,
     SWAGGER_ISSUE_DELETE_VIEW,
     SWAGGER_ISSUE_DETAIL_VIEW,
@@ -241,6 +242,17 @@ class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = IssueDetailSerializer
         return super().retrieve(request, *args, **kwargs)
+
+
+class IssueCloseView(CtrlfAuthenticationMixin, APIView):
+    @swagger_auto_schema(**SWAGGER_ISSUE_CLOSE_VIEW)
+    def post(self, request, *args, **kwargs):
+        self._ctrlf_authentication(request)
+        issue = Issue.objects.filter(id=request.data["issue_id"]).first()
+        if issue.status == CtrlfIssueStatus.REJECTED:
+            issue.status = CtrlfIssueStatus.CLOSED
+            issue.save()
+            return Response(data={"message": "이슈 닫힘"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class IssueDeleteView(CtrlfAuthenticationMixin, APIView):
