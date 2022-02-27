@@ -5,6 +5,7 @@ from ctrlfbe.swagger import (
     SWAGGER_IMAGE_UPLOAD_VIEW,
     SWAGGER_ISSUE_APPROVE_VIEW,
     SWAGGER_ISSUE_COUNT,
+    SWAGGER_ISSUE_DELETE_VIEW,
     SWAGGER_ISSUE_DETAIL_VIEW,
     SWAGGER_ISSUE_LIST_VIEW,
     SWAGGER_NOTE_CREATE_VIEW,
@@ -240,6 +241,17 @@ class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = IssueDetailSerializer
         return super().retrieve(request, *args, **kwargs)
+
+
+class IssueDeleteView(CtrlfAuthenticationMixin, APIView):
+    @swagger_auto_schema(**SWAGGER_ISSUE_DELETE_VIEW)
+    def delete(self, request, *args, **kwargs):
+        self._ctrlf_authentication(request)
+        issue = Issue.objects.get(id=request.data["issue_id"])
+
+        if issue.status != CtrlfIssueStatus.APPROVED:
+            issue.delete()
+            return Response(data={"message": "이슈 삭제"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class IssueApproveView(CtrlfAuthenticationMixin, APIView):

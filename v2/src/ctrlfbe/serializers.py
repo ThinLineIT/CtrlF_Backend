@@ -269,11 +269,11 @@ class IssueDetailSerializer(serializers.Serializer):
         return page_history.version_no
 
 
-class IssueApproveResponseSerializer(serializers.Serializer):
+class IssueActionResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
 
 
-class IssueApproveRequestBodySerializer(serializers.Serializer):
+class IssueActionRequestBodySerializer(serializers.Serializer):
     issue_id = serializers.IntegerField()
 
 

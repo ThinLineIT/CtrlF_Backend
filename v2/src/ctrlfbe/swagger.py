@@ -1,8 +1,8 @@
 from ctrlfbe.serializers import (
     ImageSerializer,
     ImageUploadRequestBodySerializer,
-    IssueApproveRequestBodySerializer,
-    IssueApproveResponseSerializer,
+    IssueActionRequestBodySerializer,
+    IssueActionResponseSerializer,
     IssueCountSerializer,
     IssueDetailSerializer,
     IssueListSerializer,
@@ -160,14 +160,26 @@ SWAGGER_ISSUE_DETAIL_VIEW = {
 
 SWAGGER_ISSUE_APPROVE_VIEW = {
     "responses": {
-        200: IssueApproveResponseSerializer(),
-        400: IssueApproveResponseSerializer(),
-        401: IssueApproveResponseSerializer(),
+        200: IssueActionResponseSerializer(),
+        400: IssueActionResponseSerializer(),
+        401: IssueActionResponseSerializer(),
     },
-    "request_body": IssueApproveRequestBodySerializer(),
+    "request_body": IssueActionRequestBodySerializer(),
     "operation_summary": "Issue Approve API",
     "operation_description": "issue_id에 해당하는 Issue의 content(Note or Topic or Page)를 승인 합니다",
     "tags": ["이슈 화면", "디테일 화면"],
+}
+
+SWAGGER_ISSUE_DELETE_VIEW = {
+    "responses": {
+        200: IssueActionResponseSerializer(),
+        400: IssueActionResponseSerializer(),
+        401: IssueActionResponseSerializer(),
+    },
+    "request_body": IssueActionRequestBodySerializer(),
+    "operation_summary": "Issue Delete API",
+    "operation_description": "issue_id에 해당하는 Issue를 삭제 합니다.",
+    "tags": ["이슈 화면"],
 }
 
 SWAGGER_IMAGE_UPLOAD_VIEW = {

@@ -618,3 +618,72 @@ class TestIssueCount(IssueTextMixin, TestCase):
 
         # Then: 생성한 Issue 개수 만큼 리턴 해야한다
         self.assertEqual(response.json()["issues_count"], want_to_make_issue_count)
+
+
+class TestIssueDelete(IssueTextMixin, TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.owner_data = {
+            "email": "jinho@naver.com",
+            "password": "q1w2e3r4",
+        }
+        self.owner = CtrlfUser.objects.create_user(**self.owner_data)
+        self.note = Note.objects.create(title="basic note")
+        self.note.owners.add(self.owner)
+        topic_data = {"note": self.note, "title": "basic topic"}
+        self.topic = Topic.objects.create(**topic_data)
+        self.topic.owners.add(self.owner)
+
+    def _make_page(self):
+        page = Page.objects.create(topic=self.topic)
+        page.owners.add(self.owner)
+        page_history_data = {
+            "owner": self.user,
+            "page": page,
+            "title": "test page title",
+            "content": "test page content",
+            "version_type": PageVersionType.CURRENT,
+        }
+        page_history = PageHistory.objects.create(**page_history_data)
+        issue_data = {
+            "owner": self.owner,
+            "title": "test page title",
+            "reason": "reason for page create",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.PAGE,
+            "related_model_id": page.id,
+            "action": CtrlfActionType.CREATE,
+        }
+        issue = Issue.objects.create(**issue_data)
+        return page, issue, page_history
+
+    def _login(self, user_data):
+        serializer = LoginSerializer()
+        return serializer.validate(user_data)["token"]
+
+    def _call_api(self, request_body, token=None):
+        if token:
+            header = {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+        else:
+            header = {}
+        return self.client.delete(
+            reverse("actions:issue_delete"), request_body, content_type="application/json", **header
+        )
+
+    def test_issue_delete_on_success(self):
+        # Given: Page와 Issue를 생성한다.
+        page, issue, page_history = self._make_page()
+        # And: issue의 상태는 Approved가 아니다
+        issue.status = CtrlfIssueStatus.REQUESTED
+        issue.save()
+        # And: request_body로 유효한 issue id가 주어진다.
+        request_body = {"issue_id": issue.id}
+        # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+        owner_token = self._login(self.owner_data)
+
+        # When: Issue Delete API 를 호출했을 때,
+        self._call_api(request_body, owner_token)
+
+        # Then: 이슈는 삭제되어야 한다
+        issue = Issue.objects.filter(id=issue.id).first()
+        self.assertIsNone(issue)
