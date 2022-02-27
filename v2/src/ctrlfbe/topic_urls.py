@@ -29,8 +29,9 @@ urlpatterns = [
             {
                 "get": "retrieve",
                 "put": "update",
+                "delete": "delete",
             }
         ),
-        name="topic_detail_update",
+        name="topic_detail_update_delete",
     ),
 ]

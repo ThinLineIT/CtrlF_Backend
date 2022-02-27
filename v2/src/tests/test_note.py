@@ -8,6 +8,7 @@ from ctrlfbe.models import (
     Issue,
     Note,
 )
+from ctrlfbe.serializers import IssueCreateSerializer
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -32,6 +33,14 @@ class NoteTestMixin:
 
     def _call_note_update_api(self, request_body, note_id, token=None):
         return self.client.put(
+            reverse("notes:note_detail_update_delete", kwargs={"note_id": note_id}),
+            data=json.dumps(request_body),
+            content_type="application/json",
+            **_get_header(token),
+        )
+
+    def _call_note_delete_api(self, request_body, note_id, token=None):
+        return self.client.delete(
             reverse("notes:note_detail_update_delete", kwargs={"note_id": note_id}),
             data=json.dumps(request_body),
             content_type="application/json",
@@ -462,3 +471,116 @@ class TestNoteUpdate(NoteTestMixin, TestCase):
         # And: Note title은 업데이트 되지 않는다.
         note = Note.objects.get(id=self.note.id)
         self.assertNotEqual(note.title, valid_issue.title)
+
+
+class TestNoteDelete(NoteTestMixin, TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.note = self._make_note_list(1)[0]
+
+    def test_note_delete_on_success(self):
+        # Given: 새로운 Note title과 Issue reason이 주어진다.
+        valid_request_body = {
+            "reason": "reason for delete note",
+        }
+        # And: 로그인 해서 토큰을 발급받는다.
+        user_token_of_creating_note_delete_issue = _login(self.user_data)
+        # And: 수정할 Note의 id가 주어진다.
+        valid_note_id = self.note.id
+
+        # When: Note 삭제 API를 호출 했을 떄
+        self._call_note_delete_api(valid_request_body, valid_note_id, user_token_of_creating_note_delete_issue)
+
+        # Then: Issue가 정상적으로 생성된다.
+        issue = Issue.objects.first()
+        note = Note.objects.get(id=self.note.id)
+        self.assertEqual(issue.title, f"{note.title} 삭제")
+        self.assertEqual(issue.reason, valid_request_body["reason"])
+        self.assertEqual(issue.owner.id, self.user.id)
+        self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
+        self.assertEqual(issue.related_model_type, CtrlfContentType.NOTE)
+        self.assertEqual(issue.related_model_id, Note.objects.first().id)
+        self.assertEqual(issue.action, CtrlfActionType.DELETE)
+
+    def test_note_delete_on_fail_with_invalid_note_id(self):
+        # Given: 새로운 Note title과 Issue reason이 주어진다.
+        valid_request_body = {
+            "reason": "reason for delete note",
+        }
+        # And: 로그인 해서 토큰을 발급받는다.
+        user_token_of_creating_note_delete_issue = _login(self.user_data)
+        # And: 유효하지 않은 수정할 Note의 id가 주어진다.
+        invalid_note_id = 9999999
+
+        # When: Note 삭제 API를 호출 했을 떄
+        response = self._call_note_delete_api(
+            valid_request_body, invalid_note_id, user_token_of_creating_note_delete_issue
+        )
+
+        # Then: status code는 404을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And: "노트를 찾을 수 없습니다."라는 메시지를 리턴한다.
+        self.assertEqual(response.data["message"], "노트를 찾을 수 없습니다.")
+        # Then: Issue가 생성되지 않아야 한다
+        issue = Issue.objects.first()
+        self.assertIsNone(issue)
+
+    def test_should_delete_note_on_approving_issue_about_note_delete(self):
+        # Given: Note Delete Issue를 생성한다
+        note_delete_request_body = {"reason": "reason for note delete"}
+        issue_data = {
+            "owner": self.user.id,
+            "title": f"{self.note.title} 삭제",
+            "related_model_type": CtrlfContentType.NOTE,
+            "action": CtrlfActionType.DELETE,
+            "status": CtrlfIssueStatus.REQUESTED,
+            "reason": note_delete_request_body["reason"],
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=self.note)
+        # And: Note Delete Issue가 주어진다.
+        valid_issue = Issue.objects.first()
+        # And: 해당 Issue에 권한이 있는 user token을 발급받는다.
+        issue_approve_user_token = _login(self.user_data)
+
+        # When: Note Update Issue에 대한 Issue Approve API를 호출한다.
+        response = self._call_issue_approve_api(valid_issue.id, issue_approve_user_token)
+
+        # Then: status code는 204이다.
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        # And: issue도 삭제되어야 한다
+        valid_issue = Issue.objects.first()
+        self.assertIsNone(valid_issue)
+        # And: Note는 None 이어야 한다
+        self.assertIsNone(Note.objects.filter(id=self.note.id).first())
+
+    def test_should_not_delete_note_on_not_having_permission_about_delete_note_issue(self):
+        # Given: Note Delete Issue를 생성한다
+        note_delete_request_body = {"reason": "reason for note delete"}
+        issue_data = {
+            "owner": self.user.id,
+            "title": f"{self.note.title} 삭제",
+            "related_model_type": CtrlfContentType.NOTE,
+            "action": CtrlfActionType.DELETE,
+            "status": CtrlfIssueStatus.REQUESTED,
+            "reason": note_delete_request_body["reason"],
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=self.note)
+        # And: Note Delete Issue가 주어진다.
+        valid_issue = Issue.objects.first()
+        # And: 해당 Issue에 권한이 없는 user의 토큰을 발급받는다.
+        another_user_data = {"email": "test2@test.com", "password": "12345"}
+        CtrlfUser.objects.create_user(**another_user_data)
+        user_token_not_having_permission_to_issue = _login(another_user_data)
+
+        # When: Note Update Issue에 대한 Issue Approve API를 호출한다.
+        response = self._call_issue_approve_api(valid_issue.id, user_token_not_having_permission_to_issue)
+
+        # Then: status code는 403이다.
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # And: Note는 삭제되지 않아야 한다.
+        note = Note.objects.filter(id=self.note.id).first()
+        self.assertIsNotNone(note)

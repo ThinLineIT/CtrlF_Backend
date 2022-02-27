@@ -15,5 +15,5 @@ urlpatterns = [
         ),
         name="issue_detail",
     ),
-    path("issue-count/", IssueCount.as_view(), name="issue_count"),
+    path("count/", IssueCount.as_view(), name="issue_count"),
 ]

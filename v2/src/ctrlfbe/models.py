@@ -49,6 +49,12 @@ class Note(CommonTimestamp):
             self.is_approved = True
             self.save()
 
+    def process_delete(self):
+        Issue.objects.filter(
+            action=CtrlfActionType.DELETE, related_model_id=self.id, related_model_type=CtrlfContentType.NOTE
+        ).delete()
+        self.delete()
+
 
 class Topic(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)
@@ -72,6 +78,12 @@ class Topic(CommonTimestamp):
             self.is_approved = True
             self.save()
 
+    def process_delete(self):
+        Issue.objects.filter(
+            action=CtrlfActionType.DELETE, related_model_id=self.id, related_model_type=CtrlfContentType.TOPIC
+        ).delete()
+        self.delete()
+
 
 class Page(CommonTimestamp):
     owners = models.ManyToManyField(CtrlfUser)
@@ -79,6 +91,8 @@ class Page(CommonTimestamp):
 
     def __str__(self):
         page_history = self.page_history.filter(version_type=PageVersionType.CURRENT).first()
+        if page_history is None:
+            return "page_history is None"
         return f"{self.topic.note.title}-{self.topic.title}-{page_history.title}"
 
     def exists_topic_owner(self, owner_id):
@@ -109,6 +123,12 @@ class Page(CommonTimestamp):
             if page_history:
                 page_history.is_approved = True
                 page_history.save()
+
+    def process_delete(self):
+        Issue.objects.filter(
+            action=CtrlfActionType.DELETE, related_model_id=self.id, related_model_type=CtrlfContentType.PAGE
+        ).delete()
+        self.delete()
 
 
 class PageHistoryQuerySet(models.QuerySet):

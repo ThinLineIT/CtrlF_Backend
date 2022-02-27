@@ -1,21 +1,27 @@
 from ctrlfbe.serializers import (
     ImageSerializer,
     ImageUploadRequestBodySerializer,
-    IssueApproveRequestBodySerializer,
-    IssueApproveResponseSerializer,
+    IssueActionRequestBodySerializer,
+    IssueActionResponseSerializer,
     IssueCountSerializer,
     IssueDetailSerializer,
     IssueListSerializer,
     NoteCreateRequestBodySerializer,
+    NoteDeleteRequestBodySerializer,
+    NoteDeleteResponseSerializer,
     NoteSerializer,
     NoteUpdateRequestBodySerializer,
     NoteUpdateResponseSerializer,
     PageCreateRequestBodySerializer,
+    PageDeleteRequestBodySerializer,
+    PageDeleteResponseSerializer,
     PageDetailQuerySerializer,
     PageDetailSerializer,
     PageListSerializer,
     PageUpdateRequestBodySerializer,
     TopicCreateRequestBodySerializer,
+    TopicDeleteRequestBodySerializer,
+    TopicDeleteResponseSerializer,
     TopicSerializer,
     TopicUpdateRequestBodySerializer,
     TopicUpdateResponseSerializer,
@@ -70,6 +76,14 @@ SWAGGER_NOTE_UPDATE_VIEW = {
     "tags": ["디테일 화면"],
 }
 
+SWAGGER_NOTE_DELETE_VIEW = {
+    "responses": {200: NoteDeleteResponseSerializer()},
+    "request_body": NoteDeleteRequestBodySerializer(),
+    "operation_summary": "Note Delete Request API",
+    "operation_description": "Note 삭제를 위한 Issue를 생성합니다.",
+    "tags": ["디테일 화면"],
+}
+
 SWAGGER_TOPIC_CREATE_VIEW = {
     "operation_summary": "Topic Create API",
     "operation_description": "비활성화된 Topic과 이슈를 생성 합니다.",
@@ -99,6 +113,14 @@ SWAGGER_TOPIC_UPDATE_VIEW = {
     "tags": ["디테일 화면"],
 }
 
+SWAGGER_TOPIC_DELETE_VIEW = {
+    "responses": {200: TopicDeleteResponseSerializer()},
+    "request_body": TopicDeleteRequestBodySerializer(),
+    "operation_summary": "Topic Delete Request API",
+    "operation_description": "Topic 삭제를 위한 Issue를 생성합니다.",
+    "tags": ["디테일 화면"],
+}
+
 SWAGGER_PAGE_DETAIL_VIEW = {
     "responses": {200: PageDetailSerializer()},
     "operation_summary": "Page Detail API",
@@ -111,6 +133,14 @@ SWAGGER_PAGE_UPDATE_VIEW = {
     "operation_summary": "Page Update Request API",
     "operation_description": "Page 업데이트를 위한 Issue를 생성합니다.",
     "request_body": PageUpdateRequestBodySerializer,
+    "tags": ["디테일 화면"],
+}
+
+SWAGGER_PAGE_DELETE_VIEW = {
+    "operation_summary": "Page Delete Request API",
+    "operation_description": "Page 삭제 위한 Issue를 생성합니다.",
+    "responses": {200: PageDeleteResponseSerializer()},
+    "request_body": PageDeleteRequestBodySerializer,
     "tags": ["디테일 화면"],
 }
 
@@ -130,14 +160,26 @@ SWAGGER_ISSUE_DETAIL_VIEW = {
 
 SWAGGER_ISSUE_APPROVE_VIEW = {
     "responses": {
-        200: IssueApproveResponseSerializer(),
-        400: IssueApproveResponseSerializer(),
-        401: IssueApproveResponseSerializer(),
+        200: IssueActionResponseSerializer(),
+        400: IssueActionResponseSerializer(),
+        401: IssueActionResponseSerializer(),
     },
-    "request_body": IssueApproveRequestBodySerializer(),
+    "request_body": IssueActionRequestBodySerializer(),
     "operation_summary": "Issue Approve API",
     "operation_description": "issue_id에 해당하는 Issue의 content(Note or Topic or Page)를 승인 합니다",
     "tags": ["이슈 화면", "디테일 화면"],
+}
+
+SWAGGER_ISSUE_DELETE_VIEW = {
+    "responses": {
+        200: IssueActionResponseSerializer(),
+        400: IssueActionResponseSerializer(),
+        401: IssueActionResponseSerializer(),
+    },
+    "request_body": IssueActionRequestBodySerializer(),
+    "operation_summary": "Issue Delete API",
+    "operation_description": "issue_id에 해당하는 Issue를 삭제 합니다.",
+    "tags": ["이슈 화면"],
 }
 
 SWAGGER_IMAGE_UPLOAD_VIEW = {

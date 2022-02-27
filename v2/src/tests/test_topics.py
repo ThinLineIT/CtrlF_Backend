@@ -9,6 +9,7 @@ from ctrlfbe.models import (
     Note,
     Topic,
 )
+from ctrlfbe.serializers import IssueCreateSerializer
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -31,11 +32,19 @@ class TestTopicMixin:
         return self.client.post(reverse("topics:topic_create"), request_body, **_get_header(token))
 
     def _call_topic_detail_api(self, topic_id):
-        return self.client.get(reverse("topics:topic_detail_update", kwargs={"topic_id": topic_id}))
+        return self.client.get(reverse("topics:topic_detail_update_delete", kwargs={"topic_id": topic_id}))
 
     def _call_topic_update_api(self, request_body, topic_id, token=None):
         return self.client.put(
-            reverse("topics:topic_detail_update", kwargs={"topic_id": topic_id}),
+            reverse("topics:topic_detail_update_delete", kwargs={"topic_id": topic_id}),
+            data=json.dumps(request_body),
+            content_type="application/json",
+            **_get_header(token),
+        )
+
+    def _call_topic_delete_api(self, request_body, topic_id, token=None):
+        return self.client.delete(
+            reverse("topics:topic_detail_update_delete", kwargs={"topic_id": topic_id}),
             data=json.dumps(request_body),
             content_type="application/json",
             **_get_header(token),
@@ -496,3 +505,115 @@ class TestTopicUpdate(TestTopicMixin, TestCase):
         # And: Topic의 title이 업데이트 되지 않는다.
         topic = Topic.objects.get(id=self.topic.id)
         self.assertNotEqual(topic.title, valid_issue.title)
+
+
+class TestTopicDelete(TestTopicMixin, TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.topic = self._make_topics_in_note(note=self.note, count=1)[0]
+
+    def test_topic_delete_on_success(self):
+        # Given: 새로운 Topic title과 Issue reason이 주어진다.
+        valid_request_body = {
+            "reason": "reason for delete topic",
+        }
+        # And: 로그인 해서 토큰을 발급받는다.
+        user_token_of_creating_topic_delete_issue = _login(self.user_data)
+        # And: 수정할 Topic id가 주어진다.
+        valid_note_id = self.topic.id
+
+        # When: Topic 삭제 API를 호출 했을 떄
+        self._call_topic_delete_api(valid_request_body, valid_note_id, user_token_of_creating_topic_delete_issue)
+
+        # Then: Issue가 정상적으로 생성된다.
+        issue = Issue.objects.first()
+        self.assertEqual(issue.title, f"{self.topic.title} 삭제")
+        self.assertEqual(issue.reason, valid_request_body["reason"])
+        self.assertEqual(issue.owner.id, self.user.id)
+        self.assertEqual(issue.status, CtrlfIssueStatus.REQUESTED)
+        self.assertEqual(issue.related_model_type, CtrlfContentType.TOPIC)
+        self.assertEqual(issue.related_model_id, self.topic.id)
+        self.assertEqual(issue.action, CtrlfActionType.DELETE)
+
+    def test_topic_delete_on_fail_with_invalid_topic_id(self):
+        # Given: 새로운 Topic title과 Issue reason이 주어진다.
+        valid_request_body = {
+            "reason": "reason for delete topic",
+        }
+        # And: 로그인 해서 토큰을 발급받는다.
+        user_token_of_creating_topic_delete_issue = _login(self.user_data)
+        # And: 유효하지 않은 수정할 Topic id가 주어진다.
+        invalid_topic_id = 9999999
+
+        # When: Topic 삭제 API를 호출 했을 떄
+        response = self._call_topic_delete_api(
+            valid_request_body, invalid_topic_id, user_token_of_creating_topic_delete_issue
+        )
+
+        # Then: status code는 404을 리턴한다.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # And: "토픽을 찾을 수 없습니다."라는 메시지를 리턴한다.
+        self.assertEqual(response.data["message"], "토픽을 찾을 수 없습니다.")
+        # Then: Issue가 생성되지 않아야 한다
+        issue = Issue.objects.first()
+        self.assertIsNone(issue)
+
+    def test_should_delete_note_on_approving_issue_about_topic_delete(self):
+        # Given: Topic Delete Issue를 생성한다
+        topic_delete_request_body = {"reason": "reason for topic delete"}
+        issue_data = {
+            "owner": self.user.id,
+            "title": f"{self.topic.title} 삭제",
+            "related_model_type": CtrlfContentType.TOPIC,
+            "action": CtrlfActionType.DELETE,
+            "status": CtrlfIssueStatus.REQUESTED,
+            "reason": topic_delete_request_body["reason"],
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=self.note)
+        # And: Topic Delete Issue가 주어진다.
+        valid_issue = Issue.objects.first()
+        # And: 해당 Issue에 권한이 있는 user token을 발급받는다.
+        issue_approve_user_token = _login(self.user_data)
+
+        # When: Topic Delete Issue에 대한 Issue Approve API를 호출한다.
+        response = self._call_issue_approve_api(valid_issue.id, issue_approve_user_token)
+
+        # Then: status code는 204이다.
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        # And: issue도 삭제되어야 한다
+        valid_issue = Issue.objects.first()
+        self.assertIsNone(valid_issue)
+        # And: Topic은 None 이어야 한다
+        self.assertIsNone(Topic.objects.filter(id=self.topic.id).first())
+
+    def test_should_not_delete_topic_on_not_having_permission_about_delete_topic_issue(self):
+        # Given: Topic Delete Issue를 생성한다
+        topic_delete_request_body = {"reason": "reason for topic delete"}
+        issue_data = {
+            "owner": self.user.id,
+            "title": f"{self.topic.title} 삭제",
+            "related_model_type": CtrlfContentType.TOPIC,
+            "action": CtrlfActionType.DELETE,
+            "status": CtrlfIssueStatus.REQUESTED,
+            "reason": topic_delete_request_body["reason"],
+        }
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        issue_serializer.save(related_model=self.note)
+        # And: Topic Delete Issue가 주어진다.
+        valid_issue = Issue.objects.first()
+        # And: 해당 Issue에 권한이 없는 user의 토큰을 발급받는다.
+        another_user_data = {"email": "test2@test.com", "password": "12345"}
+        CtrlfUser.objects.create_user(**another_user_data)
+        user_token_not_having_permission_to_issue = _login(another_user_data)
+
+        # When: Topic Delete Issue에 대한 Issue Approve API를 호출한다.
+        response = self._call_issue_approve_api(valid_issue.id, user_token_not_having_permission_to_issue)
+
+        # Then: status code는 403이다.
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # And: Topic은 삭제되지 않아야 한다.
+        topic = Topic.objects.filter(id=self.topic.id).first()
+        self.assertIsNotNone(topic)

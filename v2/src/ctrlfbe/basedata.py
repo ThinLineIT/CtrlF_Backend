@@ -36,6 +36,14 @@ class BaseData:
         }
         return issue_data
 
+    def build_delete_data(self):
+        issue_data = {
+            "reason": self.request.data["reason"],
+            "status": CtrlfIssueStatus.REQUESTED,
+            "action": CtrlfActionType.DELETE,
+        }
+        return issue_data
+
 
 class NoteData(BaseData):
     def build_create_data(self):
@@ -46,6 +54,11 @@ class NoteData(BaseData):
 
     def build_update_data(self):
         issue_data = super().build_update_data()
+        issue_data["related_model_type"] = CtrlfContentType.NOTE
+        return issue_data
+
+    def build_delete_data(self):
+        issue_data = super().build_delete_data()
         issue_data["related_model_type"] = CtrlfContentType.NOTE
         return issue_data
 
@@ -60,6 +73,11 @@ class TopicData(BaseData):
 
     def build_update_data(self):
         issue_data = super().build_update_data()
+        issue_data["related_model_type"] = CtrlfContentType.TOPIC
+        return issue_data
+
+    def build_delete_data(self):
+        issue_data = super().build_delete_data()
         issue_data["related_model_type"] = CtrlfContentType.TOPIC
         return issue_data
 
@@ -85,3 +103,8 @@ class PageData(BaseData):
             "version_type": PageVersionType.UPDATE,
         }
         return {"model_data": page_history_data, "issue_data": issue_data}
+
+    def build_delete_data(self, page):
+        issue_data = super().build_delete_data()
+        issue_data["related_model_type"] = CtrlfContentType.PAGE
+        return issue_data

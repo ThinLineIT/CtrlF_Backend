@@ -5,17 +5,21 @@ from ctrlfbe.swagger import (
     SWAGGER_IMAGE_UPLOAD_VIEW,
     SWAGGER_ISSUE_APPROVE_VIEW,
     SWAGGER_ISSUE_COUNT,
+    SWAGGER_ISSUE_DELETE_VIEW,
     SWAGGER_ISSUE_DETAIL_VIEW,
     SWAGGER_ISSUE_LIST_VIEW,
     SWAGGER_NOTE_CREATE_VIEW,
+    SWAGGER_NOTE_DELETE_VIEW,
     SWAGGER_NOTE_DETAIL_VIEW,
     SWAGGER_NOTE_LIST_VIEW,
     SWAGGER_NOTE_UPDATE_VIEW,
     SWAGGER_PAGE_CREATE_VIEW,
+    SWAGGER_PAGE_DELETE_VIEW,
     SWAGGER_PAGE_DETAIL_VIEW,
     SWAGGER_PAGE_LIST_VIEW,
     SWAGGER_PAGE_UPDATE_VIEW,
     SWAGGER_TOPIC_CREATE_VIEW,
+    SWAGGER_TOPIC_DELETE_VIEW,
     SWAGGER_TOPIC_DETAIL_VIEW,
     SWAGGER_TOPIC_LIST_VIEW,
     SWAGGER_TOPIC_UPDATE_VIEW,
@@ -31,7 +35,15 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from .basedata import NoteData, PageData, TopicData
-from .models import CtrlfActionType, CtrlfIssueStatus, Issue, Note, Page, Topic
+from .models import (
+    CtrlfActionType,
+    CtrlfIssueStatus,
+    Issue,
+    Note,
+    Page,
+    PageHistory,
+    Topic,
+)
 from .paginations import IssueListPagination, NoteListPagination
 from .serializers import (
     IssueCountSerializer,
@@ -89,6 +101,25 @@ class BaseContentViewSet(CtrlfAuthenticationMixin, ModelViewSet):
 
         return Response(data={"message": "Note 수정 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
 
+    def delete(self, request, *args, **issue_data):
+        ctrlf_user = self._ctrlf_authentication(request)
+        issue_data["owner"] = ctrlf_user.id
+
+        if self.get_object().__class__ is Page:
+            page_history = PageHistory.objects.get(page=self.get_object())
+            issue_data["title"] = f"{page_history.title} 삭제"
+        else:
+            issue_data["title"] = f"{self.get_object().title} 삭제"
+
+        issue_serializer = IssueCreateSerializer(data=issue_data)
+        issue_serializer.is_valid(raise_exception=True)
+        if self.get_object().__class__ is Page:
+            issue_serializer.save(related_model=page_history)
+        else:
+            issue_serializer.save(related_model=self.get_object())
+
+        return Response(data={"message": "삭제 이슈를 생성하였습니다."}, status=status.HTTP_200_OK)
+
     def append_ctrlf_user(self, data, ctrlf_user):
         if self.serializer_class is PageHistorySerializer:
             data["model_data"]["owner"] = ctrlf_user.id
@@ -122,6 +153,11 @@ class NoteViewSet(BaseContentViewSet):
         data = NoteData(request).build_update_data()
         return super().update(request, **data)
 
+    @swagger_auto_schema(**SWAGGER_NOTE_DELETE_VIEW)
+    def delete(self, request, *args, **kwargs):
+        data = NoteData(request).build_delete_data()
+        return super().delete(request, **data)
+
 
 class TopicViewSet(BaseContentViewSet):
     parent_model = Note
@@ -148,6 +184,11 @@ class TopicViewSet(BaseContentViewSet):
         data = TopicData(request).build_update_data()
         return super().update(request, **data)
 
+    @swagger_auto_schema(**SWAGGER_TOPIC_DELETE_VIEW)
+    def delete(self, request, *args, **kwargs):
+        data = TopicData(request).build_delete_data()
+        return super().delete(request, **data)
+
 
 class PageViewSet(BaseContentViewSet):
     parent_model = Topic
@@ -168,7 +209,8 @@ class PageViewSet(BaseContentViewSet):
 
     @swagger_auto_schema(**SWAGGER_PAGE_DETAIL_VIEW)
     def retrieve(self, request, *args, **kwargs):
-        page_serializer = PageDetailSerializer(self.get_object(), context=kwargs)
+        version_no = self.request.query_params.get("version_no")
+        page_serializer = PageDetailSerializer(self.get_object(), context={"version_no": int(version_no)})
         return Response(data=page_serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(**SWAGGER_PAGE_UPDATE_VIEW)
@@ -176,6 +218,12 @@ class PageViewSet(BaseContentViewSet):
         self.serializer_class = PageHistorySerializer
         data = PageData(request).build_update_data(self.get_object())
         return super().create(request, **data)
+
+    @swagger_auto_schema(**SWAGGER_PAGE_DELETE_VIEW)
+    def delete(self, request, *args, **kwargs):
+        self.serializer_class = PageHistorySerializer
+        data = PageData(request).build_delete_data(self.get_object())
+        return super().delete(request, **data)
 
 
 class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
@@ -193,6 +241,24 @@ class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = IssueDetailSerializer
         return super().retrieve(request, *args, **kwargs)
+
+
+class IssueDeleteView(CtrlfAuthenticationMixin, APIView):
+    @swagger_auto_schema(**SWAGGER_ISSUE_DELETE_VIEW)
+    def delete(self, request, *args, **kwargs):
+        user = self._ctrlf_authentication(request)
+        issue = Issue.objects.filter(id=request.data["issue_id"]).first()
+        if issue is None:
+            return Response(data={"message": "이슈 ID를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        if issue.status == CtrlfIssueStatus.APPROVED:
+            return Response(data={"message": "유효한 요청이 아닙니다"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if issue.owner != user:
+            return Response(data={"message": "권한이 없습니다"}, status=status.HTTP_403_FORBIDDEN)
+
+        issue.delete()
+        return Response(data={"message": "이슈 삭제"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class IssueApproveView(CtrlfAuthenticationMixin, APIView):
@@ -217,6 +283,9 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             ctrlf_content.process_update() if is_page else ctrlf_content.process_update(issue.title)
         elif issue.action == CtrlfActionType.CREATE:
             ctrlf_content.process_create()
+        else:
+            ctrlf_content.process_delete()
+            return Response(data={"message": "삭제 완료"}, status=status.HTTP_204_NO_CONTENT)
 
         issue.status = CtrlfIssueStatus.APPROVED
         issue.save()
