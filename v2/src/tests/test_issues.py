@@ -791,3 +791,21 @@ class TestIssueDelete(IssueTextMixin, TestCase):
 
         # Then: 상태코드는 404 이어야 한다
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_issue_delete_on_fail_with_forbidden(self):
+        # Given:Note와 Issue를 생성한다.
+        _, issue_id = self._make_note()
+        issue = Issue.objects.get(id=issue_id)
+        # And: issue의 상태는 Approved가 아니고,
+        issue.status = CtrlfIssueStatus.REQUESTED
+        issue.save()
+        # And: request_body로 유효한 issue id가 주어진다.
+        request_body = {"issue_id": issue.id}
+        # And: owner 정보가 아닌 계정으로 로그인 하여 토큰을 발급받은 상태이다. -> 올바르지 않은 권한
+        owner_token = self._login(self.user_data)
+
+        # When: Issue Delete API 를 호출했을 때,
+        response = self._call_api(request_body, owner_token)
+
+        # Then: 상태코드는 403 이어야 한다
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
