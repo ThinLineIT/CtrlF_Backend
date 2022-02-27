@@ -249,7 +249,8 @@ class IssueCloseView(CtrlfAuthenticationMixin, APIView):
     def post(self, request, *args, **kwargs):
         self._ctrlf_authentication(request)
         issue = Issue.objects.filter(id=request.data["issue_id"]).first()
-
+        if issue is None:
+            return Response(data={"message": "이슈 ID를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
         if issue.status not in CtrlfIssueStatus.can_be_closed():
             return Response(data={"message": "유효한 요청이 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
 
