@@ -634,6 +634,22 @@ class TestIssueDelete(IssueTextMixin, TestCase):
         self.topic = Topic.objects.create(**topic_data)
         self.topic.owners.add(self.owner)
 
+    def _make_topic(self):
+        topic_data = {"note": self.note, "title": "test topic title"}
+        topic = Topic.objects.create(**topic_data)
+        topic.owners.add(self.owner)
+        issue_data = {
+            "owner": self.owner,
+            "title": "test topic title",
+            "reason": "reason for topic create",
+            "status": CtrlfIssueStatus.REQUESTED,
+            "related_model_type": CtrlfContentType.TOPIC,
+            "related_model_id": topic.id,
+            "action": CtrlfActionType.CREATE,
+        }
+        issue = Issue.objects.create(**issue_data)
+        return topic.id, issue.id
+
     def _make_page(self):
         page = Page.objects.create(topic=self.topic)
         page.owners.add(self.owner)
@@ -670,9 +686,28 @@ class TestIssueDelete(IssueTextMixin, TestCase):
             reverse("actions:issue_delete"), request_body, content_type="application/json", **header
         )
 
-    def test_issue_delete_on_success(self):
+    def test_issue_delete_on_success_with_page(self):
         # Given: Page와 Issue를 생성한다.
         page, issue, page_history = self._make_page()
+        # And: issue의 상태는 Approved가 아니다
+        issue.status = CtrlfIssueStatus.REQUESTED
+        issue.save()
+        # And: request_body로 유효한 issue id가 주어진다.
+        request_body = {"issue_id": issue.id}
+        # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+        owner_token = self._login(self.owner_data)
+
+        # When: Issue Delete API 를 호출했을 때,
+        self._call_api(request_body, owner_token)
+
+        # Then: 이슈는 삭제되어야 한다
+        issue = Issue.objects.filter(id=issue.id).first()
+        self.assertIsNone(issue)
+
+    def test_issue_delete_on_success_with_topic(self):
+        # Given:Topic과 Issue를 생성한다.
+        _, issue_id = self._make_topic()
+        issue = Issue.objects.get(id=issue_id)
         # And: issue의 상태는 Approved가 아니다
         issue.status = CtrlfIssueStatus.REQUESTED
         issue.save()
