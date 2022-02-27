@@ -4,6 +4,7 @@ from ctrlfbe.swagger import (
     SWAGGER_HEALTH_CHECK_VIEW,
     SWAGGER_IMAGE_UPLOAD_VIEW,
     SWAGGER_ISSUE_APPROVE_VIEW,
+    SWAGGER_ISSUE_CLOSE_VIEW,
     SWAGGER_ISSUE_COUNT,
     SWAGGER_ISSUE_DELETE_VIEW,
     SWAGGER_ISSUE_DETAIL_VIEW,
@@ -243,6 +244,23 @@ class IssueViewSet(CtrlfAuthenticationMixin, ModelViewSet):
         return super().retrieve(request, *args, **kwargs)
 
 
+class IssueCloseView(CtrlfAuthenticationMixin, APIView):
+    @swagger_auto_schema(**SWAGGER_ISSUE_CLOSE_VIEW)
+    def post(self, request, *args, **kwargs):
+        user = self._ctrlf_authentication(request)
+        issue = Issue.objects.filter(id=request.data["issue_id"]).first()
+        if issue is None:
+            return Response(data={"message": "이슈 ID를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        if issue.owner != user:
+            return Response(data={"message": "권한이 없습니다"}, status=status.HTTP_403_FORBIDDEN)
+        if issue.status not in CtrlfIssueStatus.can_be_closed():
+            return Response(data={"message": "유효한 요청이 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        issue.status = CtrlfIssueStatus.CLOSED
+        issue.save()
+        return Response(data={"message": "이슈 닫힘"}, status=status.HTTP_200_OK)
+
+
 class IssueDeleteView(CtrlfAuthenticationMixin, APIView):
     @swagger_auto_schema(**SWAGGER_ISSUE_DELETE_VIEW)
     def delete(self, request, *args, **kwargs):
@@ -250,12 +268,10 @@ class IssueDeleteView(CtrlfAuthenticationMixin, APIView):
         issue = Issue.objects.filter(id=request.data["issue_id"]).first()
         if issue is None:
             return Response(data={"message": "이슈 ID를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
-        if issue.status == CtrlfIssueStatus.APPROVED:
-            return Response(data={"message": "유효한 요청이 아닙니다"}, status=status.HTTP_400_BAD_REQUEST)
-
         if issue.owner != user:
             return Response(data={"message": "권한이 없습니다"}, status=status.HTTP_403_FORBIDDEN)
+        if issue.status == CtrlfIssueStatus.APPROVED:
+            return Response(data={"message": "유효한 요청이 아닙니다"}, status=status.HTTP_400_BAD_REQUEST)
 
         issue.delete()
         return Response(data={"message": "이슈 삭제"}, status=status.HTTP_204_NO_CONTENT)

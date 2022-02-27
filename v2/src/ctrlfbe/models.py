@@ -21,6 +21,10 @@ class CtrlfIssueStatus(models.TextChoices):
     APPROVED = "APPROVED", "승인"
     CLOSED = "CLOSED", "닫힘"
 
+    @classmethod
+    def can_be_closed(cls):
+        return {cls.REJECTED, cls.REQUESTED}
+
 
 class PageVersionType(models.TextChoices):
     CURRENT = "CURRENT", "최신"
