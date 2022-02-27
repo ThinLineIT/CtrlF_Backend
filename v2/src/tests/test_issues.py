@@ -942,3 +942,22 @@ class TestIssueClose(IssueTextMixin, TestCase):
                 self.assertEqual(issue.status, CtrlfIssueStatus.CLOSED)
                 # And: 상태코드는 200이어야 한다
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_issue_close_on_fail_with_bad_request(self):
+        # Given: Ctrlf Content의 Issue를 생성한다.
+        issue_list = self._get_issue_list()
+        for issue in issue_list:
+            with self.subTest():
+                # And: issue의 상태가 Closed 변경 가능한 상태가 아니고
+                issue.status = CtrlfIssueStatus.CLOSED
+                issue.save()
+                # And: request_body로 유효한 issue id가 주어진다.
+                request_body = {"issue_id": issue.id}
+                # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+                owner_token = self._login(self.owner_data)
+
+                # When: Issue Close API 를 호출했을 때,
+                response = self._call_api(request_body, owner_token)
+
+                # Then: 상태코드는 400이어야 한다
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
