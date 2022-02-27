@@ -14,9 +14,10 @@ from ctrlfbe.models import (
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
+from tests.test_mixin import IssueTestMixin
 
 
-class IssueTextMixin:
+class IssueApproveTextMixin:
     def setUp(self) -> None:
         self.client = Client()
         self.user_data = {
@@ -77,7 +78,7 @@ class IssueTextMixin:
         return self.note, self.topic, self.page, self.page_history
 
 
-class TestListIssue(IssueTextMixin, TestCase):
+class TestListIssue(IssueApproveTextMixin, TestCase):
     def setUp(self) -> None:
         super().setUp()
 
@@ -145,7 +146,7 @@ class TestListIssue(IssueTextMixin, TestCase):
             self.assertIn(issue["status"], {CtrlfIssueStatus.REQUESTED, CtrlfIssueStatus.REJECTED})
 
 
-class TestIssueDetail(IssueTextMixin, TestCase):
+class TestIssueDetail(IssueApproveTextMixin, TestCase):
     def setUp(self) -> None:
         super().setUp()
 
@@ -192,7 +193,7 @@ class TestIssueDetail(IssueTextMixin, TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class TestIssueApprove(IssueTextMixin, TestCase):
+class TestIssueApprove(IssueApproveTextMixin, TestCase):
     def setUp(self) -> None:
         super().setUp()
         self.owner_data = {
@@ -601,7 +602,7 @@ class TestIssueApprove(IssueTextMixin, TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class TestIssueCount(IssueTextMixin, TestCase):
+class TestIssueCount(IssueApproveTextMixin, TestCase):
     def setUp(self) -> None:
         super().setUp()
 
@@ -620,77 +621,9 @@ class TestIssueCount(IssueTextMixin, TestCase):
         self.assertEqual(response.json()["issues_count"], want_to_make_issue_count)
 
 
-class TestIssueDelete(IssueTextMixin, TestCase):
+class TestIssueDelete(IssueTestMixin, TestCase):
     def setUp(self) -> None:
         super().setUp()
-        self.owner_data = {
-            "email": "jinho@naver.com",
-            "password": "q1w2e3r4",
-        }
-        self.owner = CtrlfUser.objects.create_user(**self.owner_data)
-        self.note = Note.objects.create(title="basic note")
-        self.note.owners.add(self.owner)
-        topic_data = {"note": self.note, "title": "basic topic"}
-        self.topic = Topic.objects.create(**topic_data)
-        self.topic.owners.add(self.owner)
-
-    def _make_note(self):
-        note = Note.objects.create(title="test note title")
-        note.owners.add(self.owner)
-        issue_data = {
-            "owner": self.owner,
-            "title": "test note title",
-            "reason": "reason for note create",
-            "status": CtrlfIssueStatus.REQUESTED,
-            "related_model_type": CtrlfContentType.NOTE,
-            "related_model_id": note.id,
-            "action": CtrlfActionType.CREATE,
-        }
-        issue = Issue.objects.create(**issue_data)
-        return note.id, issue.id
-
-    def _make_topic(self):
-        topic_data = {"note": self.note, "title": "test topic title"}
-        topic = Topic.objects.create(**topic_data)
-        topic.owners.add(self.owner)
-        issue_data = {
-            "owner": self.owner,
-            "title": "test topic title",
-            "reason": "reason for topic create",
-            "status": CtrlfIssueStatus.REQUESTED,
-            "related_model_type": CtrlfContentType.TOPIC,
-            "related_model_id": topic.id,
-            "action": CtrlfActionType.CREATE,
-        }
-        issue = Issue.objects.create(**issue_data)
-        return topic.id, issue.id
-
-    def _make_page(self):
-        page = Page.objects.create(topic=self.topic)
-        page.owners.add(self.owner)
-        page_history_data = {
-            "owner": self.user,
-            "page": page,
-            "title": "test page title",
-            "content": "test page content",
-            "version_type": PageVersionType.CURRENT,
-        }
-        page_history = PageHistory.objects.create(**page_history_data)
-        issue_data = {
-            "owner": self.owner,
-            "title": "test page title",
-            "reason": "reason for page create",
-            "status": CtrlfIssueStatus.REQUESTED,
-            "related_model_type": CtrlfContentType.PAGE,
-            "related_model_id": page.id,
-            "action": CtrlfActionType.CREATE,
-        }
-        issue = Issue.objects.create(**issue_data)
-        return page, issue, page_history
-
-    def _login(self, user_data):
-        serializer = LoginSerializer()
-        return serializer.validate(user_data)["token"]
 
     def _call_api(self, request_body, token=None):
         if token:
@@ -701,61 +634,65 @@ class TestIssueDelete(IssueTextMixin, TestCase):
             reverse("actions:issue_delete"), request_body, content_type="application/json", **header
         )
 
-    def test_issue_delete_on_success_with_page(self):
-        # Given: Page와 Issue를 생성한다.
-        page, issue, page_history = self._make_page()
-        # And: issue의 상태는 Approved가 아니다
-        issue.status = CtrlfIssueStatus.REQUESTED
-        issue.save()
-        # And: request_body로 유효한 issue id가 주어진다.
-        request_body = {"issue_id": issue.id}
-        # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
-        owner_token = self._login(self.owner_data)
+    def test_issue_delete_on_success_when_status_is_requested(self):
+        # Given: Ctrlf Content의 Issue를 생성한다.
+        issue_list = self._get_issue_list()
+        with self.subTest():
+            for issue in issue_list:
+                # And: issue의 상태는 Approved가 아니다
+                issue.status = CtrlfIssueStatus.REQUESTED
+                issue.save()
+                # And: request_body로 유효한 issue id가 주어진다.
+                request_body = {"issue_id": issue.id}
+                # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+                owner_token = self._login(self.owner_data)
 
-        # When: Issue Delete API 를 호출했을 때,
-        self._call_api(request_body, owner_token)
+                # When: Issue Delete API 를 호출했을 때,
+                self._call_api(request_body, owner_token)
 
-        # Then: 이슈는 삭제되어야 한다
-        issue = Issue.objects.filter(id=issue.id).first()
-        self.assertIsNone(issue)
+                # Then: 이슈는 삭제되어야 한다
+                issue = Issue.objects.filter(id=issue.id).first()
+                self.assertIsNone(issue)
 
-    def test_issue_delete_on_success_with_topic(self):
-        # Given:Topic과 Issue를 생성한다.
-        _, issue_id = self._make_topic()
-        issue = Issue.objects.get(id=issue_id)
-        # And: issue의 상태는 Approved가 아니다
-        issue.status = CtrlfIssueStatus.REQUESTED
-        issue.save()
-        # And: request_body로 유효한 issue id가 주어진다.
-        request_body = {"issue_id": issue.id}
-        # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
-        owner_token = self._login(self.owner_data)
+    def test_issue_delete_on_success_when_status_is_rejected(self):
+        # Given: Ctrlf Content의 Issue를 생성한다.
+        issue_list = self._get_issue_list()
+        for issue in issue_list:
+            with self.subTest():
+                # And: issue의 상태는 Approved가 아니다
+                issue.status = CtrlfIssueStatus.REJECTED
+                issue.save()
+                # And: request_body로 유효한 issue id가 주어진다.
+                request_body = {"issue_id": issue.id}
+                # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+                owner_token = self._login(self.owner_data)
 
-        # When: Issue Delete API 를 호출했을 때,
-        self._call_api(request_body, owner_token)
+                # When: Issue Delete API 를 호출했을 때,
+                self._call_api(request_body, owner_token)
 
-        # Then: 이슈는 삭제되어야 한다
-        issue = Issue.objects.filter(id=issue.id).first()
-        self.assertIsNone(issue)
+                # Then: 이슈는 삭제되어야 한다
+                issue = Issue.objects.filter(id=issue.id).first()
+                self.assertIsNone(issue)
 
-    def test_issue_delete_on_success_with_note(self):
-        # Given:Note와 Issue를 생성한다.
-        _, issue_id = self._make_note()
-        issue = Issue.objects.get(id=issue_id)
-        # And: issue의 상태는 Approved가 아니다
-        issue.status = CtrlfIssueStatus.REQUESTED
-        issue.save()
-        # And: request_body로 유효한 issue id가 주어진다.
-        request_body = {"issue_id": issue.id}
-        # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
-        owner_token = self._login(self.owner_data)
+    def test_issue_delete_on_success_when_status_is_closed(self):
+        # Given: Ctrlf Content의 Issue를 생성한다.
+        issue_list = self._get_issue_list()
+        for issue in issue_list:
+            with self.subTest():
+                # And: issue의 상태는 Approved가 아니다
+                issue.status = CtrlfIssueStatus.CLOSED
+                issue.save()
+                # And: request_body로 유효한 issue id가 주어진다.
+                request_body = {"issue_id": issue.id}
+                # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+                owner_token = self._login(self.owner_data)
 
-        # When: Issue Delete API 를 호출했을 때,
-        self._call_api(request_body, owner_token)
+                # When: Issue Delete API 를 호출했을 때,
+                self._call_api(request_body, owner_token)
 
-        # Then: 이슈는 삭제되어야 한다
-        issue = Issue.objects.filter(id=issue.id).first()
-        self.assertIsNone(issue)
+                # Then: 이슈는 삭제되어야 한다
+                issue = Issue.objects.filter(id=issue.id).first()
+                self.assertIsNone(issue)
 
     def test_issue_delete_on_fail_with_bad_request(self):
         # Given:Note와 Issue를 생성한다.
@@ -811,77 +748,9 @@ class TestIssueDelete(IssueTextMixin, TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class TestIssueClose(IssueTextMixin, TestCase):
+class TestIssueClose(IssueTestMixin, TestCase):
     def setUp(self) -> None:
         super().setUp()
-        self.owner_data = {
-            "email": "jinho@naver.com",
-            "password": "q1w2e3r4",
-        }
-        self.owner = CtrlfUser.objects.create_user(**self.owner_data)
-        self.note = Note.objects.create(title="basic note")
-        self.note.owners.add(self.owner)
-        topic_data = {"note": self.note, "title": "basic topic"}
-        self.topic = Topic.objects.create(**topic_data)
-        self.topic.owners.add(self.owner)
-
-    def _make_note(self):
-        note = Note.objects.create(title="test note title")
-        note.owners.add(self.owner)
-        issue_data = {
-            "owner": self.owner,
-            "title": "test note title",
-            "reason": "reason for note create",
-            "status": CtrlfIssueStatus.REQUESTED,
-            "related_model_type": CtrlfContentType.NOTE,
-            "related_model_id": note.id,
-            "action": CtrlfActionType.CREATE,
-        }
-        issue = Issue.objects.create(**issue_data)
-        return note.id, issue.id
-
-    def _make_topic(self):
-        topic_data = {"note": self.note, "title": "test topic title"}
-        topic = Topic.objects.create(**topic_data)
-        topic.owners.add(self.owner)
-        issue_data = {
-            "owner": self.owner,
-            "title": "test topic title",
-            "reason": "reason for topic create",
-            "status": CtrlfIssueStatus.REQUESTED,
-            "related_model_type": CtrlfContentType.TOPIC,
-            "related_model_id": topic.id,
-            "action": CtrlfActionType.CREATE,
-        }
-        issue = Issue.objects.create(**issue_data)
-        return topic.id, issue.id
-
-    def _make_page(self):
-        page = Page.objects.create(topic=self.topic)
-        page.owners.add(self.owner)
-        page_history_data = {
-            "owner": self.user,
-            "page": page,
-            "title": "test page title",
-            "content": "test page content",
-            "version_type": PageVersionType.CURRENT,
-        }
-        page_history = PageHistory.objects.create(**page_history_data)
-        issue_data = {
-            "owner": self.owner,
-            "title": "test page title",
-            "reason": "reason for page create",
-            "status": CtrlfIssueStatus.REQUESTED,
-            "related_model_type": CtrlfContentType.PAGE,
-            "related_model_id": page.id,
-            "action": CtrlfActionType.CREATE,
-        }
-        issue = Issue.objects.create(**issue_data)
-        return page, issue, page_history
-
-    def _login(self, user_data):
-        serializer = LoginSerializer()
-        return serializer.validate(user_data)["token"]
 
     def _call_api(self, request_body, token=None):
         if token:
@@ -889,15 +758,6 @@ class TestIssueClose(IssueTextMixin, TestCase):
         else:
             header = {}
         return self.client.post(reverse("actions:issue_close"), request_body, content_type="application/json", **header)
-
-    def _get_issue_list(self):
-        _, page_issue, _ = self._make_page()
-        topic_issue_id, _ = self._make_topic()
-        note_issue_id, _ = self._make_note()
-        topic_issue = Issue.objects.get(id=topic_issue_id)
-        note_issue = Issue.objects.get(id=note_issue_id)
-
-        return [page_issue, topic_issue, note_issue]
 
     def test_issue_close_on_success_when_issue_status_is_rejected(self):
         # Given: Ctrlf Content의 Issue를 생성한다.
