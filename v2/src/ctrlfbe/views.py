@@ -249,10 +249,10 @@ class IssueCloseView(CtrlfAuthenticationMixin, APIView):
     def post(self, request, *args, **kwargs):
         self._ctrlf_authentication(request)
         issue = Issue.objects.filter(id=request.data["issue_id"]).first()
-        if issue.status == CtrlfIssueStatus.REJECTED:
+        if issue.status in CtrlfIssueStatus.can_be_closed():
             issue.status = CtrlfIssueStatus.CLOSED
             issue.save()
-            return Response(data={"message": "이슈 닫힘"}, status=status.HTTP_204_NO_CONTENT)
+            return Response(data={"message": "이슈 닫힘"}, status=status.HTTP_200_OK)
 
 
 class IssueDeleteView(CtrlfAuthenticationMixin, APIView):

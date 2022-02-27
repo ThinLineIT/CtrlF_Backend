@@ -890,18 +890,21 @@ class TestIssueClose(IssueTextMixin, TestCase):
             header = {}
         return self.client.post(reverse("actions:issue_close"), request_body, content_type="application/json", **header)
 
-    def test_issue_close_on_success_when_issue_status_is_rejected(self):
-        # Given: Ctrlf Content의 Issue를 생성한다.
+    def _get_issue_list(self):
         _, page_issue, _ = self._make_page()
         topic_issue_id, _ = self._make_topic()
         note_issue_id, _ = self._make_note()
         topic_issue = Issue.objects.get(id=topic_issue_id)
         note_issue = Issue.objects.get(id=note_issue_id)
 
-        issue_list = [page_issue, topic_issue, note_issue]
+        return [page_issue, topic_issue, note_issue]
+
+    def test_issue_close_on_success_when_issue_status_is_rejected(self):
+        # Given: Ctrlf Content의 Issue를 생성한다.
+        issue_list = self._get_issue_list()
         for issue in issue_list:
             with self.subTest():
-                # And: issue의 상태는 Approved가 아니다
+                # And: issue의 상태는 Rejected이고
                 issue.status = CtrlfIssueStatus.REJECTED
                 issue.save()
                 # And: request_body로 유효한 issue id가 주어진다.
@@ -910,8 +913,32 @@ class TestIssueClose(IssueTextMixin, TestCase):
                 owner_token = self._login(self.owner_data)
 
                 # When: Issue Close API 를 호출했을 때,
-                self._call_api(request_body, owner_token)
+                response = self._call_api(request_body, owner_token)
 
                 # Then: 이슈의 상태는 Closed 가 되어야 한다
                 issue = Issue.objects.filter(id=issue.id).first()
                 self.assertEqual(issue.status, CtrlfIssueStatus.CLOSED)
+                # And: 상태코드는 200이어야 한다
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_issue_close_on_success_when_issue_status_is_requested(self):
+        # Given: Ctrlf Content의 Issue를 생성한다.
+        issue_list = self._get_issue_list()
+        for issue in issue_list:
+            with self.subTest():
+                # And: issue의 상태는 REQUESTED 이고,
+                issue.status = CtrlfIssueStatus.REQUESTED
+                issue.save()
+                # And: request_body로 유효한 issue id가 주어진다.
+                request_body = {"issue_id": issue.id}
+                # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+                owner_token = self._login(self.owner_data)
+
+                # When: Issue Close API 를 호출했을 때,
+                response = self._call_api(request_body, owner_token)
+
+                # Then: 이슈의 상태는 Closed 가 되어야 한다
+                issue = Issue.objects.filter(id=issue.id).first()
+                self.assertEqual(issue.status, CtrlfIssueStatus.CLOSED)
+                # And: 상태코드는 200이어야 한다
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
