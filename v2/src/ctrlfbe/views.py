@@ -251,10 +251,10 @@ class IssueCloseView(CtrlfAuthenticationMixin, APIView):
         issue = Issue.objects.filter(id=request.data["issue_id"]).first()
         if issue is None:
             return Response(data={"message": "이슈 ID를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-        if issue.status not in CtrlfIssueStatus.can_be_closed():
-            return Response(data={"message": "유효한 요청이 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
         if issue.owner != user:
             return Response(data={"message": "권한이 없습니다"}, status=status.HTTP_403_FORBIDDEN)
+        if issue.status not in CtrlfIssueStatus.can_be_closed():
+            return Response(data={"message": "유효한 요청이 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
 
         issue.status = CtrlfIssueStatus.CLOSED
         issue.save()
@@ -268,12 +268,10 @@ class IssueDeleteView(CtrlfAuthenticationMixin, APIView):
         issue = Issue.objects.filter(id=request.data["issue_id"]).first()
         if issue is None:
             return Response(data={"message": "이슈 ID를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
-        if issue.status == CtrlfIssueStatus.APPROVED:
-            return Response(data={"message": "유효한 요청이 아닙니다"}, status=status.HTTP_400_BAD_REQUEST)
-
         if issue.owner != user:
             return Response(data={"message": "권한이 없습니다"}, status=status.HTTP_403_FORBIDDEN)
+        if issue.status == CtrlfIssueStatus.APPROVED:
+            return Response(data={"message": "유효한 요청이 아닙니다"}, status=status.HTTP_400_BAD_REQUEST)
 
         issue.delete()
         return Response(data={"message": "이슈 삭제"}, status=status.HTTP_204_NO_CONTENT)
