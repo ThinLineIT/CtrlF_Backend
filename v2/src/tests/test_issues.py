@@ -756,3 +756,24 @@ class TestIssueDelete(IssueTextMixin, TestCase):
         # Then: 이슈는 삭제되어야 한다
         issue = Issue.objects.filter(id=issue.id).first()
         self.assertIsNone(issue)
+
+    def test_issue_delete_on_fail_with_bad_request(self):
+        # Given:Note와 Issue를 생성한다.
+        _, issue_id = self._make_note()
+        issue = Issue.objects.get(id=issue_id)
+        # And: issue의 상태는 Approved일 때,
+        issue.status = CtrlfIssueStatus.APPROVED
+        issue.save()
+        # And: request_body로 유효한 issue id가 주어진다.
+        request_body = {"issue_id": issue.id}
+        # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+        owner_token = self._login(self.owner_data)
+
+        # When: Issue Delete API 를 호출했을 때,
+        response = self._call_api(request_body, owner_token)
+
+        # Then: 상태코드는 400 이어야 한다
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # And: 이슈는 삭제 되지 않아야 한다
+        issue = Issue.objects.filter(id=issue.id).first()
+        self.assertIsNotNone(issue)

@@ -249,9 +249,11 @@ class IssueDeleteView(CtrlfAuthenticationMixin, APIView):
         self._ctrlf_authentication(request)
         issue = Issue.objects.get(id=request.data["issue_id"])
 
-        if issue.status != CtrlfIssueStatus.APPROVED:
-            issue.delete()
-            return Response(data={"message": "이슈 삭제"}, status=status.HTTP_204_NO_CONTENT)
+        if issue.status == CtrlfIssueStatus.APPROVED:
+            return Response(data={"message": "유효한 요청이 아닙니다"}, status=status.HTTP_400_BAD_REQUEST)
+
+        issue.delete()
+        return Response(data={"message": "이슈 삭제"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class IssueApproveView(CtrlfAuthenticationMixin, APIView):
