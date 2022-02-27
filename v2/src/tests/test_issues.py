@@ -777,3 +777,17 @@ class TestIssueDelete(IssueTextMixin, TestCase):
         # And: 이슈는 삭제 되지 않아야 한다
         issue = Issue.objects.filter(id=issue.id).first()
         self.assertIsNotNone(issue)
+
+    def test_issue_delete_on_fail_with_not_found(self):
+        # Given:유효하지 않은 issue_id가 주어지고,
+        invalid_issue_id = 9999999
+        # And: request_body로 유효하지 않은 issue id가 주어진다.
+        request_body = {"issue_id": invalid_issue_id}
+        # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+        owner_token = self._login(self.owner_data)
+
+        # When: Issue Delete API 를 호출했을 때,
+        response = self._call_api(request_body, owner_token)
+
+        # Then: 상태코드는 404 이어야 한다
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
