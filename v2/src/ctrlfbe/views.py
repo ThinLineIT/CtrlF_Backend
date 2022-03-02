@@ -36,6 +36,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from .basedata import NoteData, PageData, TopicData
+from .constants import MODEL_NAME_TO_MODEL
 from .models import (
     CtrlfActionType,
     CtrlfIssueStatus,
@@ -258,6 +259,9 @@ class IssueCloseView(CtrlfAuthenticationMixin, APIView):
 
         issue.status = CtrlfIssueStatus.CLOSED
         issue.save()
+        if issue.action == CtrlfActionType.CREATE:
+            _model = MODEL_NAME_TO_MODEL[issue.related_model_type]
+            _model.objects.filter(id=issue.related_model_id).delete()
         return Response(data={"message": "이슈 닫힘"}, status=status.HTTP_200_OK)
 
 

@@ -1,3 +1,5 @@
+from ctrlfbe.models import Note, Page, Topic
+
 MAX_PRINTABLE_NOTE_COUNT = 30
 ERR_NOTE_NOT_FOUND = "노트를 찾을 수 없습니다."
 ERR_TOPIC_NOT_FOUND = "토픽을 찾을 수 없습니다."
@@ -10,4 +12,10 @@ ERR_NOT_FOUND_MSG_MAP = {
     "topic": ERR_TOPIC_NOT_FOUND,
     "page": ERR_PAGE_NOT_FOUND,
     "pagehistory": ERR_PAGE_VERSION_NOT_FOUND,
+}
+
+MODEL_NAME_TO_MODEL = {
+    "NOTE": Note,
+    "PAGE": Page,
+    "TOPIC": Topic,
 }

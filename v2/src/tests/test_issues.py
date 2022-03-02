@@ -1,5 +1,6 @@
 from ctrlf_auth.models import CtrlfUser
 from ctrlf_auth.serializers import LoginSerializer
+from ctrlfbe.constants import MODEL_NAME_TO_MODEL
 from ctrlfbe.models import (
     CtrlfActionType,
     CtrlfContentType,
@@ -759,7 +760,7 @@ class TestIssueClose(IssueTestMixin, TestCase):
             header = {}
         return self.client.post(reverse("actions:issue_close"), request_body, content_type="application/json", **header)
 
-    def test_issue_close_on_success_when_issue_status_is_rejected(self):
+    def test_issue_close_on_success_when_issue_status_is_rejected_on_issue_action_is_created(self):
         # Given: Ctrlf Content의 Issue를 생성한다.
         issue_list = self._get_issue_list()
         for issue in issue_list:
@@ -780,13 +781,19 @@ class TestIssueClose(IssueTestMixin, TestCase):
                 self.assertEqual(issue.status, CtrlfIssueStatus.CLOSED)
                 # And: 상태코드는 200이어야 한다
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
+                # And: 임시로 생성된 컨텐츠는 삭제되어야 한다
+                related_model_id = issue.related_model_id
+                related_model_type = issue.related_model_type
+                _model = MODEL_NAME_TO_MODEL[related_model_type]
+                temp_content = _model.objects.filter(id=related_model_id).first()
+                self.assertIsNone(temp_content)
 
-    def test_issue_close_on_success_when_issue_status_is_requested(self):
+    def test_issue_close_on_success_when_issue_status_is_requested_on_issue_action_is_created(self):
         # Given: Ctrlf Content의 Issue를 생성한다.
         issue_list = self._get_issue_list()
         for issue in issue_list:
             with self.subTest():
-                # And: issue의 상태는 REQUESTED 이고,
+                # And: issue의 상태는 Requested이고
                 issue.status = CtrlfIssueStatus.REQUESTED
                 issue.save()
                 # And: request_body로 유효한 issue id가 주어진다.
@@ -802,6 +809,70 @@ class TestIssueClose(IssueTestMixin, TestCase):
                 self.assertEqual(issue.status, CtrlfIssueStatus.CLOSED)
                 # And: 상태코드는 200이어야 한다
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
+                # And: 임시로 생성된 컨텐츠는 삭제되어야 한다
+                related_model_id = issue.related_model_id
+                related_model_type = issue.related_model_type
+                _model = MODEL_NAME_TO_MODEL[related_model_type]
+                temp_content = _model.objects.filter(id=related_model_id).first()
+                self.assertIsNone(temp_content)
+
+    def test_issue_close_on_success_when_issue_status_is_requested_on_issue_action_is_not_created(self):
+        # Given: Ctrlf Content의 Issue를 생성한다.
+        issue_list = self._get_issue_list()
+        for issue in issue_list:
+            with self.subTest():
+                # And: issue의 상태는 REQUESTED 이고, issue의 action은 CREATED가 아니고,
+                issue.status = CtrlfIssueStatus.REQUESTED
+                issue.action = CtrlfActionType.UPDATE
+                issue.save()
+                # And: request_body로 유효한 issue id가 주어진다.
+                request_body = {"issue_id": issue.id}
+                # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+                owner_token = self._login(self.owner_data)
+
+                # When: Issue Close API 를 호출했을 때,
+                response = self._call_api(request_body, owner_token)
+
+                # Then: 이슈의 상태는 Closed 가 되어야 한다
+                issue = Issue.objects.filter(id=issue.id).first()
+                self.assertEqual(issue.status, CtrlfIssueStatus.CLOSED)
+                # And: 상태코드는 200이어야 한다
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                # And: 임시로 생성된 컨텐츠는 삭제되지 않아야 한다
+                related_model_id = issue.related_model_id
+                related_model_type = issue.related_model_type
+                _model = MODEL_NAME_TO_MODEL[related_model_type]
+                temp_content = _model.objects.filter(id=related_model_id).first()
+                self.assertIsNotNone(temp_content)
+
+    def test_issue_close_on_success_when_issue_status_is_rejected_on_issue_action_is_not_created(self):
+        # Given: Ctrlf Content의 Issue를 생성한다.
+        issue_list = self._get_issue_list()
+        for issue in issue_list:
+            with self.subTest():
+                # And: issue의 상태는 REJECTED 이고, issue의 action은 CREATED가 아니고,
+                issue.status = CtrlfIssueStatus.REJECTED
+                issue.action = CtrlfActionType.UPDATE
+                issue.save()
+                # And: request_body로 유효한 issue id가 주어진다.
+                request_body = {"issue_id": issue.id}
+                # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+                owner_token = self._login(self.owner_data)
+
+                # When: Issue Close API 를 호출했을 때,
+                response = self._call_api(request_body, owner_token)
+
+                # Then: 이슈의 상태는 Closed 가 되어야 한다
+                issue = Issue.objects.filter(id=issue.id).first()
+                self.assertEqual(issue.status, CtrlfIssueStatus.CLOSED)
+                # And: 상태코드는 200이어야 한다
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                # And: 임시로 생성된 컨텐츠는 삭제되지 않아야 한다
+                related_model_id = issue.related_model_id
+                related_model_type = issue.related_model_type
+                _model = MODEL_NAME_TO_MODEL[related_model_type]
+                temp_content = _model.objects.filter(id=related_model_id).first()
+                self.assertIsNotNone(temp_content)
 
     def test_issue_close_on_fail_with_bad_request(self):
         # Given: Ctrlf Content의 Issue를 생성한다.
