@@ -182,3 +182,14 @@ class Issue(CommonTimestamp):
             CtrlfContentType.NOTE: Note.objects.filter(id=self.related_model_id).first(),
             CtrlfContentType.TOPIC: Topic.objects.filter(id=self.related_model_id).first(),
         }.get(self.related_model_type)
+
+    def delete_content_on_action_is_create(self, content_id, model_name):
+        _model = MODEL_NAME_TO_MODEL[model_name]
+        _model.objects.filter(id=content_id).delete()  # type: ignore[attr-defined]
+
+
+MODEL_NAME_TO_MODEL = {
+    "NOTE": Note,
+    "PAGE": Page,
+    "TOPIC": Topic,
+}

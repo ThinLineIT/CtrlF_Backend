@@ -1,7 +1,7 @@
 from ctrlf_auth.models import CtrlfUser
 from ctrlf_auth.serializers import LoginSerializer
-from ctrlfbe.constants import MODEL_NAME_TO_MODEL
 from ctrlfbe.models import (
+    MODEL_NAME_TO_MODEL,
     CtrlfActionType,
     CtrlfContentType,
     CtrlfIssueStatus,
@@ -642,6 +642,7 @@ class TestIssueDelete(IssueTestMixin, TestCase):
             for issue in issue_list:
                 # And: issue의 상태는 Approved가 아니다
                 issue.status = CtrlfIssueStatus.REQUESTED
+                issue.action = CtrlfActionType.UPDATE
                 issue.save()
                 # And: request_body로 유효한 issue id가 주어진다.
                 request_body = {"issue_id": issue.id}
@@ -662,6 +663,7 @@ class TestIssueDelete(IssueTestMixin, TestCase):
             with self.subTest():
                 # And: issue의 상태는 Approved가 아니다
                 issue.status = CtrlfIssueStatus.REJECTED
+                issue.action = CtrlfActionType.UPDATE
                 issue.save()
                 # And: request_body로 유효한 issue id가 주어진다.
                 request_body = {"issue_id": issue.id}
@@ -734,6 +736,7 @@ class TestIssueDelete(IssueTestMixin, TestCase):
             with self.subTest():
                 # And: issue의 상태는 Approved가 아니다
                 issue.status = CtrlfIssueStatus.CLOSED
+                issue.action = CtrlfActionType.UPDATE
                 issue.save()
                 # And: request_body로 유효한 issue id가 주어진다.
                 request_body = {"issue_id": issue.id}
