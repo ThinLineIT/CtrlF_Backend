@@ -277,6 +277,9 @@ class IssueDeleteView(CtrlfAuthenticationMixin, APIView):
         if issue.status == CtrlfIssueStatus.APPROVED:
             return Response(data={"message": "유효한 요청이 아닙니다"}, status=status.HTTP_400_BAD_REQUEST)
 
+        if issue.action == CtrlfActionType.CREATE:
+            _model = MODEL_NAME_TO_MODEL[issue.related_model_type]
+            _model.objects.filter(id=issue.related_model_id).delete()
         issue.delete()
         return Response(data={"message": "이슈 삭제"}, status=status.HTTP_204_NO_CONTENT)
 

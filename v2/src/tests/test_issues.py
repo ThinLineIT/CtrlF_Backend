@@ -675,6 +675,58 @@ class TestIssueDelete(IssueTestMixin, TestCase):
                 issue = Issue.objects.filter(id=issue.id).first()
                 self.assertIsNone(issue)
 
+    def test_issue_delete_on_success_when_status_is_requested_on_issue_action_is_created(self):
+        # Given: Ctrlf Content의 Issue를 생성한다.
+        issue_list = self._get_issue_list()
+        with self.subTest():
+            for issue in issue_list:
+                # And: issue의 상태는 Approved가 아니다
+                issue.status = CtrlfIssueStatus.REQUESTED
+                issue.save()
+                # And: request_body로 유효한 issue id가 주어진다.
+                request_body = {"issue_id": issue.id}
+                # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+                owner_token = self._login(self.owner_data)
+
+                # When: Issue Delete API 를 호출했을 때,
+                self._call_api(request_body, owner_token)
+
+                # Then: 임시로 생성된 컨텐츠는 삭제되어야 한다
+                related_model_id = issue.related_model_id
+                related_model_type = issue.related_model_type
+                _model = MODEL_NAME_TO_MODEL[related_model_type]
+                temp_content = _model.objects.filter(id=related_model_id).first()
+                self.assertIsNone(temp_content)
+                # And: 이슈는 삭제되어야 한다
+                issue = Issue.objects.filter(id=issue.id).first()
+                self.assertIsNone(issue)
+
+    def test_issue_delete_on_success_when_status_is_rejected_on_issue_action_is_created(self):
+        # Given: Ctrlf Content의 Issue를 생성한다.
+        issue_list = self._get_issue_list()
+        for issue in issue_list:
+            with self.subTest():
+                # And: issue의 상태는 Approved가 아니다
+                issue.status = CtrlfIssueStatus.REJECTED
+                issue.save()
+                # And: request_body로 유효한 issue id가 주어진다.
+                request_body = {"issue_id": issue.id}
+                # And: owner 정보로 로그인 하여 토큰을 발급받은 상태이다. -> 올바른 권한
+                owner_token = self._login(self.owner_data)
+
+                # When: Issue Delete API 를 호출했을 때,
+                self._call_api(request_body, owner_token)
+
+                # Then: 임시로 생성된 컨텐츠는 삭제되어야 한다
+                related_model_id = issue.related_model_id
+                related_model_type = issue.related_model_type
+                _model = MODEL_NAME_TO_MODEL[related_model_type]
+                temp_content = _model.objects.filter(id=related_model_id).first()
+                self.assertIsNone(temp_content)
+                # And: 이슈는 삭제되어야 한다
+                issue = Issue.objects.filter(id=issue.id).first()
+                self.assertIsNone(issue)
+
     def test_issue_delete_on_success_when_status_is_closed(self):
         # Given: Ctrlf Content의 Issue를 생성한다.
         issue_list = self._get_issue_list()
