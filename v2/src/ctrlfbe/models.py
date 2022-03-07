@@ -185,7 +185,10 @@ class Issue(CommonTimestamp):
 
     def delete_content_on_action_is_create(self, content_id, model_name):
         _model = MODEL_NAME_TO_MODEL[model_name]
-        _model.objects.filter(id=content_id).delete()  # type: ignore[attr-defined]
+        content = _model.objects.filter(id=content_id)  # type: ignore[attr-defined]
+        if _model is Page:
+            PageHistory.objects.filter(page=content.first()).delete()
+        content.delete()
 
 
 MODEL_NAME_TO_MODEL = {

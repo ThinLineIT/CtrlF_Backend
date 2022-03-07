@@ -725,6 +725,8 @@ class TestIssueDelete(IssueTestMixin, TestCase):
                 _model = MODEL_NAME_TO_MODEL[related_model_type]
                 temp_content = _model.objects.filter(id=related_model_id).first()
                 self.assertIsNone(temp_content)
+                if temp_content is Page:
+                    self.assertIsNone(PageHistory.objects.filter(page=temp_content).first())
                 # And: 이슈는 삭제되어야 한다
                 issue = Issue.objects.filter(id=issue.id).first()
                 self.assertIsNone(issue)
