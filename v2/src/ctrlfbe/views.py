@@ -278,7 +278,7 @@ class IssueDeleteView(CtrlfAuthenticationMixin, APIView):
         if issue.action == CtrlfActionType.CREATE:
             issue.delete_content_on_action_is_create(issue.related_model_id, issue.related_model_type)
         issue.delete()
-        return Response(data={"message": "이슈 삭제"}, status=status.HTTP_204_NO_CONTENT)
+        return Response(data={"message": "이슈 삭제"}, status=status.HTTP_200_OK)
 
 
 class IssueApproveView(CtrlfAuthenticationMixin, APIView):
@@ -305,7 +305,7 @@ class IssueApproveView(CtrlfAuthenticationMixin, APIView):
             ctrlf_content.process_create()
         else:
             ctrlf_content.process_delete()
-            return Response(data={"message": "삭제 완료"}, status=status.HTTP_204_NO_CONTENT)
+            return Response(data={"message": "삭제 완료"}, status=status.HTTP_200_OK)
 
         issue.status = CtrlfIssueStatus.APPROVED
         issue.save()

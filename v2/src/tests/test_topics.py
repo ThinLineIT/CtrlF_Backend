@@ -580,8 +580,8 @@ class TestTopicDelete(TestTopicMixin, TestCase):
         # When: Topic Delete Issue에 대한 Issue Approve API를 호출한다.
         response = self._call_issue_approve_api(valid_issue.id, issue_approve_user_token)
 
-        # Then: status code는 204이다.
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        # Then: status code는 200이다.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         # And: issue도 삭제되어야 한다
         valid_issue = Issue.objects.first()
         self.assertIsNone(valid_issue)
