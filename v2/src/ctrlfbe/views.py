@@ -260,11 +260,13 @@ class IssueUpdateView(CtrlfAuthenticationMixin, APIView):
 
         issue.status = CtrlfIssueStatus.REQUESTED
         issue.title = request.data["new_title"]
+        issue.reason = request.data["reason"]
 
         new_content = request.data.get("new_content")
-        if new_content:
-            issue.reason = new_content
-
+        if issue.related_model_type is Page and new_content:
+            page_history = PageHistory.objects.get(id=issue.related_model_id)
+            page_history.content = new_content
+            page_history.save()
         issue.save()
         return Response(data={"message": "이슈 업데이트"}, status=status.HTTP_200_OK)
 
