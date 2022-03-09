@@ -40,6 +40,7 @@ from rest_framework.viewsets import ModelViewSet
 from .basedata import NoteData, PageData, TopicData
 from .models import (
     CtrlfActionType,
+    CtrlfContentType,
     CtrlfIssueStatus,
     Issue,
     Note,
@@ -263,8 +264,9 @@ class IssueUpdateView(CtrlfAuthenticationMixin, APIView):
         issue.reason = request.data["reason"]
 
         new_content = request.data.get("new_content")
-        if issue.related_model_type is Page and new_content:
+        if issue.related_model_type == CtrlfContentType.PAGE and new_content:
             page_history = PageHistory.objects.get(id=issue.related_model_id)
+            page_history.title = request.data["new_title"]
             page_history.content = new_content
             page_history.save()
         issue.save()
