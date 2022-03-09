@@ -277,6 +277,13 @@ class IssueActionRequestBodySerializer(serializers.Serializer):
     issue_id = serializers.IntegerField()
 
 
+class IssueUpdateActionRequestBodySerializer(serializers.Serializer):
+    issue_id = serializers.IntegerField()
+    new_title = serializers.CharField()
+    new_content = serializers.CharField()
+    reason = serializers.CharField(allow_null=True)
+
+
 class ImageUploadRequestBodySerializer(serializers.Serializer):
     image = serializers.ImageField()
 

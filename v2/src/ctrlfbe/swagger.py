@@ -6,6 +6,7 @@ from ctrlfbe.serializers import (
     IssueCountSerializer,
     IssueDetailSerializer,
     IssueListSerializer,
+    IssueUpdateActionRequestBodySerializer,
     NoteCreateRequestBodySerializer,
     NoteDeleteRequestBodySerializer,
     NoteDeleteResponseSerializer,
@@ -191,6 +192,30 @@ SWAGGER_ISSUE_CLOSE_VIEW = {
     "request_body": IssueActionRequestBodySerializer(),
     "operation_summary": "Issue Close API",
     "operation_description": "issue_id에 해당하는 Issue의 상태를 Closed로 변경합니다",
+    "tags": ["이슈 화면"],
+}
+
+SWAGGER_ISSUE_REJECT_VIEW = {
+    "responses": {
+        200: IssueActionResponseSerializer(),
+        400: IssueActionResponseSerializer(),
+        401: IssueActionResponseSerializer(),
+    },
+    "request_body": IssueActionRequestBodySerializer(),
+    "operation_summary": "Issue Reject API",
+    "operation_description": "issue_id에 해당하는 Issue의 상태를 Rejected로 변경합니다",
+    "tags": ["이슈 화면"],
+}
+
+SWAGGER_ISSUE_UPDATE_VIEW = {
+    "responses": {
+        200: IssueActionResponseSerializer(),
+        400: IssueActionResponseSerializer(),
+        401: IssueActionResponseSerializer(),
+    },
+    "request_body": IssueUpdateActionRequestBodySerializer(),
+    "operation_summary": "Issue Update API",
+    "operation_description": "issue_id에 해당하는 Issue의 상태를 Updated로 변경합니다",
     "tags": ["이슈 화면"],
 }
 
