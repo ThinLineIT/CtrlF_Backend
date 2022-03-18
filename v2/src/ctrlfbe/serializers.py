@@ -279,8 +279,8 @@ class IssueActionRequestBodySerializer(serializers.Serializer):
 
 class IssueUpdateActionRequestBodySerializer(serializers.Serializer):
     issue_id = serializers.IntegerField()
-    new_title = serializers.CharField()
-    new_content = serializers.CharField()
+    new_title = serializers.CharField(allow_null=True)
+    new_content = serializers.CharField(allow_null=True)
     reason = serializers.CharField(allow_null=True)
 
 
