@@ -260,14 +260,16 @@ class IssueUpdateView(CtrlfAuthenticationMixin, APIView):
         if issue.status not in {CtrlfIssueStatus.REQUESTED, CtrlfIssueStatus.REJECTED}:
             return Response(data={"message": "유효한 요청이 아닙니다."}, status=status.HTTP_400_BAD_REQUEST)
 
+        if issue.action != CtrlfActionType.DELETE:
+            issue.title = request.data["new_title"] or ""
+
         issue.status = CtrlfIssueStatus.REQUESTED
-        issue.title = request.data["new_title"] or ""
         issue.reason = request.data["reason"]
 
         new_content = request.data["new_content"]
-        if issue.related_model_type == CtrlfContentType.PAGE and new_content:
+        if issue.related_model_type == CtrlfContentType.PAGE and issue.action != CtrlfActionType.DELETE and new_content:
             page_history = PageHistory.objects.get(id=issue.related_model_id)
-            page_history.title = request.data["new_title"] or ""
+            page_history.title = request.data["new_title"]
             page_history.content = new_content
             page_history.save()
         issue.save()
