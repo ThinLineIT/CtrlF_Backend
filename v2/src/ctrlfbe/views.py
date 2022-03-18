@@ -10,6 +10,7 @@ from ctrlfbe.swagger import (
     SWAGGER_ISSUE_DETAIL_VIEW,
     SWAGGER_ISSUE_LIST_VIEW,
     SWAGGER_ISSUE_REJECT_VIEW,
+    SWAGGER_ISSUE_UPDATE_PERMISSION_CHECK,
     SWAGGER_ISSUE_UPDATE_VIEW,
     SWAGGER_NOTE_CREATE_VIEW,
     SWAGGER_NOTE_DELETE_VIEW,
@@ -394,6 +395,23 @@ class IssueCount(APIView):
     def get(self, request):
         serializer = IssueCountSerializer({"issues_count": Issue.objects.count()})
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+class IssueUpdatePermissionCheck(CtrlfAuthenticationMixin, APIView):
+    @swagger_auto_schema(**SWAGGER_ISSUE_UPDATE_PERMISSION_CHECK)
+    def post(self, request, *args, **kwargs):
+        user = self._ctrlf_authentication(request)
+        if user.is_admin:
+            return Response(data={"has_permission": True}, status=status.HTTP_200_OK)
+
+        issue = Issue.objects.filter(id=request.data["issue_id"]).first()
+        if issue is None:
+            return Response(data={"message": "이슈 ID를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        if issue.owner != user:
+            return Response(data={"message": "권한이 없습니다"}, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(data={"has_permission": True}, status=status.HTTP_200_OK)
 
 
 class HealthCheckView(APIView):

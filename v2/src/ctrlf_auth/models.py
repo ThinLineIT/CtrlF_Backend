@@ -25,6 +25,7 @@ class CtrlfUser(AbstractBaseUser):
     email = models.EmailField(verbose_name="email address", max_length=255, unique=True, help_text="email 주소")
     is_active = models.BooleanField(default=True, help_text="패스워드")
     nickname = models.CharField(max_length=30, help_text="닉네임")
+    is_admin = models.BooleanField(default=False, help_text="관리자 여부")
 
     objects = CtrlfUserManager()
 

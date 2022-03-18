@@ -7,6 +7,8 @@ from ctrlfbe.serializers import (
     IssueDetailSerializer,
     IssueListSerializer,
     IssueUpdateActionRequestBodySerializer,
+    IssueUpdatePermissionCheckRequestBodySerializer,
+    IssueUpdatePermissionCheckResponseSerializer,
     NoteCreateRequestBodySerializer,
     NoteDeleteRequestBodySerializer,
     NoteDeleteResponseSerializer,
@@ -216,6 +218,18 @@ SWAGGER_ISSUE_UPDATE_VIEW = {
     "request_body": IssueUpdateActionRequestBodySerializer(),
     "operation_summary": "Issue Update API",
     "operation_description": "issue_id에 해당하는 Issue의 상태를 Updated로 변경합니다",
+    "tags": ["이슈 화면"],
+}
+
+SWAGGER_ISSUE_UPDATE_PERMISSION_CHECK = {
+    "responses": {
+        200: IssueUpdatePermissionCheckResponseSerializer(),
+        403: IssueActionResponseSerializer(),
+        404: IssueActionResponseSerializer(),
+    },
+    "request_body": IssueUpdatePermissionCheckRequestBodySerializer(),
+    "operation_summary": "Issue Update Permission Check API",
+    "operation_description": "issue_id에 해당하는 Issue의 수정 권한을 체크 합니다.",
     "tags": ["이슈 화면"],
 }
 

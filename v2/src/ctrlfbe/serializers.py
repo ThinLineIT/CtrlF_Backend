@@ -269,8 +269,12 @@ class IssueDetailSerializer(serializers.Serializer):
         return page_history.version_no
 
 
+class IssueUpdatePermissionCheckResponseSerializer(serializers.Serializer):
+    has_permission = serializers.BooleanField()
+
+
 class IssueActionResponseSerializer(serializers.Serializer):
-    message = serializers.CharField()
+    message = serializers.CharField
 
 
 class IssueActionRequestBodySerializer(serializers.Serializer):
@@ -282,6 +286,10 @@ class IssueUpdateActionRequestBodySerializer(serializers.Serializer):
     new_title = serializers.CharField(allow_null=True)
     new_content = serializers.CharField(allow_null=True)
     reason = serializers.CharField(allow_null=True)
+
+
+class IssueUpdatePermissionCheckRequestBodySerializer(serializers.Serializer):
+    issue_id = serializers.IntegerField()
 
 
 class ImageUploadRequestBodySerializer(serializers.Serializer):
