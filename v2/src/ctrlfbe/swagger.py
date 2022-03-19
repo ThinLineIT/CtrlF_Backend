@@ -224,7 +224,6 @@ SWAGGER_ISSUE_UPDATE_VIEW = {
 SWAGGER_ISSUE_UPDATE_PERMISSION_CHECK = {
     "responses": {
         200: IssueUpdatePermissionCheckResponseSerializer(),
-        403: IssueActionResponseSerializer(),
         404: IssueActionResponseSerializer(),
     },
     "request_body": IssueUpdatePermissionCheckRequestBodySerializer(),
